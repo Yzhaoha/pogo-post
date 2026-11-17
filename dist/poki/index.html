@@ -109,7 +109,7 @@ paused:'Paused',resume:'Resume',retry:'Retry',next:'Next level',allDone:'More st
 win:'Delivered!',fail:'Oops!',st1:'Delivered',st2:'Nothing dropped',st3:'Under {n}s',time:'{n}s',
 revive:'📺 Try again from here',skip:'📺 Skip this level',adTest:'Ad goes here (the test build skips ads)',
 t1:'Hold to squish the spring…',t2:'…let go to jump!',t3:'Hold longer = jump further',t4:'Big jumps tip you backwards. Hold in the air to lean forward!',t5:'Land straight and the parcels stay put. Get to the door!',
-t_tramp:'Bounce pads launch you sky-high!',t_frag:'FRAGILE! Land gently: small hops, straight landings.',t_rope:'Clotheslines snag tall stacks. Use small hops underneath!',t_dog:'Don’t step on the dog. Wait, then hop over.',t_cake:'Cake on top! Keep it level or it slides off.',
+t_tramp:'Bounce pads launch you sky-high!',t_frag:'FRAGILE! Land gently: small hops, straight landings.',t_rope:'Clotheslines snag tall stacks. Use small hops underneath!',t_dog:'Don’t step on the dog. Wait, then hop over.',t_cake:'Cake on top! Keep it level or it slides off.',t_wind:'Windy! Tailwind pushes you further in the air.',t_head:'Headwind! Charge longer than you think.',t_fan:'Fans blow you through the air. Ride the breeze!',t_long:'Long parcels catch the wind. Way more push!',t_chick:'A live chicken! It flaps at random. Keep landings soft.',
 woof:'WOOF!',perfect:'PERFECT!',nice:'Nice',wobbly:'Wobbly!',crack:'Crack!',
 q_fall:['Recipient: the bottom of the alley.','That was not the doorstep.','Gravity: 1, Courier: 0.'],
 q_face:['Delivered… face first.','Signature required. Got a faceprint instead.','Landing: creative. Score: zero.'],
@@ -125,7 +125,7 @@ paused:'暂停',resume:'继续',retry:'重来',next:'下一关',allDone:'更多�
 win:'送达！',fail:'哎呀！',st1:'送达',st2:'一件不掉',st3:'{n} 秒内',time:'{n} 秒',
 revive:'📺 从这里再来',skip:'📺 跳过这关',adTest:'这里会播放广告（测试版自动跳过）',
 t1:'按住，压弹簧……',t2:'……松开，起跳！',t3:'按得越久，跳得越远',t4:'跳得远身体会往后仰，空中按住往前倾！',t5:'落地站正，包裹才不晃。送到门口！',
-t_tramp:'踩弹床能弹得超高！',t_frag:'易碎品！落地要轻：小跳、站正。',t_rope:'晾衣绳会勾走高高的包裹，从下面小跳过去！',t_dog:'别踩到狗。等它走开再跳过去。',t_cake:'顶上是蛋糕！保持水平，不然会滑下去。',
+t_tramp:'踩弹床能弹得超高！',t_frag:'易碎品！落地要轻：小跳、站正。',t_rope:'晾衣绳会勾走高高的包裹，从下面小跳过去！',t_dog:'别踩到狗。等它走开再跳过去。',t_cake:'顶上是蛋糕！保持水平，不然会滑下去。',t_wind:'起风了！顺风时空中会被吹得更远。',t_head:'逆风！蓄力要比平时更久。',t_fan:'大风扇会把你吹着走，借风过去！',t_long:'超长件特别兜风，被吹得更猛！',t_chick:'活鸡！它会随时扑腾，落地要稳。',
 woof:'汪！',perfect:'完美！',nice:'不错',wobbly:'要晃倒啦！',crack:'裂了！',
 q_fall:['签收人：小巷底部。','那可不是门口。','重力 1 : 0 快递员。'],
 q_face:['包裹送达……用脸签收。','需要签名，你给了个脸印。','落地姿势：很有创意。得分：零。'],
@@ -162,12 +162,23 @@ const LEVELS=[
  {pk:['box','cake'],plats:[[0,200,140],[290,120,180],[500,110,140],[700,120,210],[910,110,160],[1110,120,230],[1320,110,170],[1520,300,130]],tip:'t_cake'},
  {pk:['box','frag','box'],plats:[[0,220,120],[310,420,120],[820,140,190],[1050,130,140],[1260,120,200],[1470,300,150]],ropes:[[360,540,340,10]],dogs:[[580,700,1.1]]},
  {pk:['box','cake','box'],plats:[[0,200,120],[280,240,30],[660,160,320],[900,280,320],[1310,140,250],[1530,130,190],[1740,300,150]],tramps:[[460,60]],ropes:[[920,1160,540,10]]},
- {pk:['box','frag','box','cake'],plats:[[0,200,140],[290,130,200],[500,330,120],[920,250,40],[1320,140,330],[1550,340,330],[1980,140,260],[2200,130,200],[2420,320,160]],tramps:[[1060,60]],ropes:[[560,800,365,10]],dogs:[[1590,1840,1.0]],boss:1}
+ {pk:['box','frag','box','cake'],plats:[[0,200,140],[290,130,200],[500,330,120],[920,250,40],[1320,140,330],[1550,340,330],[1980,140,260],[2200,130,200],[2420,320,160]],tramps:[[1060,60]],ropes:[[560,800,365,10]],dogs:[[1590,1840,1.0]],boss:1},
+ /* ---- chapter 2: Windy Pier ---- */
+ {pk:['box','box'],wind:110,plats:[[0,220,120],[330,150,140],[600,140,110],[880,150,160],[1160,130,120],[1450,140,150],[1760,300,130]],tip:'t_wind'},
+ {pk:['box','box'],wind:-120,plats:[[0,220,140],[300,140,140],[530,130,180],[760,140,140],[990,120,200],[1210,140,150],[1450,300,140]],tip:'t_head'},
+ {pk:['box','box'],plats:[[0,220,140],[320,140,160],[560,120,140],[1100,160,150],[1360,130,180],[1600,120,140],[1850,300,150]],fans:[[700,40,380,420,850],[1470,100,110,400,-500]],tip:'t_fan'},
+ {pk:['box','long'],wind:60,plats:[[0,220,130],[320,140,150],[580,130,120],[840,140,170],[1110,130,130],[1380,140,160],[1660,300,140]],tip:'t_long'},
+ {pk:['box','chick'],wind:-40,plats:[[0,220,130],[300,150,150],[540,140,130],[790,150,170],[1040,140,140],[1290,150,170],[1550,300,140]],tip:'t_chick'},
+ {pk:['box','frag','box'],wind:-100,plats:[[0,220,150],[300,130,170],[520,120,150],[1040,150,160],[1290,130,200],[1520,120,160],[1760,300,150]],fans:[[660,40,360,420,850]]},
+ {pk:['box','long'],wind:70,plats:[[0,220,120],[300,520,120],[900,140,160],[1150,130,130],[1640,150,150],[1900,300,140]],ropes:[[420,720,345,10]],fans:[[1300,40,320,420,450]]},
+ {pk:['box','chick'],wind:80,plats:[[0,220,130],[310,440,130],[850,150,170],[1100,380,150],[1600,140,190],[1850,300,150]],dogs:[[350,700,1.3],[1150,1430,1.5]]},
+ {pk:['box','cake'],wind:-90,plats:[[0,220,140],[300,260,40],[660,170,330],[920,140,280],[1150,240,60],[1500,160,330],[1760,300,260]],tramps:[[440,60],[1290,60]]},
+ {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1}
 ];
 LEVELS.forEach((L,i)=>{L.i=i;L.goal=L.plats.length-1;L.start=L.plats[0][0]+40;L.tramps=L.tramps||[];L.ropes=L.ropes||[];L.dogs=L.dogs||[];L.fans=L.fans||[];
  const topAt=x=>{for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return 0};
  L.tramps.forEach(t=>t[2]=topAt(t[0]+t[1]/2));L.dogs.forEach(d=>d[3]=topAt((d[0]+d[1])/2))});
-const PAR=[16,18,18,16,19,19,17,18,18,23];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
+const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
 const CHAPTERS=3,PER=10;
 
 /* ================= simulation (deterministic, fixed step) ================= */
@@ -461,12 +472,15 @@ function render(){
  c.fillStyle='#fff6c9';c.beginPath();c.arc(CW*0.82,CH*0.17,46*S,0,7);c.fill();
  for(let i=0;i<7;i++){const x=((i*397-GS.cam.x*0.08+GS.time*6)%(CW+400)+CW+400)%(CW+400)-200,y=CH*(0.12+hash(i)*0.25);cloud(c,x,y,(0.7+hash(i+9)*0.6)*S)}
  c.fillStyle=shade(sky[1],-0.18);
- for(let i=-2;i<14;i++){const wd=120*S,base=Math.floor(GS.cam.x*0.25/120);const k=base+i;const x=CW*0.5+(k*120-GS.cam.x*0.25)*S;const hh=(80+hash(k)*140)*S;c.fillRect(x,H(GS.cam.y*0.0)+0-hh+40*S-((GS.cam.y)*S*0.1),wd-8*S,hh+CH)}
+ if(ch===1)pierBack(c,sky);else for(let i=-2;i<14;i++){const wd=120*S,base=Math.floor(GS.cam.x*0.25/120);const k=base+i;const x=CW*0.5+(k*120-GS.cam.x*0.25)*S;const hh=(80+hash(k)*140)*S;c.fillRect(x,H(GS.cam.y*0.0)+0-hh+40*S-((GS.cam.y)*S*0.1),wd-8*S,hh+CH)}
  // world
  const L=GS.L;if(L){
   for(let i=0;i<L.plats.length;i++)drawBuilding(c,L,i);
+  if(ch===1)drawSea(c);
+  for(const f of L.fans)drawFan(c,f);
   for(const t of L.tramps)drawTramp(c,t);
   for(const r of L.ropes)drawRope(c,r);
+  if(L.wind)drawWind(c,L.wind);
   drawGoal(c,L);
   const s=GS.s;
   for(const d of L.dogs)drawDog(c,d,s?s.t:GS.time);
@@ -499,6 +513,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(p[0]),y=H
  c.fillStyle=col;c.fillRect(x,y,w,bottom-y);c.strokeRect(x,y,w,bottom-y+40);
  // shade strip
  c.fillStyle=shade(col,-0.12);c.fillRect(x+w-10*z,y,10*z,bottom-y);
+ if((L.i/PER|0)===1&&i!==L.goal){drawCrates(c,L,i,x,y,w,col,z);return}
  // windows
  const cols=Math.max(1,Math.floor((p[1]-30)/48));const gap=(w-cols*22*z)/(cols+1);
  for(let r=0;r<8;r++){const wy=y+40*z+r*56*z;if(wy>CH)break;for(let k=0;k<cols;k++){const wx=x+gap+k*(22*z+gap);const lit=hash(i*31+r*7+k+L.i*5)>0.45;
@@ -507,6 +522,48 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(p[0]),y=H
  c.lineWidth=LW;c.fillStyle=shade(col,-0.3);rr(c,x-6*z,y-4*z,w+12*z,14*z,5*z);c.fill();c.stroke();
  if(p[1]>150&&i!==L.goal&&i!==0){const ax=x+w*(0.25+hash(i+L.i)*0.4);c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke()}
 }
+/* ---- chapter 2: pier ---- */
+function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
+ c.fillStyle=shade(sky[1],-0.2);
+ for(let i=-2;i<9;i++){const base=Math.floor(GS.cam.x*0.2/260);const k=base+i;const x=CW*0.5+(k*260-GS.cam.x*0.2)*S;if(hash(k*3)<0.45)continue;
+  const th=(150+hash(k)*90)*S;c.fillRect(x,hy-th,14*S,th);c.fillRect(x-60*S,hy-th,170*S,10*S);c.fillRect(x+90*S,hy-th+10*S,3*S,40*S+hash(k+1)*50*S);
+  c.beginPath();c.moveTo(x-6*S,hy-th);c.lineTo(x+7*S,hy-th-34*S);c.lineTo(x+20*S,hy-th);c.fill()}
+ for(let i=-2;i<12;i++){const base=Math.floor(GS.cam.x*0.2/150);const k=base+i;if(hash(k+40)<0.5)continue;const x=CW*0.5+(k*150-GS.cam.x*0.2)*S;const n=1+(hash(k+5)*3|0);
+  for(let j=0;j<n;j++)c.fillRect(x,hy-(j+1)*22*S,64*S,20*S)}
+ const g=c.createLinearGradient(0,hy,0,CH);g.addColorStop(0,'#6fb7e6');g.addColorStop(1,'#3d84c4');c.fillStyle=g;c.fillRect(0,hy,CW,CH-hy);
+ c.fillStyle='#ffffff55';for(let i=0;i<14;i++){const x=((hash(i)*CW*1.3-GS.cam.x*0.3*S+GS.time*12)%CW+CW)%CW;c.fillRect(x,hy+8*S+hash(i+2)*(CH-hy),26*S,3*S)}}
+function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
+ c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
+function drawCrates(c,L,i,x,y,w,col,z){const bottom=CH+20;
+ // pylons under the stack
+ c.fillStyle='#8a6a52';for(const k of [0.18,0.82]){const px=x+w*k-7*z;c.fillRect(px,y,14*z,bottom-y);c.strokeRect(px,y,14*z,bottom-y+40)}
+ const rowH=58*z;let r=0;
+ for(let yy=y;yy<bottom&&r<9;yy+=rowH,r++){const cc=r===0?col:BCOL[(i*5+r*3+L.i)%BCOL.length];const inset=r===0?0:(hash(i*7+r)*16-8)*z;
+  c.fillStyle=cc;c.fillRect(x+inset,yy,w,rowH);c.lineWidth=LW;c.strokeRect(x+inset,yy,w,rowH);
+  c.strokeStyle=shade(cc,-0.28);c.lineWidth=LW*0.6;c.beginPath();for(let k=14*z;k<w-6*z;k+=14*z){c.moveTo(x+inset+k,yy+7*z);c.lineTo(x+inset+k,yy+rowH-7*z)}c.stroke();c.strokeStyle=INK;
+  c.fillStyle=shade(cc,-0.3);c.fillRect(x+inset,yy,w,6*z);c.fillRect(x+inset,yy+rowH-6*z,w,6*z);c.lineWidth=LW*0.6;c.strokeRect(x+inset,yy,w,6*z)}
+ c.lineWidth=LW;
+ // bollard / rope coil on top
+ if(L.plats[i][1]>150&&i!==0){const ax=x+w*(0.3+hash(i+L.i)*0.4);c.fillStyle='#5b5a8f';rr(c,ax,y-18*z,18*z,18*z,6*z);c.fill();c.stroke();c.fillStyle='#7a79b0';rr(c,ax-4*z,y-24*z,26*z,8*z,4*z);c.fill();c.stroke()}}
+function drawFan(c,f){const z=S*GS.cam.z,dir=Math.sign(f[4]);const fx=dir>0?f[0]+14:f[0]+f[2]-14;const fy=Math.min(f[1]+f[3]-60,Math.max(f[1]+150,topUnder(fx)+190));
+ const X=W(fx),Y=H(fy);if(X<-200||X>CW+200)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ // breeze streaks through the zone
+ c.save();c.strokeStyle='#ffffffb0';c.lineWidth=3*z;c.lineCap='round';const len=f[2];
+ for(let k=0;k<9;k++){const ph=((GS.time*Math.abs(f[4])*0.0012+hash(k*3+f[0]))%1);const sx=dir>0?f[0]+ph*len:f[0]+f[2]-ph*len;const sy=f[1]+60+hash(k+f[0])*(Math.min(f[3],360)-40);
+  c.globalAlpha=Math.sin(ph*Math.PI)*0.9;c.beginPath();c.moveTo(W(sx),H(sy));c.lineTo(W(sx-dir*40),H(sy));c.stroke()}
+ c.restore();
+ // pole
+ c.fillStyle='#9aa3b8';c.fillRect(X-5*z,Y,10*z,CH-Y+20);c.strokeRect(X-5*z,Y,10*z,CH-Y+40);
+ // housing
+ c.save();c.translate(X,Y);c.scale(dir,1);c.fillStyle='#5b5a8f';rr(c,-22*z,-34*z,22*z,68*z,8*z);c.fill();c.stroke();
+ c.fillStyle='#dfe6f5';c.beginPath();c.ellipse(4*z,0,12*z,38*z,0,0,7);c.fill();c.stroke();
+ const a=GS.time*18*Math.sign(f[4]);c.fillStyle='#ff6b4a';for(let k=0;k<3;k++){const yb=Math.sin(a+k*2.094)*30*z,wb=Math.abs(Math.cos(a+k*2.094))*8*z+2*z;c.beginPath();c.ellipse(5*z,yb*0.9,wb*0.6,9*z,0,0,7);c.fill();c.stroke()}
+ c.fillStyle=INK;c.beginPath();c.arc(5*z,0,4*z,0,7);c.fill();c.restore()}
+function drawWind(c,w){const dir=Math.sign(w),sp=180+Math.abs(w)*2.2;c.save();c.strokeStyle='#ffffff99';c.lineCap='round';c.lineWidth=Math.max(2,2.5*S);
+ for(let i=0;i<16;i++){const L=(50+hash(i)*70)*S;const x=((hash(i+1)*(CW+300)+dir*GS.time*sp*(0.7+hash(i+4)*0.6))%(CW+300)+CW+300)%(CW+300)-150;const y=CH*(0.08+hash(i+9)*0.7)+Math.sin(GS.time*3+i)*6*S;
+  c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-dir*L*0.5,y-6*S,x-dir*L,y);c.stroke()}
+ c.restore()}
 function drawTramp(c,t){const z=S*GS.cam.z,x=W(t[0]),y=H(t[2]),w=t[1]*z;const hit=GS.trampHit&&performance.now()-GS.trampHit<250?Math.sin((performance.now()-GS.trampHit)/25)*4*z:0;
  c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#c9d3e6';for(const k of [0.15,0.85]){c.fillRect(x+w*k-4*z,y-16*z,8*z,16*z);c.strokeRect(x+w*k-4*z,y-16*z,8*z,16*z)}
  c.fillStyle='#ff4f6d';rr(c,x-4*z,y-22*z+hit,w+8*z,10*z,5*z);c.fill();c.stroke();c.fillStyle='#fff';c.fillRect(x+w*0.3,y-20*z+hit,w*0.12,4*z);c.fillRect(x+w*0.6,y-20*z+hit,w*0.12,4*z)}
@@ -615,6 +672,12 @@ function hud(c){const s=GS.s,L=GS.L;const sz=Math.max(0.8,Math.min(1.2,S*1.1));
  // timer
  const tv=GS.result&&GS.mode==='win'?GS.result.time:s.t;const tt=tv.toFixed(1);const ok=tv<=L.par;c.font=`900 ${18*sz}px Nunito,sans-serif`;c.textAlign='right';c.strokeText('⏱ '+tt,CW-14,30*sz);c.fillStyle=ok?'#fff':'#ffd0d0';c.fillText('⏱ '+tt,CW-14,30*sz);
  c.font=`800 ${12*sz}px Nunito,sans-serif`;c.lineWidth=4;c.strokeText('★ '+L.par+'s',CW-14,48*sz);c.fillStyle=ok?'#ffc23d':'#ccc';c.fillText('★ '+L.par+'s',CW-14,48*sz);
+ // wind badge
+ if(L.wind){const dir=Math.sign(L.wind),n=Math.min(3,Math.ceil(Math.abs(L.wind)/40)),bw=78*sz,bh=26*sz,bx=CW-14-bw,by=58*sz;c.save();c.lineWidth=3;c.strokeStyle=INK;c.fillStyle=dir>0?'#bff0d4':'#ffd6cc';rr(c,bx,by,bw,bh,bh/2);c.fill();c.stroke();
+  const fx=dir>0?bx+12*sz:bx+bw-12*sz,fl=Math.sin(GS.time*9)*2*sz;c.fillStyle=INK;c.fillRect(fx-1.2*sz,by+5*sz,2.5*sz,bh-10*sz);c.fillStyle='#ff6b4a';c.beginPath();c.moveTo(fx,by+5*sz);c.lineTo(fx+dir*16*sz,by+8*sz+fl);c.lineTo(fx,by+12*sz);c.closePath();c.fill();
+  c.strokeStyle=INK;c.lineWidth=3.5*sz;c.lineCap='round';c.lineJoin='round';const cx=bx+bw*(dir>0?0.62:0.38),ph=(GS.time*2)%1;
+  for(let k=0;k<n;k++){const ox=(k-(n-1)/2)*11*sz+dir*ph*3*sz;c.beginPath();c.moveTo(cx+ox-dir*4*sz,by+7*sz);c.lineTo(cx+ox+dir*4*sz,by+bh/2);c.lineTo(cx+ox-dir*4*sz,by+bh-7*sz);c.stroke()}
+  c.restore()}
  // parcels
  const tot=L.pk.length;let x=CW/2-(tot-1)*17*sz;const y=62*sz+TOPPAD;
  for(let i=0;i<tot;i++){const have=i<s.stack.length&&!s.dead;c.save();c.translate(x+i*34*sz,y);c.globalAlpha=have?1:0.3;drawParcel(c,have?s.stack[i].t:L.pk[i],0.62*sz,have&&s.stack[i].crack,0);c.restore()}
