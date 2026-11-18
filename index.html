@@ -112,7 +112,7 @@ win:'Delivered!',fail:'Oops!',st1:'Delivered',st2:'Nothing dropped',st3:'Under {
 revive:'📺 Try again from here',skip:'📺 Skip this level',adTest:'Ad goes here (the test build skips ads)',
 t1:'Hold to squish the spring…',t2:'…let go to jump!',t3:'Hold longer = jump further',t4:'Tipping back? Hold in mid-air to lean forward!',t5:'Land upright. Reach the door!',
 t_tramp:'Bounce pads send you sky-high!',t_frag:'Fragile! Land softly and upright.',t_rope:'Clotheslines snag parcels. Stay low!',t_dog:'Wait for the dog, then hop over.',t_cake:'Cake on top! Keep it level.',t_wind:'Tailwind: you fly further.',t_head:'Headwind: charge longer.',t_fan:'Fans push you through the air.',t_long:'Long parcels catch more wind.',t_chick:'The chicken flaps. Land softly!',
-t_bull:'Hit the red bullseye for points. Streaks multiply!',pts:'{n} pts',best:'best {n}',
+t_rain:'Wet roofs! You slide after landing.',t_bull:'Hit the red bullseye for points. Streaks multiply!',pts:'{n} pts',best:'best {n}',
 endless:'Endless Run',newBest:'New record!',deliv:'Delivered +{n}',t_endless:'Chain bullseyes and deliver at every door!',
 woof:'WOOF!',perfect:'PERFECT!',nice:'Nice',wobbly:'Wobbly!',crack:'Crack!',
 q_fall:['Recipient: the bottom of the alley.','That was not the doorstep.','Gravity: 1, Courier: 0.'],
@@ -130,7 +130,7 @@ win:'送达！',fail:'哎呀！',st1:'送达',st2:'一件不掉',st3:'{n} 秒内
 revive:'📺 从这里再来',skip:'📺 跳过这关',adTest:'这里会播放广告（测试版自动跳过）',
 t1:'按住，压弹簧……',t2:'……松开，起跳！',t3:'按得越久，跳得越远',t4:'往后仰了？空中按住往前倾！',t5:'站正落地，送到门口！',
 t_tramp:'踩弹床，弹得超高！',t_frag:'易碎品！落地要轻、要正。',t_rope:'晾衣绳会勾走包裹，小跳过去！',t_dog:'等狗走开，再跳过去。',t_cake:'顶上是蛋糕，别让它歪！',t_wind:'顺风：飞得更远。',t_head:'逆风：多蓄一会儿力。',t_fan:'大风扇会把你吹着走。',t_long:'超长件更兜风。',t_chick:'活鸡会扑腾，落地要稳！',
-t_bull:'踩中红色靶心加分，连中翻倍！',pts:'{n} 分',best:'最高 {n}',
+t_rain:'下雨路滑！落地后会往前滑一段。',t_bull:'踩中红色靶心加分，连中翻倍！',pts:'{n} 分',best:'最高 {n}',
 endless:'无尽模式',newBest:'新纪录！',deliv:'送达 +{n}',t_endless:'连踩靶心，沿路送货，看你能跳多远！',
 woof:'汪！',perfect:'完美！',nice:'不错',wobbly:'要晃倒啦！',crack:'裂了！',
 q_fall:['签收人：小巷底部。','那可不是门口。','重力 1 : 0 快递员。'],
@@ -151,7 +151,7 @@ function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==nul
 const pickQ=k=>{const a=T(k);return Array.isArray(a)?a[Math.random()*a.length|0]:a};
 
 /* ================= constants ================= */
-const DT=1/120,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18;
+const DT=1/120,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2;
 const PK={box:{h:26,w:36},frag:{h:26,w:34},cake:{h:24,w:40},chick:{h:26,w:30},long:{h:18,w:70}};
 
 /* ================= levels =================
@@ -179,14 +179,25 @@ const LEVELS=[
  {pk:['box','long'],wind:70,plats:[[0,220,120],[300,520,120],[900,140,160],[1150,130,130],[1640,150,150],[1900,300,140]],ropes:[[420,720,345,10]],fans:[[1300,40,320,420,450]]},
  {pk:['box','chick'],wind:80,plats:[[0,220,130],[310,440,130],[850,150,170],[1100,380,150],[1600,140,190],[1850,300,150]],dogs:[[350,700,1.3],[1150,1430,1.5]]},
  {pk:['box','cake'],wind:-90,plats:[[0,220,140],[300,260,40],[660,170,330],[920,140,280],[1150,240,60],[1500,160,330],[1760,300,260]],tramps:[[440,60],[1290,60]]},
- {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1}
+ {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1},
+ /* ---- chapter 3: Rainy Night (wet roofs: you slide after landing) ---- */
+ {rain:1,pk:['box','box'],plats:[[0,240,120],[330,200,130],[640,200,110],[950,200,150],[1260,190,120],[1560,320,140]],tip:'t_rain'},
+ {rain:1,pk:['box','frag'],plats:[[0,220,300],[300,190,250],[590,180,200],[880,190,260],[1170,180,190],[1460,180,130],[1740,320,150]]},
+ {rain:1,wind:80,pk:['box','box','box'],plats:[[0,220,120],[340,200,140],[670,190,110],[1000,200,160],[1330,190,120],[1660,320,140]]},
+ {rain:1,pk:['box','cake'],plats:[[0,220,100],[290,250,40],[640,220,330],[950,190,280],[1230,180,330],[1500,260,60],[1890,220,360],[2200,320,260]],tramps:[[450,60],[1650,60]]},
+ {rain:1,pk:['box','box'],plats:[[0,220,120],[300,480,120],[870,190,170],[1150,190,120],[1420,420,120],[1930,320,160]],dogs:[[420,640,1.3],[1540,1720,1.5]]},
+ {rain:1,wind:-70,pk:['box','frag','box'],plats:[[0,640,100],[700,240,100],[1030,190,150],[1300,260,110],[1650,320,140]],ropes:[[180,520,330,8],[1310,1440,340,6]]},
+ {rain:1,pk:['box','long'],plats:[[0,220,140],[320,190,160],[610,180,140],[1120,260,150],[1460,190,180],[1740,320,150]],fans:[[760,40,380,420,450]]},
+ {rain:1,wind:60,pk:['box','chick','box'],plats:[[0,220,130],[310,460,130],[870,190,170],[1150,400,150],[1650,190,190],[1930,320,150]],dogs:[[430,650,1.3],[1270,1430,1.5]]},
+ {rain:1,wind:-60,pk:['box','cake','frag'],plats:[[0,220,140],[300,260,40],[660,220,330],[970,190,280],[1250,240,60],[1600,220,330],[1910,320,260]],tramps:[[440,60],[1390,60]]},
+ {rain:1,wind:50,pk:['box','frag','long','cake'],plats:[[0,220,140],[310,190,180],[590,360,130],[1040,250,40],[1440,200,330],[1730,380,330],[2200,190,260],[2660,280,220],[3030,340,170]],tramps:[[1180,60]],ropes:[[650,890,420,10]],dogs:[[1850,2000,1.0]],fans:[[2400,100,290,420,350]],boss:1}
 ];
 LEVELS.forEach((L,i)=>{L.i=i;L.goal=L.plats.length-1;L.start=L.plats[0][0]+40;L.tramps=L.tramps||[];L.ropes=L.ropes||[];L.dogs=L.dogs||[];L.fans=L.fans||[];
  const topAt=x=>{for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return 0};
  L.tramps.forEach(t=>t[2]=topAt(t[0]+t[1]/2));L.dogs.forEach(d=>d[3]=topAt((d[0]+d[1])/2));
  // bullseye: centre of every platform; none on the start, the goal, or a platform with a bounce pad
  L.bull=L.plats.map((p,k)=>k===0||k===L.goal||L.tramps.some(t=>t[0]>=p[0]&&t[0]<=p[0]+p[1])?null:p[0]+p[1]/2);L.nb=L.bull.filter(b=>b!=null).length});
-const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
+const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20, 14,16,14,18,18,17,15,17,16,22];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
 const CHAPTERS=3,PER=10;
 
 /* ================= simulation (deterministic, fixed step) ================= */
@@ -244,7 +255,7 @@ function land(s,L,i,pvy){
  const q=Math.abs(th),hard=q>0.42||impact>1350;
  s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
  for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
- s.vx=L.rain?s.vx*0.55:0;s.om=-th*2;s.needRel=s.prevHold;
+ s.vx=L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.prevHold;
  // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
  if(i>s.lastP){for(let k=Math.max(1,s.lastP);k<i;k++)if(L.bull[k]!=null&&!s.claim[k]){if(s.combo>1)ev(s,'cbreak');s.combo=0;break}
   if(L.endless){s.score+=5*(i-s.lastP);if(L.cp[i]&&!s.cpd[i]){s.cpd[i]=1;const b=20*s.stack.length;s.score+=b;let got=null;if(s.stack.length<4){got=L.cpPk[i];s.stack.push({t:got,crack:0})}ev(s,'cp',{i,b,got})}}
@@ -266,7 +277,7 @@ function step(s,L,hold){
   else if(s.charging)jump(s);
   if(s.on>=0){
    const p=L.plats[s.on];if(p[4])s.x+=PX(p,s.t)-PX(p,s.t-DT);
-   if(s.vx){s.x+=s.vx*dt;s.vx*=Math.exp(-1.2*dt);if(Math.abs(s.vx)<5)s.vx=0;const px=PX(p,s.t);if(s.x<px-3||s.x>px+p[1]+3){s.on=-1;s.vy=0;s.om=s.vx*0.004;ev(s,'slip')}}
+   if(s.vx){s.x+=s.vx*dt;s.vx*=Math.exp(-RAIN_F*dt);if(Math.abs(s.vx)<5)s.vx=0;const px=PX(p,s.t);if(s.x<px-3||s.x>px+p[1]+3){s.on=-1;s.vy=0;s.om=s.vx*0.004;ev(s,'slip')}}
    const tgt=s.charging?s.charge*0.28:0;s.om+=(-70*(s.th-tgt)-13*s.om)*dt;s.th+=s.om*dt;
   }
  }else{
@@ -806,6 +817,7 @@ function trial(s0,L,wait,c,hs,hd){const s=cloneS(s0);let f=0;const W=Math.round(
  while(s.on<0&&!s.dead&&!s.won&&f<600){step(s,L,f>=H0&&f<H1&&hd>0);f++}
  // settle on ground a little to see wobble outcome
  for(let i=0;i<50&&!s.dead&&!s.won;i++)step(s,L,false);
+ if(s.on<0&&!s.dead&&!s.won)s.dead='slip'; // slid off a wet roof
  s.ev=[];return s}
 // opt.all: only keep runs that can still hit every bullseye
 function missed(r,L){for(let k=1;k<=r.lastP;k++){const b=L.bull[k];if(b!=null&&!r.claim[k]&&(k<r.lastP||r.won||r.x>b+BULL_R))return true}return false}

@@ -46,7 +46,7 @@ h2{margin:0 0 8px;font-size:26px;font-weight:900}
 #pauseB{top:10px;left:10px}
 #muteB{top:10px;left:64px}
 .lang{position:fixed;top:12px;right:12px;z-index:6;border:3px solid var(--ink);border-radius:12px;padding:5px 6px;font-weight:800;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
-#tip{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:4;max-width:min(380px,90vw);background:#fff;color:var(--ink);font-weight:900;font-size:19px;line-height:1.3;padding:10px 16px;border-radius:16px;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);text-align:center;pointer-events:none;animation:tipIn .3s ease-out}
+#tip{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:4;max-width:min(380px,90vw);background:#fff;color:var(--ink);font-weight:900;font-size:17px;line-height:1.3;padding:8px 14px;border-radius:16px;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);text-align:center;pointer-events:none;animation:tipIn .3s ease-out}
 @keyframes tipIn{from{opacity:0;transform:translate(-50%,10px) scale(.9)}}
 .kbd{font-size:13px;opacity:.7;font-weight:800;margin:10px 0 0}
 @media (hover:none){.kbd{display:none}}
@@ -105,15 +105,15 @@ const BUILD='poki';
 const TOPPAD=(BUILD==='poki'&&matchMedia('(hover:none)').matches)?46:0;
 /* ================= text ================= */
 const TXT={
-en:{name:'Pogo Post',tag:'Bounce. Balance. Deliver. Don’t drop a thing!',play:'PLAY',levels:'Levels',back:'Back',how:'Hold Space / click to charge · release to jump · hold in the air to lean · Esc to pause',
+en:{name:'Pogo Post',tag:'Bounce. Balance. Deliver. Don’t drop a thing!',play:'PLAY',levels:'Levels',back:'Back',how:'Hold to charge · release to jump · hold in mid-air to lean forward',
 lvN:'Level {n}',chapN:'Chapter {n}',ch1:'Sunny Street',ch2:'Windy Pier',ch3:'Rainy Night',soon:'Coming soon',
 paused:'Paused',resume:'Resume',retry:'Retry',next:'Next level',allDone:'More streets coming soon!',
 win:'Delivered!',fail:'Oops!',st1:'Delivered',st2:'Nothing dropped',st3:'Under {n}s',time:'{n}s',
 revive:'📺 Try again from here',skip:'📺 Skip this level',adTest:'Ad goes here (the test build skips ads)',
-t1:'Hold to squish the spring…',t2:'…let go to jump!',t3:'Hold longer = jump further',t4:'Big jumps tip you backwards. Hold in the air to lean forward!',t5:'Land straight and the parcels stay put. Get to the door!',
-t_tramp:'Bounce pads launch you sky-high!',t_frag:'FRAGILE! Land gently: small hops, straight landings.',t_rope:'Clotheslines snag tall stacks. Use small hops underneath!',t_dog:'Don’t step on the dog. Wait, then hop over.',t_cake:'Cake on top! Keep it level or it slides off.',t_wind:'Windy! Tailwind pushes you further in the air.',t_head:'Headwind! Charge longer than you think.',t_fan:'Fans blow you through the air. Ride the breeze!',t_long:'Long parcels catch the wind. Way more push!',t_chick:'A live chicken! It flaps at random. Keep landings soft.',
-t_bull:'Land on the red mark in the middle for bonus points. Hit them in a row to multiply!',pts:'{n} pts',best:'best {n}',
-endless:'Endless Run',newBest:'New record!',deliv:'Delivered +{n}',t_endless:'How far can you go? Hit bullseyes in a row and drop parcels off at every door!',
+t1:'Hold to squish the spring…',t2:'…let go to jump!',t3:'Hold longer = jump further',t4:'Tipping back? Hold in mid-air to lean forward!',t5:'Land upright. Reach the door!',
+t_tramp:'Bounce pads send you sky-high!',t_frag:'Fragile! Land softly and upright.',t_rope:'Clotheslines snag parcels. Stay low!',t_dog:'Wait for the dog, then hop over.',t_cake:'Cake on top! Keep it level.',t_wind:'Tailwind: you fly further.',t_head:'Headwind: charge longer.',t_fan:'Fans push you through the air.',t_long:'Long parcels catch more wind.',t_chick:'The chicken flaps. Land softly!',
+t_rain:'Wet roofs! You slide after landing.',t_bull:'Hit the red bullseye for points. Streaks multiply!',pts:'{n} pts',best:'best {n}',
+endless:'Endless Run',newBest:'New record!',deliv:'Delivered +{n}',t_endless:'Chain bullseyes and deliver at every door!',
 woof:'WOOF!',perfect:'PERFECT!',nice:'Nice',wobbly:'Wobbly!',crack:'Crack!',
 q_fall:['Recipient: the bottom of the alley.','That was not the doorstep.','Gravity: 1, Courier: 0.'],
 q_face:['Delivered… face first.','Signature required. Got a faceprint instead.','Landing: creative. Score: zero.'],
@@ -123,15 +123,15 @@ q_rope:['Your parcels are drying on the line.','Clothesline: 1, Courier: 0.','Ni
 q_empty:['Today’s forecast: 100% parcel rain.','Everything delivered… to the street.','The parcels have left the building.'],
 q_win:['Signed, sealed, delivered!','Five-star courier!','Not a scratch. Probably.','Ding dong, parcel!'],
 q_drop:['Delivered! (Mostly.)','Some assembly required.','They’ll never know.']},
-zh:{name:'弹簧快递',tag:'跳一跳，稳住，送到！一件都不能掉！',play:'开始',levels:'关卡',back:'返回',how:'按住空格/鼠标蓄力 · 松开起跳 · 空中按住前倾 · Esc 暂停',
+zh:{name:'弹簧快递',tag:'跳一跳，稳住，送到！一件都不能掉！',play:'开始',levels:'关卡',back:'返回',how:'按住蓄力 · 松开起跳 · 空中按住前倾',
 lvN:'第 {n} 关',chapN:'第 {n} 章',ch1:'阳光街区',ch2:'大风码头',ch3:'雨夜高楼',soon:'敬请期待',
 paused:'暂停',resume:'继续',retry:'重来',next:'下一关',allDone:'更多街区即将开放！',
 win:'送达！',fail:'哎呀！',st1:'送达',st2:'一件不掉',st3:'{n} 秒内',time:'{n} 秒',
 revive:'📺 从这里再来',skip:'📺 跳过这关',adTest:'这里会播放广告（测试版自动跳过）',
-t1:'按住，压弹簧……',t2:'……松开，起跳！',t3:'按得越久，跳得越远',t4:'跳得远身体会往后仰，空中按住往前倾！',t5:'落地站正，包裹才不晃。送到门口！',
-t_tramp:'踩弹床能弹得超高！',t_frag:'易碎品！落地要轻：小跳、站正。',t_rope:'晾衣绳会勾走高高的包裹，从下面小跳过去！',t_dog:'别踩到狗。等它走开再跳过去。',t_cake:'顶上是蛋糕！保持水平，不然会滑下去。',t_wind:'起风了！顺风时空中会被吹得更远。',t_head:'逆风！蓄力要比平时更久。',t_fan:'大风扇会把你吹着走，借风过去！',t_long:'超长件特别兜风，被吹得更猛！',t_chick:'活鸡！它会随时扑腾，落地要稳。',
-t_bull:'落在平台正中的红色靶心有加分，连续踩中分数翻倍！',pts:'{n} 分',best:'最高 {n}',
-endless:'无尽模式',newBest:'新纪录！',deliv:'送达 +{n}',t_endless:'看你能跳多远！连续踩靶心加分，路过收件人家门口记得送货！',
+t1:'按住，压弹簧……',t2:'……松开，起跳！',t3:'按得越久，跳得越远',t4:'往后仰了？空中按住往前倾！',t5:'站正落地，送到门口！',
+t_tramp:'踩弹床，弹得超高！',t_frag:'易碎品！落地要轻、要正。',t_rope:'晾衣绳会勾走包裹，小跳过去！',t_dog:'等狗走开，再跳过去。',t_cake:'顶上是蛋糕，别让它歪！',t_wind:'顺风：飞得更远。',t_head:'逆风：多蓄一会儿力。',t_fan:'大风扇会把你吹着走。',t_long:'超长件更兜风。',t_chick:'活鸡会扑腾，落地要稳！',
+t_rain:'下雨路滑！落地后会往前滑一段。',t_bull:'踩中红色靶心加分，连中翻倍！',pts:'{n} 分',best:'最高 {n}',
+endless:'无尽模式',newBest:'新纪录！',deliv:'送达 +{n}',t_endless:'连踩靶心，沿路送货，看你能跳多远！',
 woof:'汪！',perfect:'完美！',nice:'不错',wobbly:'要晃倒啦！',crack:'裂了！',
 q_fall:['签收人：小巷底部。','那可不是门口。','重力 1 : 0 快递员。'],
 q_face:['包裹送达……用脸签收。','需要签名，你给了个脸印。','落地姿势：很有创意。得分：零。'],
@@ -151,7 +151,7 @@ function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==nul
 const pickQ=k=>{const a=T(k);return Array.isArray(a)?a[Math.random()*a.length|0]:a};
 
 /* ================= constants ================= */
-const DT=1/120,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18;
+const DT=1/120,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2;
 const PK={box:{h:26,w:36},frag:{h:26,w:34},cake:{h:24,w:40},chick:{h:26,w:30},long:{h:18,w:70}};
 
 /* ================= levels =================
@@ -179,14 +179,25 @@ const LEVELS=[
  {pk:['box','long'],wind:70,plats:[[0,220,120],[300,520,120],[900,140,160],[1150,130,130],[1640,150,150],[1900,300,140]],ropes:[[420,720,345,10]],fans:[[1300,40,320,420,450]]},
  {pk:['box','chick'],wind:80,plats:[[0,220,130],[310,440,130],[850,150,170],[1100,380,150],[1600,140,190],[1850,300,150]],dogs:[[350,700,1.3],[1150,1430,1.5]]},
  {pk:['box','cake'],wind:-90,plats:[[0,220,140],[300,260,40],[660,170,330],[920,140,280],[1150,240,60],[1500,160,330],[1760,300,260]],tramps:[[440,60],[1290,60]]},
- {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1}
+ {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1},
+ /* ---- chapter 3: Rainy Night (wet roofs: you slide after landing) ---- */
+ {rain:1,pk:['box','box'],plats:[[0,240,120],[330,200,130],[640,200,110],[950,200,150],[1260,190,120],[1560,320,140]],tip:'t_rain'},
+ {rain:1,pk:['box','frag'],plats:[[0,220,300],[300,190,250],[590,180,200],[880,190,260],[1170,180,190],[1460,180,130],[1740,320,150]]},
+ {rain:1,wind:80,pk:['box','box','box'],plats:[[0,220,120],[340,200,140],[670,190,110],[1000,200,160],[1330,190,120],[1660,320,140]]},
+ {rain:1,pk:['box','cake'],plats:[[0,220,100],[290,250,40],[640,220,330],[950,190,280],[1230,180,330],[1500,260,60],[1890,220,360],[2200,320,260]],tramps:[[450,60],[1650,60]]},
+ {rain:1,pk:['box','box'],plats:[[0,220,120],[300,480,120],[870,190,170],[1150,190,120],[1420,420,120],[1930,320,160]],dogs:[[420,640,1.3],[1540,1720,1.5]]},
+ {rain:1,wind:-70,pk:['box','frag','box'],plats:[[0,640,100],[700,240,100],[1030,190,150],[1300,260,110],[1650,320,140]],ropes:[[180,520,330,8],[1310,1440,340,6]]},
+ {rain:1,pk:['box','long'],plats:[[0,220,140],[320,190,160],[610,180,140],[1120,260,150],[1460,190,180],[1740,320,150]],fans:[[760,40,380,420,450]]},
+ {rain:1,wind:60,pk:['box','chick','box'],plats:[[0,220,130],[310,460,130],[870,190,170],[1150,400,150],[1650,190,190],[1930,320,150]],dogs:[[430,650,1.3],[1270,1430,1.5]]},
+ {rain:1,wind:-60,pk:['box','cake','frag'],plats:[[0,220,140],[300,260,40],[660,220,330],[970,190,280],[1250,240,60],[1600,220,330],[1910,320,260]],tramps:[[440,60],[1390,60]]},
+ {rain:1,wind:50,pk:['box','frag','long','cake'],plats:[[0,220,140],[310,190,180],[590,360,130],[1040,250,40],[1440,200,330],[1730,380,330],[2200,190,260],[2660,280,220],[3030,340,170]],tramps:[[1180,60]],ropes:[[650,890,420,10]],dogs:[[1850,2000,1.0]],fans:[[2400,100,290,420,350]],boss:1}
 ];
 LEVELS.forEach((L,i)=>{L.i=i;L.goal=L.plats.length-1;L.start=L.plats[0][0]+40;L.tramps=L.tramps||[];L.ropes=L.ropes||[];L.dogs=L.dogs||[];L.fans=L.fans||[];
  const topAt=x=>{for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return 0};
  L.tramps.forEach(t=>t[2]=topAt(t[0]+t[1]/2));L.dogs.forEach(d=>d[3]=topAt((d[0]+d[1])/2));
  // bullseye: centre of every platform; none on the start, the goal, or a platform with a bounce pad
  L.bull=L.plats.map((p,k)=>k===0||k===L.goal||L.tramps.some(t=>t[0]>=p[0]&&t[0]<=p[0]+p[1])?null:p[0]+p[1]/2);L.nb=L.bull.filter(b=>b!=null).length});
-const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
+const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20, 14,16,14,18,18,17,15,17,16,22];LEVELS.forEach((L,i)=>L.par=PAR[i]||20);
 const CHAPTERS=3,PER=10;
 
 /* ================= simulation (deterministic, fixed step) ================= */
@@ -244,7 +255,7 @@ function land(s,L,i,pvy){
  const q=Math.abs(th),hard=q>0.42||impact>1350;
  s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
  for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
- s.vx=L.rain?s.vx*0.55:0;s.om=-th*2;s.needRel=s.prevHold;
+ s.vx=L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.prevHold;
  // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
  if(i>s.lastP){for(let k=Math.max(1,s.lastP);k<i;k++)if(L.bull[k]!=null&&!s.claim[k]){if(s.combo>1)ev(s,'cbreak');s.combo=0;break}
   if(L.endless){s.score+=5*(i-s.lastP);if(L.cp[i]&&!s.cpd[i]){s.cpd[i]=1;const b=20*s.stack.length;s.score+=b;let got=null;if(s.stack.length<4){got=L.cpPk[i];s.stack.push({t:got,crack:0})}ev(s,'cp',{i,b,got})}}
@@ -266,7 +277,7 @@ function step(s,L,hold){
   else if(s.charging)jump(s);
   if(s.on>=0){
    const p=L.plats[s.on];if(p[4])s.x+=PX(p,s.t)-PX(p,s.t-DT);
-   if(s.vx){s.x+=s.vx*dt;s.vx*=Math.exp(-1.2*dt);if(Math.abs(s.vx)<5)s.vx=0;const px=PX(p,s.t);if(s.x<px-3||s.x>px+p[1]+3){s.on=-1;s.vy=0;s.om=s.vx*0.004;ev(s,'slip')}}
+   if(s.vx){s.x+=s.vx*dt;s.vx*=Math.exp(-RAIN_F*dt);if(Math.abs(s.vx)<5)s.vx=0;const px=PX(p,s.t);if(s.x<px-3||s.x>px+p[1]+3){s.on=-1;s.vy=0;s.om=s.vx*0.004;ev(s,'slip')}}
    const tgt=s.charging?s.charge*0.28:0;s.om+=(-70*(s.th-tgt)-13*s.om)*dt;s.th+=s.om*dt;
   }
  }else{
@@ -324,6 +335,21 @@ function noise(dur,vol,freq){if(muted||adMute||platMute)return;const a=ac();if(!
 function chargeSnd(on,c){if(muted||adMute||platMute)on=false;const a=on?ac():AC;if(!a)return;
  if(on&&!chOsc){chOsc=a.createOscillator();chGain=a.createGain();chOsc.type='triangle';chGain.gain.value=0.0001;chOsc.connect(chGain).connect(a.destination);chOsc.start();chGain.gain.exponentialRampToValueAtTime(0.05,a.currentTime+0.05)}
  if(chOsc){if(on){chOsc.frequency.setTargetAtTime(160+c*420+(c>=1?Math.sin(performance.now()/40)*30:0),a.currentTime,0.02)}else{try{chGain.gain.setTargetAtTime(0.0001,a.currentTime,0.02);chOsc.stop(a.currentTime+0.1)}catch(e){}chOsc=null}}}
+/* background music: a small looping tune, scheduled a little ahead on the audio clock */
+const MEL=[76,0,79,76,72,0,74,76, 72,0,76,72,69,0,72,0, 77,0,81,77,72,0,74,77, 79,0,74,79,83,0,79,0,
+ 81,0,77,81,84,0,81,77, 79,0,74,79,83,0,79,74, 76,0,79,76,71,0,74,76, 72,0,69,72,74,0,71,0],ROOT=[36,33,41,43,41,43,40,45];
+let mGain=null,mNext=0,mStep=0;
+function mNote(m,t,dur,type,vol){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=440*Math.pow(2,(m-69)/12);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(mGain);o.start(t);o.stop(t+dur+0.02)}
+function musicTick(){if(!AC||AC.state!=='running')return;if(!mGain){mGain=AC.createGain();mGain.connect(AC.destination);mNext=0}
+ const on=!(muted||platMute||adMute);mGain.gain.setTargetAtTime(on?(GS.mode==='crash'?0.35:1):0,AC.currentTime,0.08);
+ const far=GS.L&&GS.L.endless&&GS.s?Math.min(1,GS.s.lastP/90):0,sd=60/(124+26*far)/2;
+ if(mNext<AC.currentTime)mNext=AC.currentTime+0.06;
+ while(mNext<AC.currentTime+0.3){const k=mStep%64,b=k%8,r=ROOT[k>>3],m=MEL[k],t=mNext;
+  if(on){if(m)mNote(m,t,sd*1.7,'triangle',0.05);
+   if(b===0)mNote(r,t,sd*1.8,'sine',0.11);else if(b===4)mNote(r+7,t,sd*1.6,'sine',0.09);else if(b===2||b===6)mNote(r+12,t,sd*0.8,'square',0.018);
+   if(b%2===1){const n=AC.sampleRate*0.03|0,bf=AC.createBuffer(1,n,AC.sampleRate),d=bf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain();src.buffer=bf;hp.type='highpass';hp.frequency.value=6000;g.gain.value=0.035;src.connect(hp).connect(g).connect(mGain);src.start(t)}}
+  mNext+=sd;mStep++}}
+setInterval(musicTick,90);
 const SFX={
  jump(c){tone(220+c*120,700+c*500,0.22,'square',0.06);tone(400,900,0.12,'sine',0.12)},
  land(q){noise(0.12,0.25,500);tone(140,70,0.12,'sine',0.25)},
@@ -365,15 +391,15 @@ function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
 function burst(x,y,cols,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(sp||260)*(0.4+Math.random());GS.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v+150,r:3+Math.random()*4,col:cols[i%cols.length],t:0,life:0.6+Math.random()*0.5,kind:Math.random()<0.4?'sq':'dot',rot:Math.random()*6,vr:(Math.random()-0.5)*14})}}
 function pkWorld(s,i){const hp=headPos(s);let h=0;for(let k=0;k<i;k++)h+=PK[s.stack[k].t].h;const a=s.th+s.psi*0.8;return{x:hp.x+Math.sin(a)*(h+PK[s.stack[i]?s.stack[i].t:'box'].h/2),y:hp.y+Math.cos(a)*(h+13),a}}
 function flyPk(t,x,y,vx,vy,vr,extra){GS.debris.push(Object.assign({kind:'pk',t,x,y,vx,vy,rot:0,vr,life:0,crack:0},extra||{}))}
-function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splice(0);
+function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splice(0);let bulled=false;
  for(const e of evs){
   if(e.k==='charge'){}
   else if(e.k==='jump'){SFX.jump(e.c);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
   else if(e.k==='land'){SFX.land(e.q);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
-   if(e.perfect){SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('perfect'),'#3fbf88',1.2);GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
+   if(e.perfect){if(!bulled){SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('perfect'),'#3fbf88',1.1)}GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
    else if(e.q>0.42){wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('wobbly'),'#ff5d7a',1);GS.shake=6}
    if(e.hard)GS.shake=Math.max(GS.shake,5)}
-  else if(e.k==='bull'){SFX.bull(e.n);const bp=GS.L.plats[e.i],bx=GS.L.bull[e.i]+PX(bp,s.t)-bp[0],by=bp[2];wobbleText(bx,by-30,'+'+e.pts+(e.n>1?'  ×'+e.n:''),'#ffc23d',(e.n>1?1.3:1.1)*(e.gold?1.3:1));
+  else if(e.k==='bull'){bulled=true;SFX.bull(e.n);const bp=GS.L.plats[e.i],bx=GS.L.bull[e.i]+PX(bp,s.t)-bp[0],by=bp[2];wobbleText(bx,by-30,'+'+e.pts+(e.n>1?'  ×'+e.n:''),'#ffc23d',(e.n>1?1.3:1.1)*(e.gold?1.3:1));
    if(e.gold){[1568,2093,2637].forEach((f,k)=>tone(f,0,0.14,'triangle',0.09,0.12+k*0.06));burst(bx,by+10,['#ffc23d','#fff6c9'],22,420)}
    GS.fx.push({kind:'ring',x:bx,y:by,t:0,life:0.55,col:'#ffc23d'});burst(bx,by+6,['#ffc23d','#fff','#ff6b4a'],10+Math.min(14,e.n*3),300);GS.bump=1}
   else if(e.k==='cp'){const p=GS.L.plats[e.i];[659,784,1046,1318].forEach((f,k)=>tone(f,0,0.16,'triangle',0.13,k*0.07));wobbleText(p[0]+p[1]*0.75,p[2]+150,T('deliv',{n:e.b}),'#3fbf88',1.2);
