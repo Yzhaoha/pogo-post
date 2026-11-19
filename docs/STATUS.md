@@ -143,6 +143,20 @@
 - 预览视频重录：6 个场景各 3 秒（街区、雪天、码头风扇、雾天、雷雨、黄昏悬浮板）。
 - 提交材料和英文表单文字：`submission/表单文字-CrazyGames.md`。
 
+## 11-19 按 CrazyGames 官方要求逐条核对（docs.crazygames.com/requirements/ 下 intro、technical、gameplay、ads、game-covers、quality 六页）
+- 改了 4 处不合规：
+  1. Esc 是平台退出全屏的键，CG 版不再用 Esc 暂停（只用 P）。
+  2. Basic Launch 阶段广告是关的，「奖励按钮点了没效果」会被拒：现在广告放不出来时弹提示「暂时没有广告」（11 种语言 `adNo`）并把按钮变灰；下次打开失败面板 / 商店时恢复。看激励广告时改成广告真正开始才静音（`rewardedBreak(()=>audioOff())`，CG 适配层也传了 adStarted）。
+  3. iOS：在 touchend / click 里 `AudioContext.resume()`。
+  4. P / M / R 同时认 `e.key`，法语等键盘布局也能用。
+- HUD 小字最小缩放 0.8 → 1，800×450 窗口下「0/4」「★16s」这类字不再只有 9 像素。
+- 预览视频开头加 0.8 秒封面（官方建议用封面做第一帧），总长 18.8 秒。
+- 用假 CG SDK（广告报错 + 德语 locale）测过：语言自动变德语；Esc 不暂停、P 暂停；SDK 顺序 loadingStart > loadingStop > gameplayStart > gameplayStop…；商店看广告 → 提示 + 按钮变灰；无报错。
+- 已满足：文件 0.15MB（上限 50MB/250MB）、单文件、相对路径、进游戏 0 次点击、固定步长物理（高刷屏一致）、`user-select:none`、没有自带全屏按钮、没有外链、英文 + SDK locale、封面只有游戏名。
+- 还没做（Full Launch 才要求）：CG Data 模块存档（现在用 localStorage）。
+- 官方文档里没有提到 AI 生成内容的规定（FAQ 和 Basic Launch 指南没读）。
+- 上线流程：Basic Launch 7–21 天（至少 7 天且 500 次游玩），按平均游玩时长、留存、进入游戏转化率、点击率（11-23 起）和平台其他游戏比，决定能不能 Full Launch。
+
 ## 提交 CrazyGames（要在用户本机做）
 - 账号：总交接里 A（Stone Tech）空闲但 Burnt Again 草稿说过要先送审，B（MiracleGames）暂停到 11-28，C（QQ 邮箱）开发者名未定。**用哪个账号等用户定。** 同一账号同时只能有一个游戏在等审核。
 - 封面是 ChatGPT 生成的；表单如果单独问是否用了 AI 生成内容，由用户自己决定，会话不替用户选。

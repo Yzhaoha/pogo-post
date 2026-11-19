@@ -48,7 +48,7 @@ window.PokiSDK={
   gameplayStart:function(){try{sdk&&sdk.game.gameplayStart()}catch(e){}},
   gameplayStop:function(){try{sdk&&sdk.game.gameplayStop()}catch(e){}},
   commercialBreak:function(before){return ad('midgame',before).then(function(){})},
-  rewardedBreak:function(){return ad('rewarded')}
+  rewardedBreak:function(before){return ad('rewarded',before)}
 };
 })();
 </script>'''

@@ -22,5 +22,10 @@ const CLIPS=[[1,0.6,3],[45,0.8,3],[12,2.2,3],[52,0.9,3],[73,1.0,3],[30,1.2,3]]; 
   await p.close();
   const f=path.join(out,`preview-${w}x${h}.mp4`);
   execFileSync('ffmpeg',['-y','-loglevel','error','-framerate',String(FPS),'-i',path.join(dir,'f%05d.png'),'-c:v','libx264','-pix_fmt','yuv420p','-crf','18','-preset','slow','-movflags','+faststart','-an',f]);
-  fs.rmSync(dir,{recursive:true,force:true});console.log('wrote',f,(fs.statSync(f).size/1e6).toFixed(1)+' MB',(n/FPS).toFixed(1)+' s')}
+  fs.rmSync(dir,{recursive:true,force:true});
+  // CrazyGames asks for the static cover as the opening frame: prepend 0.8 s of the cover art
+  const cover=path.join(__dirname,'..','art','final',w>h?'pogo-post-cg-1920x1080.png':'pogo-post-cg-800x1200.png');
+  if(fs.existsSync(cover)){const tmp=f.replace('.mp4','.tmp.mp4');fs.renameSync(f,tmp);
+   execFileSync('ffmpeg',['-y','-loglevel','error','-loop','1','-framerate',String(FPS),'-t','0.8','-i',cover,'-i',tmp,'-filter_complex',`[0:v]scale=${w}:${h}:flags=lanczos,setsar=1,format=yuv420p[a];[1:v]setsar=1[b];[a][b]concat=n=2:v=1:a=0[v]`,'-map','[v]','-c:v','libx264','-pix_fmt','yuv420p','-crf','18','-preset','slow','-movflags','+faststart','-an',f]);fs.rmSync(tmp)}
+  console.log('wrote',f,(fs.statSync(f).size/1e6).toFixed(1)+' MB')}
  await b.close()})();
