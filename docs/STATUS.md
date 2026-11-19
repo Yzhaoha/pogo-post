@@ -158,7 +158,7 @@
 - 上线流程：Basic Launch 7–21 天（至少 7 天且 500 次游玩），按平均游玩时长、留存、进入游戏转化率、点击率（11-23 起）和平台其他游戏比，决定能不能 Full Launch。
 
 ## 提交 CrazyGames（要在用户本机做）
-- **用户 11-19 决定：用 Stone Tech 账号（CG 账号 A）提交。** 同一账号同时只能有一个游戏在等审核：如果 Burnt Again 已经在这个账号送审，Pogo Post 只能先存草稿；如果还没送审，Pogo Post 送审后 Burnt Again 要等审完。提交在用户本机、登了 CG 后台的那个 Chrome 里做，提交版本是 main 上的 8881eb4。
+- **用户 11-19 决定：用 Stone Tech 账号（CG 账号 A）提交。** 同一账号同时只能有一个游戏在等审核：如果 Burnt Again 已经在这个账号送审，Pogo Post 只能先存草稿；如果还没送审，Pogo Post 送审后 Burnt Again 要等审完。提交在用户本机、登了 CG 后台的那个 Chrome 里做，提交版本是 main 上的 8881eb4。用户 11-19 又确认：**不删 Burnt Again 的 CG 草稿**（草稿不占「在审」名额），直接提交 Pogo Post；如果后台显示 Burnt Again 其实已在审核，先停下来问用户。
 - 封面是 ChatGPT 生成的；表单如果单独问是否用了 AI 生成内容，由用户自己决定，会话不替用户选。
 
 ## 下一步
