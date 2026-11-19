@@ -354,7 +354,7 @@ function step(s,L,hold){
 /* ================= save ================= */
 let EB=store.get('eb',0);
 /* coins + outfits (cosmetic only) */
-const SKINS=[{c:0,hat:'cap',cap:'#3d7bff',jk:'#ffb02e',pk:'#3d7bff',st:'#8a5a12',lg:'#3d4f8a',pg:'#ff4f6d'},
+const SKINS=[{c:0,hat:'cap',cap:'#3d7bff',jk:'#ff9a1f',pk:'#3d7bff',st:'#8a5a12',lg:'#3d4f8a',pg:'#ff4f6d'},
  {c:100,hat:'cap',cap:'#3fbf88',jk:'#fff3c4',pk:'#3fbf88',st:'#2f8f66',lg:'#3d4f8a',pg:'#3d7bff'},
  {c:150,hat:'beanie',cap:'#ff4f6d',jk:'#ffffff',pk:'#ffffff',st:'#b03a4c',lg:'#2b2340',pg:'#ffc23d'},
  {c:250,hat:'cap',cap:'#8b5cf6',jk:'#ffd6f0',pk:'#8b5cf6',st:'#6a43c9',lg:'#5b5a8f',pg:'#3fbf88'},
@@ -519,7 +519,7 @@ function hatSvg(q,o){const d=`<path d="M10 11a10 10 0 0 1 20 0z" fill="${q.cap}"
  :q.hat==='beanie'?d+`<rect x="9" y="7.5" width="22" height="5" rx="2.5" fill="${q.pk}" ${o}/>`
  :q.hat==='helmet'?d+`<rect x="18.5" y="2" width="3" height="8" fill="#fff"/><rect x="8" y="8.5" width="24" height="4" rx="2" fill="${q.cap}" ${o}/>`
  :d+`<rect x="23" y="8" width="13" height="4.5" rx="2.2" fill="${q.cap}" ${o}/>`}
-function skSvg(k){const q=SKINS[k],o='stroke="#2b2340" stroke-width="2"';return`<svg viewBox="0 0 40 58" width="40" height="58"><rect x="18" y="30" width="4" height="26" rx="2" fill="${q.pg}" ${o}/><rect x="8" y="47" width="24" height="5" rx="2" fill="#c9d3e6" ${o}/><rect x="13" y="38" width="5" height="10" rx="2" fill="${q.lg}" ${o}/><rect x="22" y="38" width="5" height="10" rx="2" fill="${q.lg}" ${o}/><rect x="9" y="21" width="22" height="20" rx="7" fill="${q.jk}" ${o}/><path d="M11 24 28 39" stroke="${q.st}" stroke-width="2.5"/><rect x="15" y="28" width="9" height="6" rx="2" fill="${q.pk}" stroke="#2b2340" stroke-width="1.5"/><circle cx="20" cy="12" r="10" fill="#ffd2b0" ${o}/>${hatSvg(q,o)}<circle cx="17" cy="15" r="1.6" fill="#2b2340"/><circle cx="24" cy="15" r="1.6" fill="#2b2340"/></svg>`}
+function skSvg(k){const q=SKINS[k],o='stroke="#2b2340" stroke-width="2"';return`<svg viewBox="0 0 40 58" width="40" height="58"><rect x="18" y="30" width="4" height="26" rx="2" fill="${q.pg}" ${o}/><rect x="8" y="47" width="24" height="5" rx="2" fill="#c9d3e6" ${o}/><rect x="13" y="38" width="5" height="10" rx="2" fill="${q.lg}" ${o}/><rect x="22" y="38" width="5" height="10" rx="2" fill="${q.lg}" ${o}/><rect x="9" y="21" width="22" height="20" rx="7" fill="${q.jk}" ${o}/><path d="M11 24 28 39" stroke="${q.st}" stroke-width="2.5"/><rect x="15" y="28" width="9" height="6" rx="2" fill="${q.pk}" stroke="#2b2340" stroke-width="1.5"/><ellipse cx="11.5" cy="14" rx="4" ry="6.5" fill="#7a4526" ${o}/><circle cx="20" cy="12" r="10" fill="#ffd2b0" ${o}/><path d="M10 11a10 10 0 0 1 20 0q-5-4-9-1-5-3-11 1z" fill="#7a4526" ${o}/>${hatSvg(q,o)}<circle cx="17" cy="15" r="1.6" fill="#2b2340"/><circle cx="24" cy="15" r="1.6" fill="#2b2340"/></svg>`}
 function openShop(){gp(false);$('sCoins').textContent=COINS;const g=$('skGrid');g.innerHTML='';
  SKINS.map((q,k)=>k).sort((a,b)=>SKINS[a].c-SKINS[b].c).forEach(k=>{const q=SKINS[k],b=document.createElement('button'),own=!!OWN[k];b.className='skb'+(own?' own':'')+(k===SKI?' on':'');b.innerHTML=skSvg(k)+(k===SKI?'✓':own?'&nbsp;':'<i class="cn"></i>'+q.c);
   b.onclick=()=>{if(!OWN[k]){if(COINS<q.c){tone(180,120,0.15,'square',0.06);b.classList.remove('no');void b.offsetWidth;b.classList.add('no');return}COINS-=q.c;store.set('coins',COINS);OWN[k]=1;store.set('own',OWN);SFX.star(2)}else SFX.click();
@@ -819,6 +819,8 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
  c.fillStyle='#ffd2b0';for(const d of [-1,1]){c.beginPath();c.moveTo(d*12*z,(tb-26)*z);c.quadraticCurveTo(d*20*z,(tb-16)*z,d*13*z,(bodyY-55)*z);c.lineWidth=7*z;c.strokeStyle=INK;c.stroke();c.lineWidth=4.2*z;c.strokeStyle=SK.jk;c.stroke();c.lineWidth=LW;c.strokeStyle=INK;c.beginPath();c.arc(d*13*z,(bodyY-55)*z,4*z,0,7);c.fill();c.stroke()}
  // head
  const hy=tb-30-15;c.fillStyle='#ffd2b0';c.beginPath();c.arc(0,hy*z,15*z,0,7);c.fill();c.stroke();
+ c.fillStyle='#7a4526';c.beginPath();c.ellipse(-12*z,(hy+2)*z,6*z,9.5*z,0.25,0,7);c.fill();c.stroke();
+ c.beginPath();c.arc(0,(hy-2)*z,15*z,Math.PI*1.0,Math.PI*2.0);c.quadraticCurveTo(9*z,(hy-7)*z,2*z,(hy-4)*z);c.quadraticCurveTo(-6*z,(hy-8)*z,-15*z,(hy-2)*z);c.closePath();c.fill();c.stroke();
  c.fillStyle=SK.cap;const ht=SK.hat,dome=()=>{c.beginPath();c.arc(0,(hy-2)*z,15*z,Math.PI*1.02,Math.PI*1.98);c.closePath();c.fill();c.stroke()};
  if(ht==='band'){rr(c,-15.5*z,(hy-9)*z,31*z,6*z,3*z);c.fill();c.stroke();for(const k of [0,1]){c.save();c.translate(-15*z,(hy-6)*z);c.rotate(-0.5+k*0.7+Math.sin(GS.time*6+k)*0.15);rr(c,-13*z,-2*z,13*z,4.5*z,2*z);c.fill();c.stroke();c.restore()}}
  else if(ht==='crown'){c.beginPath();c.moveTo(-14*z,(hy-6)*z);c.lineTo(-14*z,(hy-20)*z);c.lineTo(-7*z,(hy-13)*z);c.lineTo(0,(hy-22)*z);c.lineTo(7*z,(hy-13)*z);c.lineTo(14*z,(hy-20)*z);c.lineTo(14*z,(hy-6)*z);c.closePath();c.fill();c.stroke();c.fillStyle='#ff4f6d';c.beginPath();c.arc(0,(hy-11)*z,2.6*z,0,7);c.fill()}
