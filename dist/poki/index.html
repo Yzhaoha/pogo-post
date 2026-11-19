@@ -878,7 +878,7 @@ function hud(c){const s=GS.s,L=GS.L;const sz=Math.max(0.8,Math.min(1.2,S*1.1));
 
 /* ================= loop ================= */
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(GS.mode!=='paused')update(dt);render();requestAnimationFrame(frame)}
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!GS.manual){if(GS.mode!=='paused')update(dt);render()}requestAnimationFrame(frame)}
 
 
 

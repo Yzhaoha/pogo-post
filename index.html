@@ -878,7 +878,7 @@ function hud(c){const s=GS.s,L=GS.L;const sz=Math.max(0.8,Math.min(1.2,S*1.1));
 
 /* ================= loop ================= */
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(GS.mode!=='paused')update(dt);render();requestAnimationFrame(frame)}
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!GS.manual){if(GS.mode!=='paused')update(dt);render()}requestAnimationFrame(frame)}
 
 /*TEST*/
 // test hooks: window.__pp
@@ -917,6 +917,8 @@ function robust(i,plan,noise,N){const L=LEVELS[i];let s=newState(L,1234+L.i*77);
   per.push({ok:ok/N,lost:lost/N});s=trial(s,L,q.w,q.c,q.hs,q.hd)}
  return per}
 window.__pp.robust=robust;
+// video capture: stop the real-time loop and advance frame by frame
+window.__pp.tick=function(dt){GS.manual=true;update(dt);render()};
 // replay a solver plan through the real game loop (same input sequence as trial())
 window.__pp.autoplay=function(plan){let j=0,ph='wait',k=0,f=0;
  GS.autoFn=function(s){for(;;){const q=plan[j];if(!q)return false;
