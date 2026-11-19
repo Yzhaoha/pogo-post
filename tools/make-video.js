@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),{ex
 const out=process.argv[2]||'submission';fs.mkdirSync(out,{recursive:true});
 const FPS=30;
 // [level index, seconds to skip before recording, seconds to record]
-const CLIPS=[[1,0.6,4.6],[12,2.2,4.4],[23,1.0,4.4],[30,1.2,4.6]];
+const CLIPS=[[1,0.6,3],[45,0.8,3],[12,2.2,3],[52,0.9,3],[73,1.0,3],[30,1.2,3]]; // street, snow, fans, fog, storm, hover pads
 (async()=>{const b=await chromium.launch({args:['--no-sandbox']});
  for(const [w,h] of [[1920,1080],[1080,1620]]){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ppvid-'));let n=0;
@@ -14,7 +14,7 @@ const CLIPS=[[1,0.6,4.6],[12,2.2,4.4],[23,1.0,4.4],[30,1.2,4.6]];
   await p.goto((process.env.URL||'http://127.0.0.1:8765/index.html')+'?lang=en&lvl=1');await p.waitForTimeout(500);
   await p.addStyleTag({content:'#tip,#pauseB,#muteB{display:none!important}'});
   for(const [lv,skip,len] of CLIPS){
-   const plan=await p.evaluate(i=>__pp.solve(i,{bull:true}).plan,lv);
+   const plan=await p.evaluate(i=>{const r=__pp.solve(i,{bull:true});return r.ok?r.plan:__pp.solve(i,{}).plan},lv);
    await p.evaluate(([i,pl])=>{__pp.startLevel(i);__pp.autoplay(pl);__pp.tick(0)},[lv,plan]);
    for(let k=0;k<Math.round(skip*FPS);k++)await p.evaluate(dt=>__pp.tick(dt),1/FPS);
    for(let k=0;k<Math.round(len*FPS);k++){await p.evaluate(dt=>__pp.tick(dt),1/FPS);await p.screenshot({path:path.join(dir,'f'+String(n++).padStart(5,'0')+'.png')})}

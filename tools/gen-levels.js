@@ -44,7 +44,8 @@ function genTry(ch,k,seed){
  __pp.prep(L,i);
  const r=__pp.solve(L,{});
  if(!r.ok||r.lost)return{ok:false,why:r.ok?'drops a parcel':'stuck at x='+Math.round(r.at)};
- const per=__pp.robust(L,r.plan,0.04,60),pass=per.reduce((a,q)=>a*q.ok,1);
+ const pr=pl=>__pp.robust(L,pl,0.04,60).reduce((a,q)=>a*q.ok,1);let pass=pr(r.plan);
+ if(pass<(boss?0.15:0.3)){const rb=__pp.solve(L,{bull:true});if(rb.ok&&!rb.lost)pass=Math.max(pass,pr(rb.plan))} // a safer, centre-aiming route counts too
  if(pass<(boss?0.15:0.3))return{ok:false,why:'pass '+pass.toFixed(2)};
  raw.par=Math.ceil(r.time*1.35+2);
  return{ok:true,L:raw,time:r.time,pass:+pass.toFixed(2),jumps:r.plan.length}}
@@ -52,10 +53,13 @@ function genTry(ch,k,seed){
 (async()=>{const b=await chromium.launch({args:['--no-sandbox']});const p=await b.newPage();
  await p.goto((process.env.URL||'http://127.0.0.1:8765/index.html')+'?lvl=0');await p.waitForTimeout(400);
  await p.addScriptTag({content:'window.genTry='+genTry.toString()});
- const res=fs.existsSync(out)?JSON.parse(fs.readFileSync(out,'utf8')):[]; // resume
- for(let k=res.length;k<10;k++){let got=null;
-  for(let tr=0;tr<12&&!got;tr++){const t0=Date.now();const r=await p.evaluate(([ch,k,seed])=>genTry(ch,k,seed),[CH,k,(CH*100+k)*7919+tr*104729]);
+ // ONLY=3,4 : generate just those levels (k = 0..9 within the chapter) into <out>.k<k>.json, for running several processes at once
+ const only=process.env.ONLY?process.env.ONLY.split(',').map(Number):null;
+ const res=only?[]:fs.existsSync(out)?JSON.parse(fs.readFileSync(out,'utf8')):[]; // resume
+ for(const k of only||[...Array(10).keys()].slice(res.length)){let got=null;
+  for(let tr=0;tr<(+process.env.TRIES||12)&&!got;tr++){const t0=Date.now();const r=await p.evaluate(([ch,k,seed])=>genTry(ch,k,seed),[CH,k,(CH*100+k)*7919+tr*104729]);
    console.log('L'+((CH-1)*10+k+1),'try',tr,r.ok?'OK time '+r.time+' pass '+r.pass+' jumps '+r.jumps:'no: '+r.why,((Date.now()-t0)/1000).toFixed(0)+'s');if(r.ok)got=r.L}
   if(!got){console.error('gave up on level',(CH-1)*10+k+1);process.exit(2)}
+  if(only){fs.writeFileSync(out+'.k'+k+'.json',JSON.stringify(got));continue}
   res.push(got);fs.writeFileSync(out,JSON.stringify(res))}
  console.log('wrote',out);await b.close()})();
