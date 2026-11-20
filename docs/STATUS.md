@@ -1,10 +1,55 @@
-# 当前状态（2026-11-17）
+# 弹簧快递 Pogo Post · 当前状态（2026-11-20 交接）
 
-- 测试链接：https://yzhaoha.github.io/pogo-post/ （GitHub Pages，main / root）
-- `python3 tools/build.py` 生成 `dist/poki/`、`dist/crazygames/` 和两个 zip（index.html 在 zip 根目录）。
-- CrazyGames 版：游戏只调用 PokiSDK 形状的接口；build.py 在 CG 版里注入 CG SDK v3 适配层（body 就绪后 init、loadingStart/Stop、gameplayStart/Stop、midgame 只在 adStarted 静音、rewarded、settings.muteAudio、systemInfo.locale）。游戏侧接口是 `window.__ppHost`。
-- Poki 版：手机上 HUD 下移 46px（TOPPAD），避开顶部中间的 Poki 按钮。
-- 已在 Chrome（127.0.0.1）测过：无报错；Poki 调试模式和 CG local 环境下 SDK 调用顺序正确。
+> 新会话先读这一节就够开工；下面「历史记录」是逐日细节，要查某个功能怎么做的再翻。
+
+## 一句话现状
+**90 关版本已于 11-19/20 提交 CrazyGames，正在等审核。** 在等审核结果和用户的试玩反馈，没有正在进行的开发。
+
+## 游戏现在有什么
+- 90 关 / 9 章：1 阳光街区、2 大风码头、3 雨夜高楼、4 黄昏天台（悬浮平台）、5 冰雪小镇、6 雾港、7 阵风屋顶、8 雷雨夜、9 暴雪码头。每章第 10 关是大关。1–40 关手工做，41–90 关程序生成 + 机器人验证。
+- 无尽模式（随机楼、沿路送货、金靶心、弹床、悬浮平台）。
+- 踩中心靶心连击加分；金币 + 换装商店（12 套、5 种帽子）；星星。
+- 11 种语言，自动按玩家语言选（顺序：玩家手选 > CG 平台 locale > 浏览器语言 > 英文）。
+- 代码合成的背景音乐和音效；安卓手机震动。
+- 辅助线：前 3 关完整，之后只显示前半段上升弧线。
+
+## 链接和文件
+- 测试链接：https://yzhaoha.github.io/pogo-post/ （GitHub Pages，main 分支根目录；给手机的链接加 `?v=提交号`）。
+- 源码：`index.html`（单文件，纯 Canvas 2D，约 180KB）。核心常量在开头 `const DT=...`。
+- 平台包：`python3 tools/build.py` → `dist/poki/`、`dist/crazygames/` 和两个 zip。CG 版注入 CG SDK v3 适配层，游戏侧只调 PokiSDK 形状的接口。
+- 提交材料：`submission/表单文字-CrazyGames.md`（英文标题 / 介绍 / 操作说明 / 选项建议）、`submission/preview-*.mp4`（18.8 秒，开头 0.8 秒封面）、`art/final/`（三张封面成品）、`art/source/`（ChatGPT 原图）。
+
+## CrazyGames 提交情况
+- 账号：**账号 C（QQ 邮箱，后台显示 Welcome, Nick）**。用户最初说用 Stone Tech，但本机 Chrome 登的是账号 C，用户确认就用它。
+- 状态：**Awaiting review**（小字 Pending build/art update），Flow = Basic Launch。提交的版本是 main 上的 `8881eb4`（之后只改了文档）。
+- **还缺**：Game ID、表单里开发者名和「是否 AI 生成内容」最后怎么填的。提交是用户 Chrome 里的 Claude 面板做的，问用户要。
+- 账号 C 审完前不能再送审别的游戏。用户已删掉 Burnt Again 在 CG 的草稿。
+- 总交接仓库 `Yzhaoha/burnt-again` 的 `docs/游戏提交记录.md` 还没补这条（本仓库会话对它只读，要总会话补）。
+
+## 下一步（按情况）
+1. **审核通过**：进入 Basic Launch（7–21 天，至少 7 天且 500 次游玩），平台看平均游玩时长、留存、进入游戏转化率、点击率决定能否 Full Launch。Full Launch 前要补：**CG Data 模块存档**（现在用 localStorage）。Basic Launch 期间广告是关的，看广告按钮会提示「暂时没有广告」并变灰（已处理）。
+2. **被拒**：要拒信原文。若还是通用理由，建议用户发邮件到 submissions@crazygames.com 附 Game ID 要具体原因。
+3. **用户试玩反馈**：用户 11-19 试玩说「还不错，就是前面关卡难度还没太感觉到，就先这样吧」。可做：把前 10 关难度稍微提一点。改了以后跑回归（见下）。
+4. 可选：第 10–12 章已生成（`tools/levels/ch10–12.json`）没放进游戏，`python3 tools/embed-levels.py 12` 就能放进去（放之前先用 `tools/verify-levels.js` 按当前手感重验）。
+5. 可选：Safari 没测过（云端只有 Chrome）；9 种外语是会话自己翻的，没有母语者校对。
+
+## 常用命令（先在仓库根目录 `python3 -m http.server 8765`）
+- 解全部关卡、对比成绩：`node tools/test-solve.js all`（某几关：`node tools/test-solve.js 0,9,89`；要求靶心全中：加 `allhit`）。
+- 无尽模式不出死路：`node tools/test-endless.js 6 160`。
+- 生成 / 验证 / 放进游戏：`node tools/gen-levels.js <章>`（`ONLY=3,4` 分段并行）、`node tools/verify-levels.js <章> --write`、`python3 tools/embed-levels.py <最后一章>`。
+- 预览视频：`node tools/make-video.js submission`（需要 ffmpeg）。封面加字：`node tools/make-covers.js --wide … --tall … --square …`。
+- 测试接口：`index.html?lvl=N` 直接进第 N+1 关；`window.__pp`（solve / robust / autoplay / tick / prep）。build.py 会把 `/*TEST*/…/*ENDTEST*/` 去掉。
+
+## 规矩（用户定的，一直有效）
+- 全程中文，用户不看代码，说话直白少术语。
+- 测试链接一律 GitHub Pages，给手机的带 `?v=提交号`。
+- 提交表单 Engine / Tools 永远不选任何 AI 相关选项；若单独问是否使用 AI 生成内容，停下来问用户。确认框用户自己勾，最终提交前截图给用户确认。
+- 不替用户注册、不输密码；用户邮箱不写进仓库。删除 CG 条目前先问用户。
+- 云端会话碰不到用户电脑（Remote Control 的文件夹显示 not_available），登平台、出图都在用户本机做（用户 Chrome 里的 Claude 面板）。
+
+---
+
+# 历史记录
 
 ## 11-17 新增：第 2 章「大风码头」10 关（第 11–20 关）
 - 新元素上关卡：全局风（顺风/逆风，右上角有风向牌）、大风扇（空中把人吹着走，有风扇和气流动画）、超长件（兜风 ×2.5）、活鸡（随机扑腾）。每种第一次出现时有提示（中英）。
@@ -163,24 +208,3 @@
 - 还缺：Game ID；表单里开发者名和 AI 相关问题最后怎么填的（本机会话知道）。下次拿到后补在这里。
 - 账号 C 现在有一个游戏在审，审完前不能再送审别的游戏。Burnt Again 的 CG 草稿已被用户删掉。
 - 总交接仓库 burnt-again 的 `docs/游戏提交记录.md` 需要总会话补上这条（本会话对它只读）。
-
-## 提交 CrazyGames（要在用户本机做）
-- **用户 11-19 决定：用 Stone Tech 账号（CG 账号 A）提交。** 同一账号同时只能有一个游戏在等审核：如果 Burnt Again 已经在这个账号送审，Pogo Post 只能先存草稿；如果还没送审，Pogo Post 送审后 Burnt Again 要等审完。提交在用户本机、登了 CG 后台的那个 Chrome 里做，提交版本是 main 上的 8881eb4。用户 11-19 又确认：**不删 Burnt Again 的 CG 草稿**（草稿不占「在审」名额），直接提交 Pogo Post；如果后台显示 Burnt Again 其实已在审核，先停下来问用户。之后用户说已经**删了 Burnt Again 的 CG 草稿**。本机 Chrome 里的 Claude 打开的后台只有 Trap the Ex BF（被拒），按提交记录那是**账号 C（QQ 邮箱）**，不是 Stone Tech（Stone Tech 下应有 Robber Rumble，ID 171340）；已提醒用户换登 Stone Tech 或改用账号 C，等用户选。**用户 11-19 最终决定：就用账号 C（后台显示 Welcome, Nick；QQ 邮箱那个）提交 Pogo Post**，不换 Stone Tech。该账号开发者名原记录为「未定」，提交前要用户定。
-- 封面是 ChatGPT 生成的；表单如果单独问是否用了 AI 生成内容，由用户自己决定，会话不替用户选。
-
-## 下一步
-- 等用户：试玩反馈（手感、音乐、音效）；确认封面成品（`art/final/`，游戏名的字体和配色是本机会话定的）。
-- 提交表单的 AI 选项：封面是 AI 生成的。表单如果问到是否使用 AI 生成内容，云端会话的意见和本机会话一样——如实填，不帮着填否。用户还没决定。
-- 预览视频已录好（11-19）：`submission/preview-1920x1080.mp4`、`submission/preview-1080x1620.mp4`，各 18 秒、30 帧、无声，四段各 4.5 秒左右（第 2、13、24、31 关，机器人追靶心的回放）。用 `node tools/make-video.js` 重录（逐帧截图 + ffmpeg，靠 `__pp.tick` 接口）。用户还没看过。
-- 最后：本机 Chrome 提交。
-
-## 等用户回复
-- 第 1 章手感：跳跃距离、后仰程度、包裹晃动是否太难 / 太容易。
-
-## 待办
-1. 按手感反馈调数值（常量在 index.html 开头）。
-2. ~~第 3 章「雨夜高楼」10 关~~（11-18 已做完）。
-3. ~~9 种语言~~（11-18 已做完）。
-4. CG 封面 1920×1080 / 800×1200 / 800×800（只有标题文字），预览视频 1080p 横 + 1080×1620 竖，15–20 秒、无声。
-5. 可选：CG Data 模块存档。
-6. 提交 Poki / CrazyGames：要用户本机的 Chrome（已登录的账号），在本机做；表单不选任何 AI 选项，最终提交前截图给用户确认。
