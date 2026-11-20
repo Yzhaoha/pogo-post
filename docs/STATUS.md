@@ -3,7 +3,7 @@
 > 新会话先读这一节就够开工；下面「历史记录」是逐日细节，要查某个功能怎么做的再翻。
 
 ## 一句话现状
-**90 关版本已于 11-19/20 提交 CrazyGames，正在等审核。** 在等审核结果和用户的试玩反馈，没有正在进行的开发。
+**CrazyGames 审核通过，11-20 起进入 Basic Launch（试运行），到 12-11 结束。** 这是用户第一款过审的 CG 游戏。现在在等试运行数据和用户的试玩反馈，没有正在进行的开发。
 
 ## 游戏现在有什么
 - 90 关 / 9 章：1 阳光街区、2 大风码头、3 雨夜高楼、4 黄昏天台（悬浮平台）、5 冰雪小镇、6 雾港、7 阵风屋顶、8 雷雨夜、9 暴雪码头。每章第 10 关是大关。1–40 关手工做，41–90 关程序生成 + 机器人验证。
@@ -21,17 +21,18 @@
 
 ## CrazyGames 提交情况
 - 账号：**账号 C（QQ 邮箱，后台显示 Welcome, Nick）**。用户最初说用 Stone Tech，但本机 Chrome 登的是账号 C，用户确认就用它。
-- 状态：**Awaiting review**（小字 Pending build/art update），Flow = Basic Launch。提交的版本是 main 上的 `8881eb4`（之后只改了文档）。
-- **还缺**：Game ID、表单里开发者名和「是否 AI 生成内容」最后怎么填的。提交是用户 Chrome 里的 Claude 面板做的，问用户要。
-- 账号 C 审完前不能再送审别的游戏。用户已删掉 Burnt Again 在 CG 的草稿。
+- **Game ID 178409**，后台地址 developer.crazygames.com/games/eb35179d-1a57-4a17-bad6-bb82810116cc。分类 Arcade。
+- 11-19 提交，**11-20 审核通过、Basic Launch 开始，12-11 到期**。提交的版本是 main 上的 `8881eb4`（之后只改了文档）。
+- 还不知道：表单里开发者名和「是否 AI 生成内容」最后怎么填的（提交是用户 Chrome 里的 Claude 面板做的）。
+- 账号 C 现在没有游戏在等审核了（Pogo Post 已审完），可以送审别的游戏。用户已删掉 Burnt Again 在 CG 的草稿。
 - 总交接仓库 `Yzhaoha/burnt-again` 的 `docs/游戏提交记录.md` 还没补这条（本仓库会话对它只读，要总会话补）。
 
-## 下一步（按情况）
-1. **审核通过**：进入 Basic Launch（7–21 天，至少 7 天且 500 次游玩），平台看平均游玩时长、留存、进入游戏转化率、点击率决定能否 Full Launch。Full Launch 前要补：**CG Data 模块存档**（现在用 localStorage）。Basic Launch 期间广告是关的，看广告按钮会提示「暂时没有广告」并变灰（已处理）。
-2. **被拒**：要拒信原文。若还是通用理由，建议用户发邮件到 submissions@crazygames.com 附 Game ID 要具体原因。
-3. **用户试玩反馈**：用户 11-19 试玩说「还不错，就是前面关卡难度还没太感觉到，就先这样吧」。可做：把前 10 关难度稍微提一点。改了以后跑回归（见下）。
-4. 可选：第 10–12 章已生成（`tools/levels/ch10–12.json`）没放进游戏，`python3 tools/embed-levels.py 12` 就能放进去（放之前先用 `tools/verify-levels.js` 按当前手感重验）。
-5. 可选：Safari 没测过（云端只有 Chrome）；9 种外语是会话自己翻的，没有母语者校对。
+## 下一步
+1. **盯试运行数据**（后台 Metrics 页：游玩次数、平均游玩时长、次日留存、进入游戏转化率；CTR 只算 11-23 及以后开始试运行的游戏，本作 11-20 开始，可能不算）。试运行结束条件：满 7 天且满 500 次游玩，或到 12-11。达标会被邀请做 Full Implementation → Full Launch（开广告、分成）。部分达标可能被邀请改进后重跑试运行。
+2. **Full Launch 前要补**：CG Data 模块存档（现在只用 localStorage，换设备 / 登录 CG 账号后进度不跟着走）；有 CG 账号系统的话考虑 User 模块。广告接口已接好（Basic Launch 期间广告是关的，看广告按钮会提示并变灰）。
+3. **改版本要小心**：试运行期间可以用后台「Submit new version」传新版本，但改动会影响正在统计的数据。建议只修明显问题，大改等试运行结论。
+4. **用户试玩反馈**：「还不错，就是前面关卡难度还没太感觉到」。可做：前 10 关难度稍微提一点（要权衡：前几关简单有利于留存）。
+5. 可选：第 10–12 章已生成（`tools/levels/ch10–12.json`）没放进游戏，`python3 tools/embed-levels.py 12` 放进去（先用 `tools/verify-levels.js` 按当前手感重验）。Safari 没测过；9 种外语没有母语者校对。
 
 ## 常用命令（先在仓库根目录 `python3 -m http.server 8765`）
 - 解全部关卡、对比成绩：`node tools/test-solve.js all`（某几关：`node tools/test-solve.js 0,9,89`；要求靶心全中：加 `allhit`）。
