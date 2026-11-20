@@ -15,7 +15,7 @@
 
 ## 链接和文件
 - 测试链接：https://yzhaoha.github.io/pogo-post/ （GitHub Pages，main 分支根目录；给手机的链接加 `?v=提交号`）。
-- 源码：`index.html`（单文件，纯 Canvas 2D，约 180KB）。核心常量在开头 `const DT=...`。
+- 源码：`index.html`（单文件，纯 Canvas 2D，约 150KB）。核心常量在开头 `const DT=...`。
 - 平台包：`python3 tools/build.py` → `dist/poki/`、`dist/crazygames/` 和两个 zip。CG 版注入 CG SDK v3 适配层，游戏侧只调 PokiSDK 形状的接口。
 - 提交材料：`submission/表单文字-CrazyGames.md`（英文标题 / 介绍 / 操作说明 / 选项建议）、`submission/preview-*.mp4`（18.8 秒，开头 0.8 秒封面）、`art/final/`（三张封面成品）、`art/source/`（ChatGPT 原图）。
 
