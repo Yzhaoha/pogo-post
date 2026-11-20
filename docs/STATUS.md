@@ -21,7 +21,7 @@
 
 ## CrazyGames 提交情况
 - 账号：**账号 C（QQ 邮箱，后台显示 Welcome, Nick）**。用户最初说用 Stone Tech，但本机 Chrome 登的是账号 C，用户确认就用它。
-- **Game ID 178409**，后台地址 developer.crazygames.com/games/eb35179d-1a57-4a17-bad6-bb82810116cc。分类 Arcade。
+- **Game ID 178409**，后台地址 developer.crazygames.com/games/eb35179d-1a57-4a17-bad6-bb82810116cc。分类 Arcade（表单建议写的是 Casual / Skill / Platformer，不确定 Arcade 是提交时选的还是平台改的；用户 11-20 说不用追究）。
 - 11-19 提交，**11-20 审核通过、Basic Launch 开始，12-11 到期**。提交的版本是 main 上的 `8881eb4`（之后只改了文档）。
 - 还不知道：表单里开发者名和「是否 AI 生成内容」最后怎么填的（提交是用户 Chrome 里的 Claude 面板做的）。
 - 账号 C 现在没有游戏在等审核了（Pogo Post 已审完），可以送审别的游戏。用户已删掉 Burnt Again 在 CG 的草稿。
