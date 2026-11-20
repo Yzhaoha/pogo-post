@@ -157,6 +157,13 @@
 - 官方文档里没有提到 AI 生成内容的规定（FAQ 和 Basic Launch 指南没读）。
 - 上线流程：Basic Launch 7–21 天（至少 7 天且 500 次游玩），按平均游玩时长、留存、进入游戏转化率、点击率（11-23 起）和平台其他游戏比，决定能不能 Full Launch。
 
+## ★ 11-19/20 已提交 CrazyGames
+- 账号 C（QQ 邮箱，后台显示 Welcome, Nick），由用户本机 Chrome 里的 Claude 面板操作，用户确认后提交。
+- 后台状态：**Awaiting review**，小字「Pending build/art update」，Flow 为 Basic Launch。封面正常显示。
+- 还缺：Game ID；表单里开发者名和 AI 相关问题最后怎么填的（本机会话知道）。下次拿到后补在这里。
+- 账号 C 现在有一个游戏在审，审完前不能再送审别的游戏。Burnt Again 的 CG 草稿已被用户删掉。
+- 总交接仓库 burnt-again 的 `docs/游戏提交记录.md` 需要总会话补上这条（本会话对它只读）。
+
 ## 提交 CrazyGames（要在用户本机做）
 - **用户 11-19 决定：用 Stone Tech 账号（CG 账号 A）提交。** 同一账号同时只能有一个游戏在等审核：如果 Burnt Again 已经在这个账号送审，Pogo Post 只能先存草稿；如果还没送审，Pogo Post 送审后 Burnt Again 要等审完。提交在用户本机、登了 CG 后台的那个 Chrome 里做，提交版本是 main 上的 8881eb4。用户 11-19 又确认：**不删 Burnt Again 的 CG 草稿**（草稿不占「在审」名额），直接提交 Pogo Post；如果后台显示 Burnt Again 其实已在审核，先停下来问用户。之后用户说已经**删了 Burnt Again 的 CG 草稿**。本机 Chrome 里的 Claude 打开的后台只有 Trap the Ex BF（被拒），按提交记录那是**账号 C（QQ 邮箱）**，不是 Stone Tech（Stone Tech 下应有 Robber Rumble，ID 171340）；已提醒用户换登 Stone Tech 或改用账号 C，等用户选。**用户 11-19 最终决定：就用账号 C（后台显示 Welcome, Nick；QQ 邮箱那个）提交 Pogo Post**，不换 Stone Tech。该账号开发者名原记录为「未定」，提交前要用户定。
 - 封面是 ChatGPT 生成的；表单如果单独问是否用了 AI 生成内容，由用户自己决定，会话不替用户选。
