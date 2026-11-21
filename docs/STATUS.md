@@ -7,6 +7,16 @@
 ### 一句话现状
 CG 试运行中（11-20 → 12-11 最晚；满 7 天且满 500 次就结束，预计 11-27 左右；Game ID 178409，公开页 https://www.crazygames.com/game/pogo-post ）。**11-21 晚 23:30 左右新版本已提交并自动上线**（本地会话在用户 Chrome 里提交，公开页确认是新版；试运行没有重启，日期不变）。现在等新版本的数据。
 
+### 新会话开场白（用户复制粘贴）
+> 你接手弹簧快递 Pogo Post，仓库 Yzhaoha/pogo-post（用 add_repo 加进来，access: push）。先读 docs/STATUS.md 开头「★ 11-21 交接」那一节，通用规则看私有仓库 Yzhaoha/burnt-again 里的 docs/总交接-全部游戏.md（只读）。全程中文，我不看代码，只看效果，说话直白少术语。CrazyGames 试运行中，11-21 晚新版本已上线，我会给你后台截图，先帮我对比新旧数据。
+
+### 11-21 新加的测试工具（都用 file:// 直接打开仓库里的 index.html，不用开本地服务器）
+- `node tools/test-autoplay.js 0 5 47`：机器人先解关，再在真实游戏循环里自动玩，输出 win / crash:原因（关卡下标从 0 算）。
+- `node tools/test-cg-build.js <截图前缀>`：先 `python3 tools/build.py`，用假的 CG SDK（广告全失败）启动 CG 包，打印 SDK 调用顺序并截图。
+- `node tools/test-falls.js <前缀>`、`node tools/test-shop.js <前缀>`：摔落 / 粉笔圈 / 完美落地，商店 5 页。
+- `node tools/narrow-levels.js <起> <止>`：窄屋顶（跑之前先把 `NARROW` 表清空）。
+- `URL=file:///…/index.html node tools/gen-levels.js <章>`：生成关卡（支持 5–15 章，`ONLY=`、`SEEDOFF=`、`TRIES=`）。
+
 ### 11-21 晚提交记录
 - 提交的是 main 上 `1239166` 的 `dist/crazygames/index.html`（`cf14be5` 只多了交接文档）。**CG 后台不接受 zip，只收解压后的 `index.html`**。
 - QA 自查表由用户本人填写并勾选。表单没问 AI 生成内容，也没让选引擎/工具。
