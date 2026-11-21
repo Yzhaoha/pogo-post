@@ -543,7 +543,7 @@ function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splic
  for(const e of evs){
   if(e.k==='charge'){}
   else if(e.k==='jump'){GS.airUsed=false;GS.coached=false;SFX.jump(e.c);buzz(8);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
-  else if(e.k==='land'){if(GS.airUsed&&AIRN<3){AIRN++;store.set('air',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
+  else if(e.k==='land'){if(GS.airUsed&&AIRN<3){AIRN++;store.set('air2',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
    if(e.perfect){if(!bulled){SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('perfect'),'#3fbf88',1.1)}GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
    else if(e.q>0.42){wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('wobbly'),'#ff5d7a',1);GS.shake=6}
    if(e.hard)GS.shake=Math.max(GS.shake,5)}
@@ -680,7 +680,7 @@ function update(rdt){
   if(!GS.freeze)GS.acc+=dt;let n=0;
   while(GS.acc>=DT&&n<12){if(GS.autoFn&&GS.mode==='play')GS.hold=GS.autoFn(s);step(s,GS.L,GS.mode==='play'&&GS.hold);GS.acc-=DT;n++;handleEvents();seaCheck(s)}
   // mid-air lean coaching: until the player has saved 3 landings by holding in the air, point it out the moment they start tipping back
-  if(GS.mode==='play'&&s.on<0&&GS.hold&&!s.needRel)GS.airUsed=true;
+  if(GS.mode==='play'&&s.on<0&&GS.hold&&!s.needRel&&(s.th<-0.12||GS.coached))GS.airUsed=true;
   if(GS.mode==='play'&&(AIRN<3||(!GS.L.endless&&GS.L.i<AIR_LV))&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6;if(AIRN<1){GS.freeze=true;hideTip();chargeSnd(false)}}
   if(GS.freeze&&(GS.hold||GS.mode!=='play'||s.on>=0))GS.freeze=false;
   if(GS.coachT>0)GS.coachT-=rdt;
@@ -729,7 +729,7 @@ function hash(n){n=Math.sin(n*127.1)*43758.5453;return n-Math.floor(n)}
 const BCOL=['#ff9f7a','#ffd36e','#8fd0c7','#b9a7ff','#f78fb3','#9fd17a','#7fc0ff'];
 const SKY=[['#7ccbff','#dff4ff'],['#88b8e8','#e9eef7'],['#2a2f5c','#5b5a8f'],['#ff9a76','#ffe6b3'],
  ['#a9c6e8','#f2f6fb'],['#aab7c4','#e6eaee'],['#6fb3e8','#d6ecfa'],['#1f2340','#474b6e'],['#9fb4cc','#eef2f7'],['#b9c0d0','#eceef3'],['#7aa6d6','#dfe9f4'],['#5d6fa3','#c9d3ea']];
-const PIER=[0,1,0,0,0,1,0,0,1,0,1,0],SEA_Y=30;let AIRN=+store.get('air',0)||0; // landings the player has saved by leaning in mid-air
+const PIER=[0,1,0,0,0,1,0,0,1,0,1,0],SEA_Y=30;let AIRN=+store.get('air2',0)||0; // landings the player has saved by leaning in mid-air
 // pier levels (and pier stretches of Endless) have open sea between the crates: falling below the waterline is a splash, not a long drop
 function seaHere(L,s){return!!(L&&s&&(L.endless?(L.plats[Math.max(0,s.on>=0?s.on:s.lastP)]||[])[3]===1:PIER[L.i/PER|0]>0))}
 function splashFx(x){const y=SEA_Y;GS.fx.push({kind:'ring',x,y,t:0,life:0.6,col:'#e8f6ff'});GS.fx.push({kind:'ring',x,y,t:-0.15,life:0.75,col:'#ffffff'});
