@@ -843,9 +843,13 @@ function drawRope(c,r){const z=S*GS.cam.z;c.lineWidth=LW;c.strokeStyle=INK;
   if(k%2){c.beginPath();c.moveTo(-12*z,0);c.lineTo(12*z,0);c.lineTo(14*z,8*z);c.lineTo(8*z,8*z);c.lineTo(8*z,22*z);c.lineTo(-8*z,22*z);c.lineTo(-8*z,8*z);c.lineTo(-14*z,8*z);c.closePath()}else{c.beginPath();c.moveTo(-4*z,0);c.lineTo(4*z,0);c.lineTo(4*z,14*z);c.lineTo(10*z,18*z);c.lineTo(8*z,22*z);c.lineTo(-4*z,20*z);c.closePath()}c.fill();c.stroke();c.restore()}}
 function topUnder(x){const L=GS.L;for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return -400}
 function drawHang(c,d,L){const r=L.ropes[d.r];if(!r)return;const y=ropeY(r,d.x);const z=S*GS.cam.z;c.save();c.translate(W(d.x),H(y));c.rotate(Math.sin(GS.time*2.2+d.sw*9)*0.15+d.sw);c.strokeStyle=INK;c.lineWidth=LW*0.6;c.beginPath();c.moveTo(0,0);c.lineTo(0,6*z);c.stroke();c.translate(0,6*z+PK[d.t].h*z/2);drawParcel(c,d.t,z,0,0);c.restore()}
-function drawDog(c,d,t){const z=S*GS.cam.z,x=dogX(d,t),dir=Math.sin(t*d[2])>=0?1:-1;const X=W(x),Y=H(d[3]);const step=Math.sin(t*14)*3*z;
+function drawDog(c,d,t){const z=S*GS.cam.z,x=dogX(d,t),dir=Math.sin(t*d[2])>=0?1:-1;const X=W(x),Y=H(d[3]);
+ // walk cycle follows the distance actually covered, so the paws never slide and the dog slows down to turn at each end
+ const v=Math.abs((d[1]-d[0])*0.5*d[2]*Math.sin(t*d[2])),amp=Math.min(1,v/45),ph=x*0.2,bob=-Math.abs(Math.sin(ph))*2*amp*z;
  c.save();c.translate(X,Y);c.scale(dir,1);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
- c.fillStyle='#b5774a';for(const k of [-14,-6,8,16]){c.fillRect(k*z-3*z,-12*z+(k%2?step:-step)*0.5,6*z,12*z);c.strokeRect(k*z-3*z,-12*z+(k%2?step:-step)*0.5,6*z,12*z)}
+ c.fillStyle='#b5774a';const legs=[[-14,0,'#9a6238'],[16,Math.PI,'#9a6238'],[-6,Math.PI,'#b5774a'],[8,0,'#b5774a']]; // far legs first (darker), diagonal pairs in step
+ for(const [k,o,col] of legs){c.save();c.translate(k*z,-13*z+bob*0.5);c.rotate(Math.sin(ph+o)*0.55*amp);c.fillStyle=col;rr(c,-3*z,0,6*z,13*z,2.5*z);c.fill();c.stroke();c.restore()}
+ c.fillStyle='#b5774a';c.translate(0,bob);
  rr(c,-22*z,-30*z,44*z,20*z,10*z);c.fill();c.stroke();
  c.save();c.translate(-22*z,-26*z);c.rotate(-0.6+Math.sin(t*16)*0.4);rr(c,-12*z,-3*z,14*z,6*z,3*z);c.fill();c.stroke();c.restore();
  c.beginPath();c.arc(22*z,-34*z,13*z,0,7);c.fill();c.stroke();
