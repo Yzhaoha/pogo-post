@@ -179,7 +179,7 @@ function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==nul
 const pickQ=k=>{const a=T(k);return Array.isArray(a)?a[Math.random()*a.length|0]:a};
 
 /* ================= constants ================= */
-const DT=1/120,AIM_F=0.7,AIM_LV=10,AIM_EB=12,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2,SNOW_K=0.62,SNOW_F=1.3;
+const DT=1/120,AIM_F=0.7,AIM_LV=10,AIM_EB=12,AIR_LV=5,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2,SNOW_K=0.62,SNOW_F=1.3;
 const PK={box:{h:26,w:36},frag:{h:26,w:34},cake:{h:24,w:40},chick:{h:26,w:30},long:{h:18,w:70}};
 
 /* ================= levels =================
@@ -647,7 +647,7 @@ function update(rdt){
   while(GS.acc>=DT&&n<12){if(GS.autoFn&&GS.mode==='play')GS.hold=GS.autoFn(s);step(s,GS.L,GS.mode==='play'&&GS.hold);GS.acc-=DT;n++;handleEvents();seaCheck(s)}
   // mid-air lean coaching: until the player has saved 3 landings by holding in the air, point it out the moment they start tipping back
   if(GS.mode==='play'&&s.on<0&&GS.hold&&!s.needRel)GS.airUsed=true;
-  if(GS.mode==='play'&&AIRN<3&&!GS.tutStep&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6;showTip(T('t4'),2.6);wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('holdAir'),'#ffc23d',1.2);if(!GS.slowTaught){GS.slowTaught=true;GS.slow=0.45}}
+  if(GS.mode==='play'&&(AIRN<3||(!GS.L.endless&&GS.L.i<AIR_LV))&&!GS.tutStep&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6;showTip(T('t4'),2.6);wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('holdAir'),'#ffc23d',1.2);if(!GS.slowTaught){GS.slowTaught=true;GS.slow=0.45}}
   if(GS.coachT>0)GS.coachT-=rdt;
   if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt} // sink below the waterline (drawing is clipped there)
   if(GS.mode==='play'&&s.charging)chargeSnd(true,s.charge);
