@@ -615,7 +615,7 @@ function restart(){if(GS.L.endless)startEndless();else startLevel(GS.L.i)}
 function startEndless(){const L=mkEndless((Math.random()*1e9)|0);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L)}
 function startLevel(i,keepRevive,EL){
  const L=EL||LEVELS[i];GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
- GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;if(!L.endless&&L.i>=3&&GS.scopeLv!==L.i){GS.scope=false;if(INV.scope>0&&USE.scope){INV.scope--;store.set('inv',INV);GS.scope=true;GS.scopeLv=L.i}}else if(L.endless)GS.scope=false;if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.tutStep=L.tut?1:0;GS.anim.face=0;GS.dogBark=0;
+ GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.groundT=0;GS.poofed=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;if(!L.endless&&L.i>=3&&GS.scopeLv!==L.i){GS.scope=false;if(INV.scope>0&&USE.scope){INV.scope--;store.set('inv',INV);GS.scope=true;GS.scopeLv=L.i}}else if(L.endless)GS.scope=false;if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.tutStep=L.tut?1:0;GS.anim.face=0;GS.dogBark=0;
  GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;
  hideTip();if(L.endless){if(!store.get('te',0)){store.set('te',1);showTip(T('t_endless'),5)}}
  else if(!L.tut&&L.nb&&!store.get('tb',0)){store.set('tb',1);showTip(T('t_bull'),5)}
@@ -623,7 +623,7 @@ function startLevel(i,keepRevive,EL){
  showLayer(null);$('pauseB').hidden=false;plays++;gp(true);
 }
 function revive(){const s=GS.s;if(!s.safe)return;const sf=s.safe;Object.assign(s,{x:PX(GS.L.plats[sf.on],s.t)+sf.dx,y:sf.y,on:sf.on,vx:0,vy:0,th:0,om:0,psi:0,psv:0,charging:false,charge:0,needRel:true,dead:null,
- stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
+ stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.groundT=0;GS.poofed=false;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
 
 /* ================= events → fx ================= */
 function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
@@ -800,6 +800,7 @@ function update(rdt){
   {const tq=TRAILS[COS.trail.sel];if(tq&&tq.k&&GS.mode==='play'&&s.on<0){GS.trT=(GS.trT||0)-rdt;if(GS.trT<=0){GS.trT=tq.k==='bub'?0.07:0.045;
    GS.fx.push({kind:'tr',k:tq.k,x:s.x-6+Math.random()*12,y:s.y+4+Math.random()*10,vx:-30+Math.random()*60,vy:tq.k==='bub'?40:-20+Math.random()*40,t:0,life:0.75,rot:Math.random()*6,hue:(GS.time*240)%360,col:['#ff4f6d','#ffc23d','#3fbf88','#3d7bff','#8b5cf6'][Math.random()*5|0]})}}}
   if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt}
+  if(GS.grounded){GS.groundT=(GS.groundT||0)+rdt;if(GS.groundT>0.7&&!GS.poofed){GS.poofed=true;burst(s.x,GROUND_Y+30,['#ffffff','#e9e4f2','#cfc8de'],26,260);try{noise(0.18,0.2,2500)}catch(e){}}}
   else if(s.dead&&s.on<0&&!GS.grounded&&!onRoof(GS.L,s)){GS.fallV=(GS.fallV||0)-G*1.2*dt;s.y+=GS.fallV*dt;s.x+=(s.vx||0)*0.25*dt;s.th+=Math.sign(s.th||1)*2.2*dt; // a mid-air crash keeps falling
    if(seaHere(GS.L,s))seaCheck(s);else if(s.y<=GROUND_Y)hitGround(s)} // sink below the waterline (drawing is clipped there)
   if(GS.mode==='play'&&s.charging)chargeSnd(true,s.charge);
@@ -888,7 +889,7 @@ function render(){
   if(s){
    if(s.on>=0&&s.charging&&GS.mode==='play'&&(L.endless?s.on<AIM_EB:L.i<AIM_LV||GS.scope))drawPreview(c,s,L,!L.endless&&(L.i<3||GS.scope));
    const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
-   if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
+   if(GS.poofed){}else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
    if(wet)c.restore();
    if(GS.coached&&s.on<0&&!GS.airUsed&&GS.mode==='play')drawKeyHint(c,s);
    if(s.on>=0&&s.charging)drawCharge(c,s);
@@ -965,7 +966,23 @@ function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
 function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
  c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
  c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
- c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
+ c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);const cx=GS.poofed&&GS.s?W(GS.s.x):-1e9;for(let x=-off;x<CW;x+=120*z)if(x+60*z<cx-95*z||x>cx+105*z)c.fillRect(x,y0+34*z,60*z,6*z); // no lane mark through the chalk outline
+ if(GS.poofed&&GS.s){const a=Math.min(1,(GS.groundT-0.7)/0.35),k=Math.min(1.3,(CH-y0-8*z)/(66*z));drawChalk(c,W(GS.s.x),y0+4*z+(CH-y0)/2+6*z,z*Math.max(0.6,k),a)}}
+// crime-scene chalk outline where the courier hit the street (drawn as if seen from above, a bit wobbly, with a silly face)
+function drawChalk(c,x,y,z,a){c.save();c.translate(x,y);c.scale(z,z);c.globalAlpha*=a;c.lineCap='round';c.lineJoin='round';
+ const pass=(ox,oy,w,col)=>{c.save();c.translate(ox,oy);c.strokeStyle=col;c.lineWidth=w;c.beginPath();
+  c.arc(-40,0,12,0,7);                                            // head
+  c.moveTo(-28,-7);c.quadraticCurveTo(-10,-11,4,-6);c.lineTo(4,6);c.quadraticCurveTo(-10,11,-28,7); // body
+  c.moveTo(-22,-9);c.lineTo(-14,-26);c.lineTo(-6,-30);c.moveTo(-22,9);c.lineTo(-12,24);c.lineTo(-4,30);   // arms waving
+  c.moveTo(4,-5);c.lineTo(24,-20);c.lineTo(30,-16);c.moveTo(4,5);c.lineTo(26,14);c.lineTo(30,22);         // legs
+  c.moveTo(34,0);c.lineTo(46,0);for(let k=0;k<4;k++){c.lineTo(48+k*4,k%2?-4:4)}c.lineTo(64,0);           // pogo stick + spring
+  c.moveTo(-46,-6);c.lineTo(-40,-1);c.moveTo(-40,-6);c.lineTo(-46,-1);c.moveTo(-46,1);c.lineTo(-40,6);c.moveTo(-40,1);c.lineTo(-46,6); // X X eyes
+  c.moveTo(-32,-3);c.quadraticCurveTo(-27,0,-32,3);                 // tongue out
+  c.rect(70,-26,13,11);c.moveTo(76,-26);c.lineTo(76,-15);           // parcel
+  c.rect(-74,12,12,10);                                             // another parcel
+  c.moveTo(84,6);c.quadraticCurveTo(92,-2,96,6);c.quadraticCurveTo(96,11,90,13);c.lineTo(90,17);c.moveTo(90,22);c.lineTo(90,23); // a question mark
+  c.stroke();c.restore()};
+ pass(0.8,0.6,4,'#ffffff55');pass(0,0,2.6,'#fbfaff');c.restore()}
 function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
  c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
