@@ -889,7 +889,7 @@ function render(){
   if(s){
    if(s.on>=0&&s.charging&&GS.mode==='play'&&(L.endless?s.on<AIM_EB:L.i<AIM_LV||GS.scope))drawPreview(c,s,L,!L.endless&&(L.i<3||GS.scope));
    const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
-   if(GS.poofed){}else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
+   if(GS.poofed)chalkTrace(c,s,Math.min(1,(GS.groundT-0.7)/0.3));else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
    if(wet)c.restore();
    if(GS.coached&&s.on<0&&!GS.airUsed&&GS.mode==='play')drawKeyHint(c,s);
    if(s.on>=0&&s.charging)drawCharge(c,s);
@@ -966,23 +966,21 @@ function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
 function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
  c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
  c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
- c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);const cx=GS.poofed&&GS.s?W(GS.s.x):-1e9;for(let x=-off;x<CW;x+=120*z)if(x+60*z<cx-95*z||x>cx+105*z)c.fillRect(x,y0+34*z,60*z,6*z); // no lane mark through the chalk outline
- if(GS.poofed&&GS.s){const a=Math.min(1,(GS.groundT-0.7)/0.35),k=Math.min(1.3,(CH-y0-8*z)/(66*z));drawChalk(c,W(GS.s.x),y0+4*z+(CH-y0)/2+6*z,z*Math.max(0.6,k),a)}}
-// crime-scene chalk outline where the courier hit the street (drawn as if seen from above, a bit wobbly, with a silly face)
-function drawChalk(c,x,y,z,a){c.save();c.translate(x,y);c.scale(z,z);c.globalAlpha*=a;c.lineCap='round';c.lineJoin='round';
- const pass=(ox,oy,w,col)=>{c.save();c.translate(ox,oy);c.strokeStyle=col;c.lineWidth=w;c.beginPath();
-  c.arc(-40,0,12,0,7);                                            // head
-  c.moveTo(-28,-7);c.quadraticCurveTo(-10,-11,4,-6);c.lineTo(4,6);c.quadraticCurveTo(-10,11,-28,7); // body
-  c.moveTo(-22,-9);c.lineTo(-14,-26);c.lineTo(-6,-30);c.moveTo(-22,9);c.lineTo(-12,24);c.lineTo(-4,30);   // arms waving
-  c.moveTo(4,-5);c.lineTo(24,-20);c.lineTo(30,-16);c.moveTo(4,5);c.lineTo(26,14);c.lineTo(30,22);         // legs
-  c.moveTo(34,0);c.lineTo(46,0);for(let k=0;k<4;k++){c.lineTo(48+k*4,k%2?-4:4)}c.lineTo(64,0);           // pogo stick + spring
-  c.moveTo(-46,-6);c.lineTo(-40,-1);c.moveTo(-40,-6);c.lineTo(-46,-1);c.moveTo(-46,1);c.lineTo(-40,6);c.moveTo(-40,1);c.lineTo(-46,6); // X X eyes
-  c.moveTo(-32,-3);c.quadraticCurveTo(-27,0,-32,3);                 // tongue out
-  c.rect(70,-26,13,11);c.moveTo(76,-26);c.lineTo(76,-15);           // parcel
-  c.rect(-74,12,12,10);                                             // another parcel
-  c.moveTo(84,6);c.quadraticCurveTo(92,-2,96,6);c.quadraticCurveTo(96,11,90,13);c.lineTo(90,17);c.moveTo(90,22);c.lineTo(90,23); // a question mark
-  c.stroke();c.restore()};
- pass(0.8,0.6,4,'#ffffff55');pass(0,0,2.6,'#fbfaff');c.restore()}
+ c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
+// crime-scene chalk line traced around the courier, right where they lay: silhouette -> grown a few px -> hollowed out
+function chalkTrace(c,s,a){const cv=GS.chalkA||(GS.chalkA=document.createElement('canvas')),cv2=GS.chalkB||(GS.chalkB=document.createElement('canvas'));
+ for(const k of [cv,cv2])if(k.width!==c.canvas.width||k.height!==c.canvas.height){k.width=c.canvas.width;k.height=c.canvas.height}
+ const o=cv.getContext('2d'),o2=cv2.getContext('2d'),tf=c.getTransform();
+ o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,cv.width,cv.height);o.setTransform(tf);
+ {const z=S*GS.cam.z,d=s.th>0?1:-1,X=W(s.x),Y=H(GROUND_Y)-12*z;o.save();o.translate(X,Y);o.scale(d*z,z);o.strokeStyle=o.fillStyle='#fff';o.lineCap=o.lineJoin='round'; // spread-eagle figure where the courier lay
+  o.beginPath();o.arc(44,-2,15,0,7);o.fill();o.lineWidth=20;o.beginPath();o.moveTo(28,-2);o.lineTo(-8,0);o.stroke();
+  o.lineWidth=9;o.beginPath();o.moveTo(20,-8);o.lineTo(30,-30);o.lineTo(42,-40);o.moveTo(20,6);o.lineTo(30,26);o.lineTo(44,34);
+  o.moveTo(-8,-6);o.lineTo(-30,-24);o.lineTo(-40,-34);o.moveTo(-8,6);o.lineTo(-32,20);o.lineTo(-38,34);o.stroke();o.restore()}
+ o.setTransform(1,0,0,1,0,0);o.globalCompositeOperation='source-in';o.fillStyle='#ffffff';o.fillRect(0,0,cv.width,cv.height);o.globalCompositeOperation='source-over';
+ const r=Math.max(2.2,2.6*S)*(tf.a||1),g=Math.max(2,2.4*S)*(tf.a||1);o2.setTransform(1,0,0,1,0,0);o2.clearRect(0,0,cv2.width,cv2.height);
+ for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*(g+r),Math.sin(an)*(g+r))}       // outer edge of the line
+ o2.globalCompositeOperation='destination-out';for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*g,Math.sin(an)*g)}o2.globalCompositeOperation='source-over'; // keep a gap around the body
+ c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=0.92*a;c.drawImage(cv2,0,0);c.restore()}
 function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
  c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
