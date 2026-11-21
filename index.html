@@ -425,6 +425,7 @@ function land(s,L,i,pvy){
  s.on=i;s.y=p[2];s.vy=0;
  const q=Math.abs(th),hard=q>0.42||impact>1350;
  s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
+ if(q<0.12){s.psv*=0.25;s.psi*=0.4} // perfect landing: the tower settles straight away
  for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
  s.vx=L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
  // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
@@ -580,7 +581,7 @@ function restart(){if(GS.L.endless)startEndless();else startLevel(GS.L.i)}
 function startEndless(){const L=mkEndless((Math.random()*1e9)|0);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L)}
 function startLevel(i,keepRevive,EL){
  const L=EL||LEVELS[i];GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
- GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;if(!L.endless&&L.i>=3&&GS.scopeLv!==L.i){GS.scope=false;if(INV.scope>0&&USE.scope){INV.scope--;store.set('inv',INV);GS.scope=true;GS.scopeLv=L.i}}else if(L.endless)GS.scope=false;if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.tutStep=L.tut?1:0;GS.anim.face=0;GS.dogBark=0;
+ GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;if(!L.endless&&L.i>=3&&GS.scopeLv!==L.i){GS.scope=false;if(INV.scope>0&&USE.scope){INV.scope--;store.set('inv',INV);GS.scope=true;GS.scopeLv=L.i}}else if(L.endless)GS.scope=false;if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.tutStep=L.tut?1:0;GS.anim.face=0;GS.dogBark=0;
  GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;
  hideTip();if(L.endless){if(!store.get('te',0)){store.set('te',1);showTip(T('t_endless'),5)}}
  else if(!L.tut&&L.nb&&!store.get('tb',0)){store.set('tb',1);showTip(T('t_bull'),5)}
@@ -588,7 +589,7 @@ function startLevel(i,keepRevive,EL){
  showLayer(null);$('pauseB').hidden=false;plays++;gp(true);
 }
 function revive(){const s=GS.s;if(!s.safe)return;const sf=s.safe;Object.assign(s,{x:PX(GS.L.plats[sf.on],s.t)+sf.dx,y:sf.y,on:sf.on,vx:0,vy:0,th:0,om:0,psi:0,psv:0,charging:false,charge:0,needRel:true,dead:null,
- stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
+ stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
 
 /* ================= events → fx ================= */
 function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
@@ -599,8 +600,8 @@ function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splic
  for(const e of evs){
   if(e.k==='charge'){}
   else if(e.k==='jump'){GS.airUsed=false;GS.coached=false;SFX.jump(e.c);buzz(8);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
-  else if(e.k==='land'){if(GS.airUsed&&AIRN<3){AIRN++;store.set('air2',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
-   if(e.perfect){if(!bulled){SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('perfect'),'#3fbf88',1.1)}GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
+  else if(e.k==='land'){if(!e.perfect)GS.pfN=0;if(GS.airUsed&&AIRN<3){AIRN++;store.set('air2',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
+   if(e.perfect){GS.pfN=(GS.pfN||0)+1;const n=Math.min(3,GS.pfN);let lab=T('perfect');if(GS.L.endless){s.score+=5*n;lab+=' +'+5*n}else{addCoins(n);GS.runCoins=(GS.runCoins||0)+n;lab+=' +'+n;const k=S*GS.cam.z;for(let j=0;j<n;j++)GS.coinFly.push({x0:W(s.x)+(j-1)*8*k,y0:H(s.y+HEAD),t:-j*0.08,v:j===n-1?n:0})}SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,lab+(n>1?'  ×'+n:''),'#3fbf88',1.1+0.1*n);GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
    else if(e.q>0.42){wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('wobbly'),'#ff5d7a',1);GS.shake=6}
    if(e.hard)GS.shake=Math.max(GS.shake,5)}
   else if(e.k==='bull'){bulled=true;SFX.bull(e.n);buzz([18,40,18]);const bp=GS.L.plats[e.i],bx=GS.L.bull[e.i]+PX(bp,s.t)-bp[0],by=bp[2];
@@ -628,7 +629,7 @@ function onWin(){const s=GS.s;GS.mode='win';gp(false);chargeSnd(false);GS.endT=0
  const prev=LP[L.i]||0;if(st>prev){LP[L.i]=st;store.set('lvp',LP)}failsHere=0;
  const extra=5+Math.max(0,st-Math.floor(prev))*10;GS.result.coins=extra+(GS.runCoins||0);addCoins(extra);
  setTimeout(showWin,1000)}
-function onCrash(why){const s=GS.s;buzz(70);GS.mode='crash';gp(false);chargeSnd(false);GS.endT=0;GS.slow=0.7;GS.shake=why==='sea'?8:14;if(why!=='sea')SFX.crash();GS.anim.face=1;GS.cam.zt=1.12;
+function onCrash(why){const s=GS.s;if(why==='fall'&&!seaHere(GS.L,s)){GS.grounded=true;s.y=GROUND_Y;s.th=Math.sign(s.th||1)*1.45;burst(s.x,GROUND_Y+4,['#d9d3e6','#ffffff','#b8b3c9'],22,320)}buzz(70);GS.mode='crash';gp(false);chargeSnd(false);GS.endT=0;GS.slow=0.7;GS.shake=why==='sea'?8:14;if(why!=='sea')SFX.crash();GS.anim.face=1;GS.cam.zt=1.12;
  if(why==='sea'){ // parcels pop back up out of the water, then sink again
   let h=0;for(const p of s.stack){flyPk(p.t,s.x+(Math.random()-0.5)*30,SEA_Y-10-h,(Math.random()-0.5)*260,380+Math.random()*260,(Math.random()-0.5)*8,{crack:p.crack});h+=8}}
  else{ const hp=headPos(s);let h=0;for(let i=0;i<s.stack.length;i++){const p=s.stack[i];const ph=PK[p.t].h;const a=-1.2+Math.random()*2.4;const v=420+Math.random()*380;
@@ -638,8 +639,8 @@ function onCrash(why){const s=GS.s;buzz(70);GS.mode='crash';gp(false);chargeSnd(
  GS.newBest=false;if(GS.L.endless){GS.endScore=s.score;if(s.score>EB){EB=s.score;store.set('eb',EB);GS.newBest=true}const cn=Math.floor(s.score/15)-(GS.paid||0);GS.endCoins=Math.max(0,cn);GS.paid=(GS.paid||0)+GS.endCoins;addCoins(GS.endCoins)}
  s.stack=[];failsHere++;
  GS.quip=why==='face'&&AIRN<3?T('faceTip'):pickQ('q_'+why);if(why==='dog')SFX.bark();
- if(!GS.L.endless&&GS.L.i<QUICK_LV)setTimeout(()=>{if(GS.mode==='crash'){restart();showTip(T('again'),1.1)}},950); // early levels: straight back in, no panel
- else setTimeout(showFail,1500)}
+ if(!GS.L.endless&&GS.L.i<QUICK_LV)setTimeout(()=>{if(GS.mode==='crash'){restart();showTip(T('again'),1.1)}},why==='wall'||why==='fall'?1400:950); // early levels: straight back in, no panel
+ else setTimeout(showFail,why==='wall'?1900:1500)}
 
 /* ================= UI ================= */
 const LAYERS=['title','mapL','shopL','pauseL','winL','failL'];
@@ -764,7 +765,9 @@ function update(rdt){
   if(GS.coachT>0)GS.coachT-=rdt;
   {const tq=TRAILS[COS.trail.sel];if(tq&&tq.k&&GS.mode==='play'&&s.on<0){GS.trT=(GS.trT||0)-rdt;if(GS.trT<=0){GS.trT=tq.k==='bub'?0.07:0.045;
    GS.fx.push({kind:'tr',k:tq.k,x:s.x-6+Math.random()*12,y:s.y+4+Math.random()*10,vx:-30+Math.random()*60,vy:tq.k==='bub'?40:-20+Math.random()*40,t:0,life:0.75,rot:Math.random()*6,hue:(GS.time*240)%360,col:['#ff4f6d','#ffc23d','#3fbf88','#3d7bff','#8b5cf6'][Math.random()*5|0]})}}}
-  if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt} // sink below the waterline (drawing is clipped there)
+  if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt}
+  else if(s.dead&&s.on<0&&!GS.grounded&&!onRoof(GS.L,s)){GS.fallV=(GS.fallV||0)-G*1.2*dt;s.y+=GS.fallV*dt;s.x+=(s.vx||0)*0.25*dt;s.th+=Math.sign(s.th||1)*2.2*dt; // a mid-air crash keeps falling
+   if(seaHere(GS.L,s))seaCheck(s);else if(s.y<=GROUND_Y)hitGround(s)} // sink below the waterline (drawing is clipped there)
   if(GS.mode==='play'&&s.charging)chargeSnd(true,s.charge);
   if(GS.L.storm){const ph=GS.time%7.3;if(ph<(GS.lph||0)&&GS.mode==='play'){noise(1.4,0.3,260);tone(70,40,1.2,'sine',0.18)}GS.lph=ph}
   // tutorial prompts (level 1)
@@ -788,7 +791,7 @@ function update(rdt){
   s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
   s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
  else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
-  const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const ty=s.dead==='fall'||(s.dead&&GS.splashed)?GS.cam.y:gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*2.5)}
+  const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
  const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
  GS.shake=Math.max(0,GS.shake-rdt*30);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
  for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
@@ -810,12 +813,15 @@ const BCOL=['#ff9f7a','#ffd36e','#8fd0c7','#b9a7ff','#f78fb3','#9fd17a','#7fc0ff
 const SKY=[['#7ccbff','#dff4ff'],['#88b8e8','#e9eef7'],['#2a2f5c','#5b5a8f'],['#ff9a76','#ffe6b3'],
  ['#a9c6e8','#f2f6fb'],['#aab7c4','#e6eaee'],['#6fb3e8','#d6ecfa'],['#1f2340','#474b6e'],['#9fb4cc','#eef2f7'],['#b9c0d0','#eceef3'],['#7aa6d6','#dfe9f4'],['#5d6fa3','#c9d3ea'],
  ['#1b1d3d','#4a3f78'],['#9cc3e0','#eef6fb'],['#6a4c93','#f2b5c8']];
-const PIER=[0,1,0,0,0,1,0,0,1,0,1,0,0,1,0],SEA_Y=30;let AIRN=+store.get('air2',0)||0; // landings the player has saved by leaning in mid-air
+const PIER=[0,1,0,0,0,1,0,0,1,0,1,0,0,1,0],SEA_Y=30,GROUND_Y=-420;let AIRN=+store.get('air2',0)||0; // landings the player has saved by leaning in mid-air
 // pier levels (and pier stretches of Endless) have open sea between the crates: falling below the waterline is a splash, not a long drop
 function seaHere(L,s){return!!(L&&s&&(L.endless?(L.plats[Math.max(0,s.on>=0?s.on:s.lastP)]||[])[3]===1:PIER[L.i/PER|0]>0))}
 function splashFx(x){const y=SEA_Y;GS.fx.push({kind:'ring',x,y,t:0,life:0.6,col:'#e8f6ff'});GS.fx.push({kind:'ring',x,y,t:-0.15,life:0.75,col:'#ffffff'});
  for(let i=0;i<34;i++){const a=(Math.random()-0.5)*1.6,v=260+Math.random()*560;GS.fx.push({kind:'dot',x:x+(Math.random()-0.5)*40,y,vx:Math.sin(a)*v*0.7,vy:Math.cos(a)*v,r:3+Math.random()*5,col:['#ffffff','#cdeeff','#8fcbef'][i%3],t:0,life:0.7+Math.random()*0.5,rot:0,vr:0})}
  SFX.splash();GS.shake=Math.max(GS.shake,7);buzz(40)}
+function onRoof(L,s){return L.plats.some(p=>{const x=PX(p,s.t);return s.x>=x-6&&s.x<=x+p[1]+6&&Math.abs(s.y-p[2])<3})}
+function hitGround(s){s.y=GROUND_Y;GS.grounded=true;s.th=Math.sign(s.th||1)*1.45;GS.shake=Math.max(GS.shake,10);GS.anim.sqv=-9;
+ try{noise(0.35,0.4,500);tone(120,50,0.3,'sine',0.25)}catch(e){}buzz(40);burst(s.x,GROUND_Y+4,['#d9d3e6','#ffffff','#b8b3c9'],22,320)}
 function seaCheck(s){if(GS.splashed||!s||s.on>=0||s.won||s.y>=SEA_Y||!seaHere(GS.L,s))return;GS.splashed=true;splashFx(s.x);if(!s.dead&&GS.mode==='play'){die(s,'sea');handleEvents()}};
 function mixSky(j){let r=0,g=0,b=0;for(let k=0;k<3;k++){const p=parseInt(SKY[k][j].slice(1),16),w=GS.thw[k];r+=(p>>16)*w;g+=((p>>8)&255)*w;b+=(p&255)*w}return'#'+((1<<24)|(Math.min(255,r)<<16)|(Math.min(255,g)<<8)|Math.min(255,b)|0).toString(16).slice(1)}
 function render(){
@@ -834,6 +840,7 @@ function render(){
  const L=GS.L;if(L){
   for(let i=0;i<L.plats.length;i++)drawBuilding(c,L,i);
   if(L.snow)for(const p of L.plats)snowCap(c,p);
+  if(pk<0.99){c.globalAlpha=1-pk;drawStreet(c);c.globalAlpha=1}
   if(pk>0.01){c.globalAlpha=pk;drawSea(c);c.globalAlpha=1}
   for(const f of L.fans)drawFan(c,f);
   for(const t of L.tramps)drawTramp(c,t);
@@ -920,6 +927,10 @@ function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
   for(let j=0;j<n;j++)c.fillRect(x,hy-(j+1)*22*S,64*S,20*S)}
  const g=c.createLinearGradient(0,hy,0,CH);g.addColorStop(0,'#6fb7e6');g.addColorStop(1,'#3d84c4');c.fillStyle=g;c.fillRect(0,hy,CW,CH-hy);
  c.fillStyle='#ffffff55';for(let i=0;i<14;i++){const x=((hash(i)*CW*1.3-GS.cam.x*0.3*S+GS.time*12)%CW+CW)%CW;c.fillRect(x,hy+8*S+hash(i+2)*(CH-hy),26*S,3*S)}}
+function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
+ c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
+ c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
+ c.fillStyle='#f4e9b0';const off=((GS.cam.x*S*z)%(120*z)+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
 function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
  c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
