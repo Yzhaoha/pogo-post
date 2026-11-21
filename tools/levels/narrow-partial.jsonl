@@ -48,6 +48,15 @@
 {"i": 48, "p": [], "par": 17, "note": "every narrowing failed", "orig": 0.82, "sec": 80}
 {"i": 49, "p": [[11, 114]], "par": 39, "pass": 0.13, "orig": 0.26, "sec": 289}
 {"i": 50, "p": [[2, 84]], "par": 28, "pass": 0.8, "orig": 0.85, "sec": 125}
+{"i": 51, "p": [[5, 98]], "par": 35, "pass": 0.3, "orig": 0.39, "sec": 159}
+{"i": 52, "p": [[5, 102]], "par": 30, "pass": 0.98, "orig": 0.93, "sec": 130}
+{"i": 53, "p": [[3, 96], [4, 84]], "par": 26, "pass": 0.76, "orig": 0.7, "sec": 92}
+{"i": 54, "p": [[6, 95]], "par": 31, "pass": 0.35, "orig": 0.33, "sec": 158}
+{"i": 55, "p": [[5, 95]], "par": 37, "pass": 0.34, "orig": 0.7, "sec": 235}
+{"i": 56, "p": [[2, 93]], "par": 32, "pass": 0.68, "orig": 0.47, "sec": 11}
+{"i": 57, "p": [[1, 105]], "par": 31, "pass": 0.52, "orig": 0.48, "sec": 141}
+{"i": 58, "p": [[3, 82], [5, 102]], "par": 33, "pass": 0.75, "orig": 0.7, "sec": 14}
+{"i": 59, "p": [[6, 98], [2, 84]], "par": 39, "pass": 0.19, "orig": 0.13, "sec": 222}
 {"i": 60, "p": [[4, 91], [3, 99]], "par": 27, "pass": 0.6, "orig": 0.75, "sec": 69}
 {"i": 61, "p": [[6, 86], [7, 81]], "par": 28, "pass": 0.33, "orig": 0.34, "sec": 66}
 {"i": 62, "p": [], "par": 35, "note": "every narrowing failed", "orig": 0.55, "sec": 128}
@@ -70,6 +79,24 @@
 {"i": 79, "p": [[6, 110], [5, 115]], "par": 37, "pass": 0.3, "orig": 0.41, "sec": 208}
 {"i": 80, "p": [], "par": 21, "note": "every narrowing failed", "orig": 0.51, "sec": 49}
 {"i": 81, "p": [[1, 111], [7, 122]], "par": 27, "pass": 0.3, "orig": 0.27, "sec": 101}
+{"i": 82, "p": [], "par": 26, "note": "every narrowing failed", "orig": 0.75, "sec": 73}
+{"i": 83, "p": [[4, 106]], "par": 27, "pass": 0.31, "orig": 0.36, "sec": 195}
+{"i": 84, "p": [], "par": 25, "note": "every narrowing failed", "orig": 0.39, "sec": 195}
+{"i": 85, "p": [], "par": 22, "note": "every narrowing failed", "orig": 0.44, "sec": 61}
+{"i": 86, "p": [], "par": 29, "note": "every narrowing failed", "orig": 0.44, "sec": 43}
+{"i": 87, "p": [], "par": 31, "note": "every narrowing failed", "orig": 0.32, "sec": 181}
+{"i": 88, "p": [], "par": 25, "note": "every narrowing failed", "orig": 0.36, "sec": 191}
+{"i": 89, "p": [], "par": 35, "note": "every narrowing failed", "orig": 0.14, "sec": 228}
+{"i": 90, "p": [[4, 102], [1, 80]], "par": 39, "pass": 0.61, "orig": 0.48, "sec": 190}
+{"i": 91, "p": [[8, 82]], "par": 44, "pass": 0.57, "orig": 0.55, "sec": 178}
+{"i": 92, "p": [[7, 105]], "par": 36, "pass": 0.85, "orig": 0.68, "sec": 145}
+{"i": 93, "p": [[2, 88]], "par": 44, "pass": 0.68, "orig": 0.65, "sec": 229}
+{"i": 94, "p": [[3, 105]], "par": 44, "pass": 0.85, "orig": 0.8, "sec": 245}
+{"i": 95, "p": [[6, 83], [1, 87]], "par": 35, "pass": 0.43, "orig": 0.62, "sec": 196}
+{"i": 96, "p": [[7, 90]], "par": 42, "pass": 0.85, "orig": 0.75, "sec": 157}
+{"i": 97, "p": [[8, 85]], "par": 43, "pass": 0.51, "orig": 0.45, "sec": 142}
+{"i": 98, "p": [[8, 97]], "par": 39, "pass": 0.83, "orig": 0.9, "sec": 190}
+{"i": 99, "p": [[3, 97], [10, 102]], "par": 53, "pass": 0.39, "orig": 0.42, "sec": 224}
 {"i": 100, "p": [[9, 100], [3, 99]], "par": 38, "pass": 0.32, "orig": 0.32, "sec": 158}
 {"i": 101, "p": [[7, 88], [1, 101]], "par": 48, "pass": 0.44, "orig": 0.47, "sec": 276}
 {"i": 102, "p": [[6, 84], [8, 104]], "par": 37, "pass": 0.53, "orig": 0.25, "sec": 129}
@@ -81,6 +108,19 @@
 {"i": 108, "p": [[1, 94], [6, 84]], "par": 42, "pass": 0.66, "orig": 0.42, "sec": 108}
 {"i": 109, "p": [[16, 96], [6, 94], [13, 83]], "par": 49, "pass": 0.27, "orig": 0.33, "sec": 137}
 {"i": 110, "p": [], "par": 36, "note": "every narrowing failed", "orig": 0.59, "sec": 94}
+{"i": 111, "p": [[2, 102]], "par": 48, "pass": 0.4, "orig": 0.25, "sec": 623}
+{"i": 112, "p": [[5, 81]], "par": 45, "pass": 0.32, "orig": 0.46, "sec": 306}
+{"i": 113, "p": [[2, 109]], "par": 46, "pass": 0.47, "orig": 0.59, "sec": 252}
+{"i": 114, "p": [], "par": 34, "note": "every narrowing failed", "orig": 0.78, "sec": 96}
+{"i": 115, "p": [[2, 90], [11, 100]], "par": 50, "pass": 0.39, "orig": 0.51, "sec": 291}
+{"i": 116, "p": [[10, 107]], "par": 38, "pass": 0.24, "orig": 0.26, "sec": 216}
+{"i": 117, "p": [], "par": 43, "note": "every narrowing failed", "orig": 0.39, "sec": 236}
+{"i": 118, "p": [], "par": 35, "note": "every narrowing failed", "orig": 0.32, "sec": 163}
+{"i": 119, "p": [[5, 114]], "par": 61, "pass": 0.3, "orig": 0.78, "sec": 415}
+{"i": 120, "p": [[4, 120]], "par": 50, "pass": 0.18, "orig": 0.24, "sec": 661}
+{"i": 122, "p": [[3, 122]], "par": 51, "pass": 0.28, "orig": 0.35, "sec": 511}
+{"i": 123, "p": [[11, 123], [3, 110]], "par": 46, "pass": 0.22, "orig": 0.25, "sec": 201}
+{"i": 124, "p": [[11, 119], [2, 122]], "par": 46, "pass": 0.73, "orig": 0.42, "sec": 230}
 {"i": 125, "p": [[1, 109], [11, 106]], "par": 42, "pass": 0.62, "orig": 0.38, "sec": 336}
 {"i": 126, "p": [], "par": 46, "note": "every narrowing failed", "orig": 0.32, "sec": 153}
 {"i": 127, "p": [[7, 119]], "par": 43, "pass": 0.7, "orig": 0.62, "sec": 219}
@@ -88,5 +128,21 @@
 {"i": 129, "p": [[5, 110], [3, 119]], "par": 61, "pass": 0.14, "orig": 0.33, "sec": 406}
 {"i": 130, "p": [], "par": 32, "note": "every narrowing failed", "orig": 0.2, "sec": 212}
 {"i": 131, "p": [], "par": 40, "note": "every narrowing failed", "orig": 0.31, "sec": 243}
+{"i": 132, "p": [], "par": 40, "note": "every narrowing failed", "orig": 0.16, "sec": 318}
+{"i": 133, "p": [], "par": 46, "note": "every narrowing failed", "orig": 0.45, "sec": 500}
+{"i": 134, "p": [[4, 123]], "par": 39, "pass": 0.13, "orig": 0.18, "sec": 450}
+{"i": 135, "p": [], "par": 41, "note": "every narrowing failed", "orig": 0.16, "sec": 400}
+{"i": 136, "p": [], "par": 42, "note": "every narrowing failed", "orig": 0.17, "sec": 589}
+{"i": 137, "p": [], "par": 43, "note": "every narrowing failed", "orig": 0.32, "sec": 217}
+{"i": 138, "p": [], "par": 41, "note": "every narrowing failed", "orig": 0.27, "sec": 221}
+{"i": 139, "p": [], "par": 45, "note": "every narrowing failed", "orig": 0.11, "sec": 201}
 {"i": 140, "p": [], "par": 35, "note": "every narrowing failed", "orig": 0.19, "sec": 377}
 {"i": 141, "p": [[3, 92], [7, 90]], "par": 53, "pass": 0.75, "orig": 0.88, "sec": 262}
+{"i": 142, "p": [], "par": 59, "note": "every narrowing failed", "orig": 0.92, "sec": 649}
+{"i": 143, "p": [[11, 113], [4, 105], [5, 113]], "par": 42, "pass": 0.53, "orig": 0.82, "sec": 227}
+{"i": 144, "p": [], "par": 33, "note": "every narrowing failed", "orig": 0.2, "sec": 139}
+{"i": 145, "p": [[4, 94], [6, 84]], "par": 63, "pass": 0.79, "orig": 0.73, "sec": 320}
+{"i": 146, "p": [[9, 119]], "par": 37, "pass": 0.43, "orig": 0.3, "sec": 265}
+{"i": 147, "p": [[12, 122], [8, 105]], "par": 43, "pass": 0.31, "orig": 0.65, "sec": 554}
+{"i": 148, "p": [], "par": 42, "note": "every narrowing failed", "orig": 0.35, "sec": 404}
+{"i": 149, "p": [[4, 124], [9, 124], [8, 122]], "par": 63, "pass": 0.39, "orig": 0.4, "sec": 290}
