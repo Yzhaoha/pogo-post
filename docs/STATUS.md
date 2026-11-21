@@ -40,6 +40,7 @@
 5. 可选：第 10–12 章已生成（`tools/levels/ch10–12.json`）没放进游戏，`python3 tools/embed-levels.py 12` 放进去（先用 `tools/verify-levels.js` 按当前手感重验）。Safari 没测过；9 种外语没有母语者校对。
 
 ## 常用命令（先在仓库根目录 `python3 -m http.server 8765`）
+- 测试链接加 `&new`（如 `?v=提交号&new`）：当成全新玩家玩，进度只存在内存里，不碰浏览器里已有的存档，关掉就没了。
 - 解全部关卡、对比成绩：`node tools/test-solve.js all`（某几关：`node tools/test-solve.js 0,9,89`；要求靶心全中：加 `allhit`）。
 - 无尽模式不出死路：`node tools/test-endless.js 6 160`。
 - 生成 / 验证 / 放进游戏：`node tools/gen-levels.js <章>`（`ONLY=3,4` 分段并行）、`node tools/verify-levels.js <章> --write`、`python3 tools/embed-levels.py <最后一章>`。
