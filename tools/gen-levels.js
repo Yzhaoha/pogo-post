@@ -60,7 +60,7 @@ function genTry(ch,k,seed){
  const only=process.env.ONLY?process.env.ONLY.split(',').map(Number):null;
  const res=only?[]:fs.existsSync(out)?JSON.parse(fs.readFileSync(out,'utf8')):[]; // resume
  for(const k of only||[...Array(10).keys()].slice(res.length)){let got=null;
-  for(let tr=0;tr<(+process.env.TRIES||12)&&!got;tr++){const t0=Date.now();const r=await p.evaluate(([ch,k,seed])=>genTry(ch,k,seed),[CH,k,(CH*100+k)*7919+tr*104729]);
+  for(let tr=0;tr<(+process.env.TRIES||12)&&!got;tr++){const t0=Date.now();const r=await p.evaluate(([ch,k,seed])=>genTry(ch,k,seed),[CH,k,(CH*100+k)*7919+(tr+(+process.env.SEEDOFF||0))*104729]);
    console.log('L'+((CH-1)*10+k+1),'try',tr,r.ok?'OK time '+r.time+' pass '+r.pass+' jumps '+r.jumps:'no: '+r.why,((Date.now()-t0)/1000).toFixed(0)+'s');if(r.ok)got=r.L}
   if(!got){console.error('gave up on level',(CH-1)*10+k+1);process.exit(2)}
   if(only){fs.writeFileSync(out+'.k'+k+'.json',JSON.stringify(got));continue}
