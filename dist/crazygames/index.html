@@ -8,7 +8,7 @@
 <script>
 /* CrazyGames v3 adapter: exposes the PokiSDK-shaped interface the game uses */
 (function(){
-var sdk=null,ready=null;
+var sdk=null,ready=null,loaded=false; // loaded: the game finished loading (maybe before the SDK was ready)
 function body(){return new Promise(function(r){if(document.body)r();else document.addEventListener('DOMContentLoaded',function(){r()},{once:true})})}
 function host(){return window.__ppHost}
 function ad(type,onStart){return new Promise(function(res){
@@ -25,12 +25,13 @@ window.PokiSDK={
       return CrazyGames.SDK.init().then(function(){sdk=CrazyGames.SDK})
     }).then(function(){
       try{sdk.game.loadingStart()}catch(e){}
+      if(loaded){try{sdk.game.loadingStop()}catch(e){}} // slow SDK: the game booted on its 4 s fallback, still report the load as finished
       try{var h=host(),st=sdk.game.settings;if(h&&st)h.setPlatMute(!!st.muteAudio);
           sdk.game.addSettingsChangeListener(function(n){var h=host();if(h&&n)h.setPlatMute(!!n.muteAudio)})}catch(e){}
       try{var loc=sdk.user&&sdk.user.systemInfo&&sdk.user.systemInfo.locale;var h2=host();if(loc&&h2)h2.setLang(loc)}catch(e){}
     }).catch(function(){sdk=null});
     return ready},
-  gameLoadingFinished:function(){try{sdk&&sdk.game.loadingStop()}catch(e){}},
+  gameLoadingFinished:function(){loaded=true;try{sdk&&sdk.game.loadingStop()}catch(e){}},
   gameplayStart:function(){try{sdk&&sdk.game.gameplayStart()}catch(e){}},
   gameplayStop:function(){try{sdk&&sdk.game.gameplayStop()}catch(e){}},
   commercialBreak:function(before){return ad('midgame',before).then(function(){})},
