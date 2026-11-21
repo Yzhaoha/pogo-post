@@ -16,7 +16,7 @@
 ## 要上传的文件
 - 文件名：`pogo-post-crazygames.zip`（约 76KB，里面只有一个 `index.html`，和 11-19 第一次提交的格式一样）。
 - 下载：https://github.com/Yzhaoha/pogo-post/raw/main/dist/pogo-post-crazygames.zip （打开链接会直接下载到「下载」文件夹）。
-- 如果后台只接受单个 HTML 而不是 zip：把 zip 解压，传里面的 `index.html`。
+- **CG 后台不接受 zip（11-21 实测）**：把 zip 解压，传里面的 `index.html`。
 
 ## 步骤
 1. 让用户先点上面的下载链接，确认「下载」文件夹里有 `pogo-post-crazygames.zip`。
