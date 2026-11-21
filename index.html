@@ -790,6 +790,7 @@ function update(rdt){
   GS.cam.x=s.x-((port?0.5:0.26)*CW-CW*0.5)/k;GS.cam.y=by+((port?0.55:0.86)*CH-CH*0.66)/k;
   s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
   s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
+ else if(s&&GS.grounded){const ty=GROUND_Y+0.18*CH/(S*GS.cam.z);GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*6)} // lying on the street: no more panning, just settle on the street
  else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
   const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
  const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
@@ -930,7 +931,7 @@ function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
 function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
  c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
  c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
- c.fillStyle='#f4e9b0';const off=((GS.cam.x*S*z)%(120*z)+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
+ c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
 function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
  c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
