@@ -760,7 +760,7 @@ function update(rdt){
   while(GS.acc>=DT&&n<12){if(GS.autoFn&&GS.mode==='play')GS.hold=GS.autoFn(s);step(s,GS.L,GS.mode==='play'&&GS.hold);GS.acc-=DT;n++;handleEvents();seaCheck(s)}
   // mid-air lean coaching: until the player has saved 3 landings by holding in the air, point it out the moment they start tipping back
   if(GS.mode==='play'&&s.on<0&&GS.hold&&!s.needRel&&(s.th<-0.12||GS.coached))GS.airUsed=true;
-  if(GS.mode==='play'&&(AIRN<3||(!GS.L.endless&&GS.L.i<AIR_LV))&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6}
+  if(GS.mode==='play'&&(AIRN<3||(!GS.L.endless&&GS.L.i<AIR_LV))&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6;if(AIRN<1){GS.freeze=true;hideTip();chargeSnd(false)}}
   if(GS.freeze&&(GS.hold||GS.mode!=='play'||s.on>=0))GS.freeze=false;
   if(GS.coachT>0)GS.coachT-=rdt;
   {const tq=TRAILS[COS.trail.sel];if(tq&&tq.k&&GS.mode==='play'&&s.on<0){GS.trT=(GS.trT||0)-rdt;if(GS.trT<=0){GS.trT=tq.k==='bub'?0.07:0.045;
