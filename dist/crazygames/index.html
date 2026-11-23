@@ -218,7 +218,7 @@ function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==nul
 const pickQ=k=>{const a=T(k);return Array.isArray(a)?a[Math.random()*a.length|0]:a};
 
 /* ================= constants ================= */
-const DT=1/120,AIM_F=0.7,CRASH_EASY=1.45,QUICK_LV=5,AIM_LV=3,AIM_EB=12,AIR_LV=3,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2,SNOW_K=0.62,SNOW_F=1.3;
+const DT=1/120,AIM_F=0.7,CRASH_EASY=1.45,QUICK_LV=5,AIM_LV=0,AIM_EB=0,AIR_LV=3,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2,SNOW_K=0.62,SNOW_F=1.3;
 const PK={box:{h:26,w:36},frag:{h:26,w:34},cake:{h:24,w:40},chick:{h:26,w:30},long:{h:18,w:70}};
 
 /* ================= levels =================
@@ -633,7 +633,7 @@ function flyPk(t,x,y,vx,vy,vr,extra){GS.debris.push(Object.assign({kind:'pk',t,x
 function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splice(0);let bulled=false;
  for(const e of evs){
   if(e.k==='charge'){}
-  else if(e.k==='jump'){GS.airUsed=false;GS.coached=false;SFX.jump(e.c);buzz(8);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
+  else if(e.k==='jump'){GS.lastCh=e.c;GS.airUsed=false;GS.coached=false;SFX.jump(e.c);buzz(8);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
   else if(e.k==='land'){if(!e.perfect)GS.pfN=0;if(GS.airUsed&&AIRN<3){AIRN++;store.set('air2',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
    if(e.perfect){GS.pfN=(GS.pfN||0)+1;const n=Math.min(3,GS.pfN);let lab=T('perfect');if(GS.L.endless){s.score+=5*n;lab+=' +'+5*n}else{addCoins(n);GS.runCoins=(GS.runCoins||0)+n;lab+=' +'+n;const k=S*GS.cam.z;for(let j=0;j<n;j++)GS.coinFly.push({x0:W(s.x)+(j-1)*8*k,y0:H(s.y+HEAD),t:-j*0.08,v:j===n-1?n:0})}SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,lab+(n>1?'  ×'+n:''),'#3fbf88',1.1+0.1*n);GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
    else if(e.q>0.42){wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('wobbly'),'#ff5d7a',1);GS.shake=6}
@@ -887,12 +887,12 @@ function render(){
   for(const d of L.dogs)drawDog(c,d,s?s.t:GS.time);
   for(const d of GS.debris)if(d.kind==='hang')drawHang(c,d,L);
   if(s){
-   if(s.on>=0&&s.charging&&GS.mode==='play'&&(L.endless?s.on<AIM_EB:L.i<AIM_LV||GS.scope))drawPreview(c,s,L,!L.endless&&(L.i<1||GS.scope));
+   if(s.on>=0&&s.charging&&GS.mode==='play'&&(L.endless?s.on<AIM_EB:L.i<AIM_LV||GS.scope))drawPreview(c,s,L,!L.endless&&GS.scope);
    const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
    if(GS.poofed)chalkTrace(c,s,Math.min(1,(GS.groundT-0.7)/0.3));else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
    if(wet)c.restore();
    if(GS.coached&&s.on<0&&!GS.airUsed&&GS.mode==='play')drawKeyHint(c,s);
-   if(s.on>=0&&s.charging)drawCharge(c,s);
+   if(s.on>=0&&(s.charging||GS.mode==='play'))drawCharge(c,s);
   }
   {const wetP=pk>0.01&&seaHere(L,GS.s);if(wetP){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
   for(const d of GS.debris)if(d.kind==='pk'){c.save();c.translate(W(d.x),H(d.y));c.rotate(d.rot);drawParcel(c,d.t,z,d.crack,d.life);c.restore()}
@@ -1159,10 +1159,16 @@ function drawTiltGauge(c,s){const z=S*GS.cam.z,X=W(s.x),Y=H(s.y)+26*z;const a=s.
  c.lineWidth=7*z;c.strokeStyle='#ffffffb0';c.beginPath();c.arc(X,Y,30*z,Math.PI*0.15,Math.PI*0.85);c.stroke();
  c.lineWidth=7*z;c.strokeStyle='#3fbf8899';c.beginPath();c.arc(X,Y,30*z,Math.PI*0.5-0.15,Math.PI*0.5+0.15);c.stroke();
  const ang=Math.PI*0.5-Math.max(-1.2,Math.min(1.2,a));c.fillStyle=col;c.strokeStyle=INK;c.lineWidth=2*z;c.beginPath();c.arc(X+Math.cos(ang)*30*z,Y+Math.sin(ang)*30*z,6*z,0,7);c.fill();c.stroke()}
-function drawCharge(c,s){const z=S*GS.cam.z,X=W(s.x)-44*z,Y=H(s.y)-20*z,h=70*z;c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#fff';
- if(s.charge>=1){const a=0.5+0.5*Math.sin(GS.time*28);c.save();c.shadowColor='#fff';c.shadowBlur=14*z*a;c.strokeStyle=`rgba(255,79,109,${0.5+0.5*a})`;c.lineWidth=LW*2.2;rr(c,X-7*z,Y-h,14*z,h,7*z);c.stroke();c.restore()}
- rr(c,X-7*z,Y-h,14*z,h,7*z);c.fill();c.stroke();
- const k=s.charge;const g=c.createLinearGradient(0,Y,0,Y-h);g.addColorStop(0,'#3fbf88');g.addColorStop(0.6,'#ffc23d');g.addColorStop(1,'#ff4f6d');c.fillStyle=g;rr(c,X-5*z,Y-2*z-(h-4*z)*k,10*z,(h-4*z)*k,5*z);c.fill()}
+function drawCharge(c,s){ // big charge meter left of the courier (no aim line: this is what the player reads), with a marker at the last jump's charge
+ const z=S*GS.cam.z,bw=24*z,h=112*z,X=W(s.x)-58*z,Y=H(s.y)+6*z,k=s.charging?s.charge:0;c.save();if(!s.charging)c.globalAlpha=0.55;
+ c.lineWidth=LW*1.4;c.strokeStyle=INK;
+ if(s.charge>=1&&s.charging){const a=0.5+0.5*Math.sin(GS.time*28);c.save();c.shadowColor='#ff4f6d';c.shadowBlur=18*z*a;c.strokeStyle=`rgba(255,79,109,${0.5+0.5*a})`;c.lineWidth=LW*3;rr(c,X-bw/2,Y-h,bw,h,bw/2);c.stroke();c.restore()}
+ c.fillStyle='rgba(255,255,255,0.92)';rr(c,X-bw/2,Y-h,bw,h,bw/2);c.fill();c.stroke();
+ if(k>0){const g=c.createLinearGradient(0,Y,0,Y-h);g.addColorStop(0,'#3fbf88');g.addColorStop(0.55,'#ffc23d');g.addColorStop(1,'#ff4f6d');c.fillStyle=g;const ih=(h-6*z)*k;rr(c,X-bw/2+3*z,Y-3*z-ih,bw-6*z,ih,Math.min((bw-6*z)/2,ih/2));c.fill()}
+ c.strokeStyle='rgba(43,35,64,0.35)';c.lineWidth=2*z;for(const q of [0.25,0.5,0.75]){const y=Y-3*z-(h-6*z)*q;c.beginPath();c.moveTo(X-bw/2+4*z,y);c.lineTo(X-bw/2+9*z,y);c.moveTo(X+bw/2-9*z,y);c.lineTo(X+bw/2-4*z,y);c.stroke()}
+ if(GS.lastCh!=null){const y=Y-3*z-(h-6*z)*GS.lastCh,x0=X+bw/2+2*z;c.globalAlpha=1;c.fillStyle='#fff';c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(x0,y);c.lineTo(x0+11*z,y-7*z);c.lineTo(x0+11*z,y+7*z);c.closePath();c.fill();c.stroke()}
+ if(s.charging){c.globalAlpha=1;c.font=`900 ${15*z}px Nunito,sans-serif`;c.textAlign='center';c.textBaseline='bottom';c.lineWidth=4*z;c.strokeStyle=INK;const t=Math.round(k*100)+'%';c.strokeText(t,X,Y-h-4*z);c.fillStyle=k>=1?'#ff4f6d':'#fff';c.fillText(t,X,Y-h-4*z)}
+ c.restore()}
 function drawPreview(c,s,L,full){ // aim guide: full arc in the first 3 levels; elsewhere a tapering arc that covers ~70% of the flight, so the landing spot stays a judgement call
  const v=V0+V1*s.charge;let x=s.x,y=s.y,vx=v*Math.sin(LAUNCH),vy=v*Math.cos(LAUNCH);const z=S*GS.cam.z,lim=full?99:AIM_F*2*vy/G,GAP=22,SKIP=46;
  let t=0,d=0,next=SKIP,pts=[];
