@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>蹦蹦快递 · 小游戏预览</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#1d1830;touch-action:none;user-select:none;-webkit-user-select:none}
+#ph{position:absolute;overflow:hidden;background:#9fd8ff}
+#ph canvas{position:absolute;left:0;top:0;width:100%;height:100%}
+#cap{position:absolute;width:87px;height:32px;border-radius:16px;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.12);pointer-events:none;
+ display:flex;align-items:center;justify-content:space-around;font:700 16px sans-serif;color:#333}
+#sb{position:absolute;left:0;right:0;top:0;height:44px;pointer-events:none;font:600 14px sans-serif;color:#222;display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-sizing:border-box}
+#ad{position:absolute;inset:0;background:#000d;color:#fff;display:none;align-items:center;justify-content:center;font:700 20px sans-serif;z-index:3}
+#note{position:fixed;left:8px;bottom:6px;color:#fff8;font:12px sans-serif}
+</style>
+</head>
+<body>
+<div id="ph"><div id="sb"><span>9:41</span><span>●●● 100%</span></div><div id="cap"><span>···</span><span>◎</span></div><div id="ad">📺 广告播放中（模拟）</div></div>
+<div id="note" style="display:none">小游戏预览：模拟微信小游戏环境（状态栏、右上角胶囊按钮、广告都是假的）</div>
+<script>
+// a fake `wx` so the mini-game build runs in a browser
+(function(){
+const ph=document.getElementById('ph'),desk=innerWidth>600;
+const W=desk?390:innerWidth,H=desk?Math.min(844,innerHeight-40):innerHeight,SB=desk?44:0;
+Object.assign(ph.style,{width:W+'px',height:H+'px',left:(innerWidth-W)/2+'px',top:(innerHeight-H)/2+'px',borderRadius:desk?'36px':'0'});
+const cap=document.getElementById('cap');Object.assign(cap.style,{right:'8px',top:(SB+4)+'px'});if(!desk)document.getElementById('sb').style.display='none';else document.getElementById('note').style.display='block';
+const T={start:[],end:[],cancel:[]};let first=true;
+function mkTouch(e){const r=ph.getBoundingClientRect();const t={clientX:e.clientX-r.left,clientY:e.clientY-r.top,identifier:e.pointerId};return t}
+const down=new Map();
+ph.addEventListener('pointerdown',e=>{e.preventDefault();const t=mkTouch(e);down.set(e.pointerId,t);T.start.forEach(f=>f({touches:[...down.values()],changedTouches:[t]}))});
+addEventListener('pointerup',e=>{if(!down.has(e.pointerId))return;const t=mkTouch(e);down.delete(e.pointerId);T.end.forEach(f=>f({touches:[...down.values()],changedTouches:[t]}))});
+addEventListener('pointercancel',e=>{down.delete(e.pointerId);T.cancel.forEach(f=>f({}))});
+// keyboard: space = touch (for testing on a computer)
+let kd=false;addEventListener('keydown',e=>{if(e.code==='Space'&&!kd){kd=true;e.preventDefault();T.start.forEach(f=>f({touches:[{clientX:-99,clientY:-99}],changedTouches:[{clientX:-99,clientY:-99}]}))}});
+addEventListener('keyup',e=>{if(e.code==='Space'){kd=false;T.end.forEach(f=>f({touches:[],changedTouches:[{clientX:-99,clientY:-99}]}))}});
+const hide=[],show=[];document.addEventListener('visibilitychange',()=>(document.hidden?hide:show).forEach(f=>f()));
+function fakeAd(){const L={close:[],err:[]};const el=document.getElementById('ad');return{
+ load(){return Promise.resolve()},show(){el.style.display='flex';setTimeout(()=>{el.style.display='none';L.close.forEach(f=>f({isEnded:true}))},1000);return Promise.resolve()},
+ onClose(f){L.close.push(f)},offClose(f){L.close=L.close.filter(g=>g!==f)},onError(f){L.err.push(f)}}}
+window.__fakeP={
+ getSystemInfoSync:()=>({windowWidth:W,windowHeight:H,pixelRatio:Math.min(3,devicePixelRatio||2),statusBarHeight:SB,platform:'devtools',safeArea:{top:SB,bottom:H-(desk?20:0)}}),
+ getMenuButtonBoundingClientRect:()=>({top:SB+4,bottom:SB+36,left:W-95,right:W-8,width:87,height:32}),
+ createCanvas(){const c=document.createElement('canvas');if(first){first=false;ph.insertBefore(c,ph.firstChild)}return c},
+ getStorageSync:k=>{const v=localStorage.getItem('mini_'+k);return v==null?'':v},setStorageSync:(k,v)=>localStorage.setItem('mini_'+k,v),
+ onTouchStart:f=>T.start.push(f),onTouchEnd:f=>T.end.push(f),onTouchCancel:f=>T.cancel.push(f),onTouchMove(){},
+ createWebAudioContext:()=>new (window.AudioContext||window.webkitAudioContext)(),
+ vibrateShort(){},onHide:f=>hide.push(f),onShow:f=>show.push(f),onWindowResize(){},
+ showShareMenu(){},onShareAppMessage(){},onShareTimeline(){},
+ createRewardedVideoAd:fakeAd,createInterstitialAd:fakeAd};
+})();
+</script>
+<script src="game.js"></script>
+</body>
+</html>

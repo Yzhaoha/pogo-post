@@ -1,0 +1,13 @@
+{
+  "description": "蹦蹦快递",
+  "projectname": "bengbeng-kuaidi",
+  "compileType": "game",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "postcss": false
+  }
+}

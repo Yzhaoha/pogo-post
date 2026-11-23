@@ -1,0 +1,1282 @@
+/* 蹦蹦快递 · 微信 / 抖音小游戏版
+ * 由 tools/build_mini.py 从 index.html 生成，别直接改 dist/ 里的文件。
+ * 这一段是平台适配层：把游戏用到的浏览器接口（window、document、localStorage……）
+ * 换成小游戏的 wx / tt 接口。游戏本体代码和网页版是同一份。 */
+(function(){
+'use strict';
+// read the real global before the stand-in below shadows the name
+const _RAF=typeof requestAnimationFrame!=='undefined'?requestAnimationFrame:null;
+(function(){
+const P=typeof tt!=='undefined'?tt:typeof wx!=='undefined'?wx:globalThis.__fakeP;
+const PLAT=typeof tt!=='undefined'?'tt':typeof wx!=='undefined'?'wx':'sim';
+const SYS=(()=>{try{return P.getSystemInfoSync()}catch(e){return{windowWidth:375,windowHeight:667,pixelRatio:2}}})();
+const SCREEN=P.createCanvas(); // the first canvas a mini game creates is the one on screen
+let innerWidth=SYS.windowWidth,innerHeight=SYS.windowHeight;
+
+// safe area: keep the HUD below the status bar and the platform's capsule menu (top right)
+const SAFE=(()=>{let top=(SYS.statusBarHeight||20)+4,bottom=innerHeight;
+ try{const m=P.getMenuButtonBoundingClientRect?P.getMenuButtonBoundingClientRect():P.getMenuButtonLayout?P.getMenuButtonLayout():null;if(m&&m.bottom>0&&m.bottom<innerHeight/3)top=m.bottom+6}catch(e){}
+ try{const sa=SYS.safeArea;if(sa&&sa.bottom>innerHeight*0.7)bottom=sa.bottom}catch(e){}
+ return{top,bottom}})();
+
+const LSN={};
+function addEventListener(n,f){(LSN[n]=LSN[n]||[]).push(f)}
+function fire(n,e){(LSN[n]||[]).forEach(f=>{try{f(e)}catch(err){console.error(err)}})}
+try{P.onWindowResize&&P.onWindowResize(r=>{innerWidth=r.windowWidth||innerWidth;innerHeight=r.windowHeight||innerHeight;fire('resize')})}catch(e){}
+
+// stand-ins for the page elements the game code still pokes (state only; ui.js draws them)
+const EL={};
+function el(id){if(id==='cv')return SCREEN;return EL[id]||(EL[id]={id,hidden:id!=='muteB',textContent:'',value:'',disabled:false,onclick:null,onchange:null,style:{},
+ classList:{add(){},remove(){},contains(){return false}},appendChild(){},
+ click(){if(this.onclick&&!this.disabled)this.onclick({stopPropagation(){},target:{classList:{contains(){return false}}}})}})}
+
+const performance={now:()=>Date.now()};
+const _raf=_RAF||(P.requestAnimationFrame?P.requestAnimationFrame.bind(P):f=>setTimeout(f,16));
+const raf=f=>_raf(()=>f(performance.now())); // the game compares the frame time with performance.now(): give both the same clock
+const document={hidden:false,title:'',documentElement:{lang:'zh-CN'},
+ getElementById:el,querySelectorAll:()=>[],addEventListener,
+ createElement:t=>t==='canvas'?P.createCanvas():el('_'+t)};
+const localStorage={getItem(k){try{const v=P.getStorageSync(k);return v===''||v==null?null:v}catch(e){return null}},
+ setItem(k,v){try{P.setStorageSync(k,String(v))}catch(e){}}};
+const location={search:''};
+class URLSearchParams{get(){return null}has(){return false}}
+const navigator={language:'zh-CN',languages:['zh-CN'],vibrate(){try{P.vibrateShort&&P.vibrateShort({type:'light'})}catch(e){}return true}};
+const matchMedia=q=>({matches:/hover:\s*none|pointer:\s*coarse/.test(q)});
+function WebAC(){const f=P.createWebAudioContext||P.getWebAudioContext;if(!f)throw new Error('no web audio');return f.call(P)}
+const window={devicePixelRatio:SYS.pixelRatio||2,AudioContext:(P.createWebAudioContext||P.getWebAudioContext)?WebAC:undefined,addEventListener};
+const requestAnimationFrame=raf;
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const BUILD='mini';
+const TOPPAD=(BUILD==='poki'&&matchMedia('(hover:none)').matches)?46:0;
+/* ================= text ================= */
+const TXT={
+en:{name:'Pogo Post',shop:'Shop',tag:'Bounce. Balance. Deliver. Don’t drop a thing!',play:'PLAY',levels:'Levels',back:'Back',how:'Hold to charge · release to jump · hold in mid-air to lean forward',
+lvN:'Level {n}',chapN:'Chapter {n}',ch1:'Sunny Street',ch2:'Windy Pier',ch3:'Rainy Night',ch4:'Sunset Heights',ch5:'Snowy Town',ch6:'Foggy Harbor',ch7:'Gusty Rooftops',ch8:'Thunder Night',ch9:'Blizzard Pier',ch10:'Misty Towers',ch11:'Gale Docks',ch12:'Wild Weather',ch13:"Rainy Neon",ch14:"Frozen Harbor",ch15:"The Last Delivery",soon:'Coming soon',
+paused:'Paused',resume:'Resume',retry:'Retry',next:'Next level',allDone:'More streets coming soon!',
+win:'Delivered!',fail:'Oops!',st1:'Delivered',st2:'Nothing dropped',st3:'Under {n}s',time:'{n}s',
+revive:'📺 Try again from here',skip:'📺 Skip this level',adTest:'Ad goes here (the test build skips ads)',adNo:'No ad available right now. Try again later.',
+t1:'Hold to squish the spring…',t2:'…let go to jump!',t3:'Hold longer = jump further',t4:'Tipping back? Hold in mid-air to lean forward!',balKey:"Hold SPACE to keep your balance",balMouse:"Hold the mouse to keep your balance",balScreen:"Hold the screen to keep your balance",spaceKey:"SPACE",holdMouse:"Hold mouse",holdScreen:"Hold screen",again:"Again!",dailyT:"Daily gift",dailyGot:"+{n} coins · {d}-day streak",dailyNext:"Come back tomorrow: +{n} coins",claim:"Collect",skinNext:"{n} more coins for a new outfit",skinReady:"You can buy a new outfit!",tabSkin:"Outfits",tabPogo:"Pogo sticks",tabTrail:"Trails",tabBox:"Boxes",tabItem:"Items",itTape:"Tape",itTapeD:"Saves one parcel, once",itScope:"Scope",itScopeD:"Full aim line for one level",useOn:"In use",useOff:"Off",tapeSave:"Tape saved a parcel!",have:"Have {n}",holdAir:"Hold!",faceTip:"Tip: hold in mid-air to lean forward and land upright.",t5:'Land upright. Reach the door!',
+t_tramp:'Bounce pads send you sky-high!',t_frag:'Fragile! Land softly and upright.',t_rope:'Clotheslines snag parcels. Stay low!',t_dog:'Wait for the dog, then hop over.',t_cake:'Cake on top! Keep it level.',t_wind:'Tailwind: you fly further.',t_head:'Headwind: charge longer.',t_fan:'Fans push you through the air.',t_long:'Long parcels catch more wind.',t_chick:'The chicken flaps. Land softly!',
+t_rain:'Wet roofs! You slide after landing.',t_move:'Hover pads slide. Time your jump!',t_snow:'Icy roofs! You slide much further after landing.',t_fog:'Thick fog! You can’t see far ahead.',t_gust:'The wind keeps changing! Watch the wind sign.',t_storm:'Thunderstorm! Wet roofs and shifting wind.',t_bull:"Hit the red bullseye for coins. Streaks pay more!",pts:'{n} pts',best:'best {n}',
+endless:'Endless Run',newBest:'New record!',deliv:'Delivered +{n}',t_endless:'Chain bullseyes and deliver at every door!',
+woof:'WOOF!',perfect:'PERFECT!',nice:'Nice',wobbly:'Wobbly!',crack:'Crack!',
+q_fall:['Recipient: the bottom of the alley.','That was not the doorstep.','Gravity: 1, Courier: 0.'],
+q_face:['Delivered… face first.','Signature required. Got a faceprint instead.','Landing: creative. Score: zero.'],
+q_wall:['The wall didn’t order anything.','Wall: undefeated.','Knock knock. The wall won.'],q_sea:["Splash! Not waterproof after all.", "The sea didn’t order anything.", "Delivered to the fish."],
+q_dog:['The dog has signed for your parcels.','Good boy. Bad delivery.','Woof means “no”.'],
+q_rope:['Your parcels are drying on the line.','Clothesline: 1, Courier: 0.','Nice laundry. Terrible delivery.'],
+q_empty:['Today’s forecast: 100% parcel rain.','Everything delivered… to the street.','The parcels have left the building.'],
+q_win:['Signed, sealed, delivered!','Five-star courier!','Not a scratch. Probably.','Ding dong, parcel!'],
+q_drop:['Delivered! (Mostly.)','Some assembly required.','They’ll never know.']},
+zh:{name:'弹簧快递',shop:'换装',tag:'跳一跳，稳住，送到！一件都不能掉！',play:'开始',levels:'关卡',back:'返回',how:'按住蓄力 · 松开起跳 · 空中按住前倾',
+lvN:'第 {n} 关',chapN:'第 {n} 章',ch1:'阳光街区',ch2:'大风码头',ch3:'雨夜高楼',ch4:'黄昏天台',ch5:'冰雪小镇',ch6:'雾港',ch7:'阵风屋顶',ch8:'雷雨夜',ch9:'暴雪码头',ch10:'迷雾高楼',ch11:'狂风码头',ch12:'极端天气',ch13:"霓虹雨夜",ch14:"冰封港口",ch15:"最后一单",soon:'敬请期待',
+paused:'暂停',resume:'继续',retry:'重来',next:'下一关',allDone:'更多街区即将开放！',
+win:'送达！',fail:'哎呀！',st1:'送达',st2:'一件不掉',st3:'{n} 秒内',time:'{n} 秒',
+revive:'📺 从这里再来',skip:'📺 跳过这关',adTest:'这里会播放广告（测试版自动跳过）',adNo:'暂时没有广告，请稍后再试。',
+t1:'按住，压弹簧……',t2:'……松开，起跳！',t3:'按得越久，跳得越远',t4:'往后仰了？空中按住往前倾！',balKey:"按住空格保持平衡",balMouse:"按住鼠标保持平衡",balScreen:"按住屏幕保持平衡",spaceKey:"空格",holdMouse:"按住鼠标",holdScreen:"按住屏幕",again:"再来！",dailyT:"每日礼物",dailyGot:"+{n} 金币 · 连续 {d} 天",dailyNext:"明天再来领 +{n} 金币",claim:"领取",skinNext:"再赚 {n} 金币就能换新衣服",skinReady:"金币够了，去换装吧！",tabSkin:"衣服",tabPogo:"弹簧杆",tabTrail:"特效",tabBox:"快递箱",tabItem:"道具",itTape:"胶带",itTapeD:"保住一件快递（用一次）",itScope:"瞄准镜",itScopeD:"一关显示完整辅助线",useOn:"使用中",useOff:"不用",tapeSave:"胶带救回一件！",have:"有 {n} 个",holdAir:"按住！",faceTip:"提示：落地前在空中按住，身体会往前扳正。",t5:'站正落地，送到门口！',
+t_tramp:'踩弹床，弹得超高！',t_frag:'易碎品！落地要轻、要正。',t_rope:'晾衣绳会勾走包裹，小跳过去！',t_dog:'等狗走开，再跳过去。',t_cake:'顶上是蛋糕，别让它歪！',t_wind:'顺风：飞得更远。',t_head:'逆风：多蓄一会儿力。',t_fan:'大风扇会把你吹着走。',t_long:'超长件更兜风。',t_chick:'活鸡会扑腾，落地要稳！',
+t_rain:'下雨路滑！落地后会往前滑一段。',t_move:'悬浮板会来回滑，看准再跳！',t_snow:'屋顶结冰了！落地后会滑得更远。',t_fog:'大雾！看不清远处，小心前进。',t_gust:'风向一直在变，看右上角的风向牌！',t_storm:'雷雨！屋顶湿滑，风向还会变。',t_bull:"踩中红色靶心得金币，连中给得更多！",pts:'{n} 分',best:'最高 {n}',
+endless:'无尽模式',newBest:'新纪录！',deliv:'送达 +{n}',t_endless:'连踩靶心，沿路送货，看你能跳多远！',
+woof:'汪！',perfect:'完美！',nice:'不错',wobbly:'要晃倒啦！',crack:'裂了！',
+q_fall:['签收人：小巷底部。','那可不是门口。','重力 1 : 0 快递员。'],
+q_face:['包裹送达……用脸签收。','需要签名，你给了个脸印。','落地姿势：很有创意。得分：零。'],
+q_wall:['墙说它没下单。','墙：至今未败。','咚咚咚，墙赢了。'],q_sea:["扑通！快递泡汤了。", "大海说它没下单。", "签收人：鱼。"],
+q_dog:['狗狗已代签收。','好狗狗，坏快递。','汪 = 拒收。'],
+q_rope:['包裹晾在绳上了。','晾衣绳 1 : 0 快递员。','衣服晾得不错，快递送得很差。'],
+q_empty:['今日天气：包裹雨，概率 100%。','全部送达……送到了马路上。','包裹们已离家出走。'],
+q_win:['签收成功！','五星好评快递员！','完好无损。大概。','叮咚，您的快递！'],
+q_drop:['送到了！（大部分。）','需要自行组装。','他们不会发现的。']},
+fr:{name:"Pogo Post",shop:"Boutique",tag:"Rebondis. Équilibre. Livre. Ne fais rien tomber !",play:"JOUER",levels:"Niveaux",back:"Retour",how:"Maintiens pour charger · relâche pour sauter · maintiens en l’air pour te pencher en avant",lvN:"Niveau {n}",chapN:"Chapitre {n}",ch1:"Rue ensoleillée",ch2:"Quai venteux",ch3:"Nuit pluvieuse",ch4:"Hauteurs du couchant",ch5:"Ville enneigée",ch6:"Port brumeux",ch7:"Toits venteux",ch8:"Nuit d’orage",ch9:"Quai du blizzard",ch10:"Tours dans la brume",ch11:"Docks en tempête",ch12:"Météo folle",ch13:"Néons sous la pluie",ch14:"Port gelé",ch15:"La dernière livraison",soon:"Bientôt",paused:"Pause",resume:"Reprendre",retry:"Réessayer",next:"Niveau suivant",allDone:"D’autres rues arrivent bientôt !",win:"Livré !",fail:"Oups !",st1:"Livré",st2:"Rien n’est tombé",st3:"Moins de {n} s",time:"{n} s",revive:"📺 Reprendre d’ici",skip:"📺 Passer ce niveau",adTest:"Publicité ici (ignorée dans la version test)",adNo:"Aucune pub disponible pour le moment. Réessaie plus tard.",t1:"Maintiens pour écraser le ressort…",t2:"…relâche pour sauter !",t3:"Plus longtemps = plus loin",t4:"Tu bascules en arrière ? Maintiens en l’air pour te redresser !",balKey:"Maintiens ESPACE pour garder l’équilibre",balMouse:"Maintiens le clic pour garder l’équilibre",balScreen:"Maintiens l’écran pour garder l’équilibre",spaceKey:"ESPACE",holdMouse:"Maintiens le clic",holdScreen:"Maintiens l’écran",again:"Encore !",dailyT:"Cadeau du jour",dailyGot:"+{n} pièces · {d} jours d’affilée",dailyNext:"Reviens demain : +{n} pièces",claim:"Récupérer",skinNext:"Encore {n} pièces pour une nouvelle tenue",skinReady:"Tu peux acheter une nouvelle tenue !",tabSkin:"Tenues",tabPogo:"Pogos",tabTrail:"Traînées",tabBox:"Colis",tabItem:"Objets",itTape:"Scotch",itTapeD:"Sauve un colis une fois",itScope:"Viseur",itScopeD:"Trajectoire complète pour un niveau",useOn:"Activé",useOff:"Désactivé",tapeSave:"Le scotch a sauvé un colis !",have:"{n} en stock",holdAir:"Maintiens !",faceTip:"Astuce : maintiens en l’air pour te pencher en avant et atterrir droit.",t5:"Atterris bien droit. Va jusqu’à la porte !",t_tramp:"Les trampolines t’envoient très haut !",t_frag:"Fragile ! Atterris en douceur et bien droit.",t_rope:"Les cordes à linge accrochent les colis. Reste bas !",t_dog:"Attends le chien, puis saute par-dessus.",t_cake:"Gâteau au sommet ! Garde-le à plat.",t_wind:"Vent arrière : tu voles plus loin.",t_head:"Vent de face : charge plus longtemps.",t_fan:"Les ventilateurs te poussent en l’air.",t_long:"Les colis longs prennent plus le vent.",t_chick:"La poule bat des ailes. Atterris en douceur !",t_rain:"Toits mouillés ! Tu glisses après l’atterrissage.",t_move:"Les plateformes glissent. Saute au bon moment !",t_snow:"Toits glacés ! Tu glisses bien plus loin à l’atterrissage.",t_fog:"Brouillard épais ! Tu ne vois pas loin devant.",t_gust:"Le vent change sans arrêt ! Surveille l’indicateur.",t_storm:"Orage ! Toits mouillés et vent changeant.",t_bull:"Vise le centre rouge pour gagner des pièces. Les séries rapportent plus !",pts:"{n} pts",best:"record {n}",endless:"Course infinie",newBest:"Nouveau record !",deliv:"Livré +{n}",t_endless:"Enchaîne les cibles et livre à chaque porte !",woof:"OUAF !",perfect:"PARFAIT !",nice:"Bien",wobbly:"Ça tangue !",crack:"Crac !",q_fall:["Destinataire : le fond de la ruelle.", "Ce n’était pas le pas de la porte.", "Gravité : 1, Livreur : 0."],q_face:["Livré… avec le visage.", "Signature requise. Empreinte de visage reçue.", "Atterrissage : créatif. Score : zéro."],q_wall:["Le mur n’a rien commandé.", "Le mur : toujours invaincu.", "Toc toc. Le mur a gagné."],q_sea:["Plouf ! Les colis prennent l’eau.", "La mer n’a rien commandé.", "Livré aux poissons."],q_dog:["Le chien a signé pour vos colis.", "Bon chien. Mauvaise livraison.", "Ouaf veut dire « non »."],q_rope:["Vos colis sèchent sur la corde.", "Corde à linge : 1, Livreur : 0.", "Belle lessive. Livraison ratée."],q_empty:["Météo du jour : 100 % de pluie de colis.", "Tout est livré… dans la rue.", "Les colis ont quitté l’immeuble."],q_win:["Signé, scellé, livré !", "Livreur cinq étoiles !", "Pas une égratignure. Sans doute.", "Ding dong, un colis !"],q_drop:["Livré ! (En grande partie.)", "Un peu de montage nécessaire.", "Ils n’en sauront rien."]},
+it:{name:"Pogo Post",shop:"Negozio",tag:"Salta. Resta in equilibrio. Consegna. Non far cadere nulla!",play:"GIOCA",levels:"Livelli",back:"Indietro",how:"Tieni premuto per caricare · rilascia per saltare · tieni premuto in aria per inclinarti in avanti",lvN:"Livello {n}",chapN:"Capitolo {n}",ch1:"Via soleggiata",ch2:"Molo ventoso",ch3:"Notte di pioggia",ch4:"Tetti al tramonto",ch5:"Paese innevato",ch6:"Porto nebbioso",ch7:"Tetti a raffiche",ch8:"Notte di temporale",ch9:"Molo nella bufera",ch10:"Torri nella foschia",ch11:"Moli in burrasca",ch12:"Meteo pazzo",ch13:"Neon sotto la pioggia",ch14:"Porto ghiacciato",ch15:"L’ultima consegna",soon:"In arrivo",paused:"In pausa",resume:"Riprendi",retry:"Riprova",next:"Livello successivo",allDone:"Altre strade in arrivo!",win:"Consegnato!",fail:"Ops!",st1:"Consegnato",st2:"Niente è caduto",st3:"Meno di {n} s",time:"{n} s",revive:"📺 Riprova da qui",skip:"📺 Salta questo livello",adTest:"Qui va la pubblicità (saltata nella versione di prova)",adNo:"Nessuna pubblicità disponibile ora. Riprova più tardi.",t1:"Tieni premuto per schiacciare la molla…",t2:"…rilascia per saltare!",t3:"Più a lungo = più lontano",t4:"Cadi all’indietro? Tieni premuto in aria per raddrizzarti!",balKey:"Tieni premuto SPAZIO per restare in equilibrio",balMouse:"Tieni premuto il mouse per restare in equilibrio",balScreen:"Tieni premuto lo schermo per restare in equilibrio",spaceKey:"SPAZIO",holdMouse:"Tieni premuto",holdScreen:"Tieni premuto",again:"Ancora!",dailyT:"Regalo del giorno",dailyGot:"+{n} monete · {d} giorni di fila",dailyNext:"Torna domani: +{n} monete",claim:"Ritira",skinNext:"Ancora {n} monete per un nuovo outfit",skinReady:"Puoi comprare un nuovo outfit!",tabSkin:"Outfit",tabPogo:"Pogo",tabTrail:"Scie",tabBox:"Pacchi",tabItem:"Oggetti",itTape:"Nastro",itTapeD:"Salva un pacco una volta",itScope:"Mirino",itScopeD:"Traiettoria completa per un livello",useOn:"Attivo",useOff:"Spento",tapeSave:"Il nastro ha salvato un pacco!",have:"Ne hai {n}",holdAir:"Tieni premuto!",faceTip:"Consiglio: tieni premuto in aria per piegarti in avanti e atterrare dritto.",t5:"Atterra dritto. Raggiungi la porta!",t_tramp:"I trampolini ti lanciano in alto!",t_frag:"Fragile! Atterra piano e dritto.",t_rope:"I fili del bucato agganciano i pacchi. Resta basso!",t_dog:"Aspetta il cane, poi saltalo.",t_cake:"Torta in cima! Tienila in piano.",t_wind:"Vento a favore: voli più lontano.",t_head:"Vento contrario: carica più a lungo.",t_fan:"I ventilatori ti spingono in aria.",t_long:"I pacchi lunghi prendono più vento.",t_chick:"La gallina sbatte le ali. Atterra piano!",t_rain:"Tetti bagnati! Scivoli dopo l’atterraggio.",t_move:"Le piattaforme scorrono. Salta al momento giusto!",t_snow:"Tetti ghiacciati! Dopo l’atterraggio scivoli molto di più.",t_fog:"Nebbia fitta! Non vedi lontano.",t_gust:"Il vento cambia di continuo! Guarda l’indicatore.",t_storm:"Temporale! Tetti bagnati e vento che cambia.",t_bull:"Centra il bersaglio rosso per le monete. Le serie valgono di più!",pts:"{n} pt",best:"record {n}",endless:"Corsa infinita",newBest:"Nuovo record!",deliv:"Consegnato +{n}",t_endless:"Colpisci i bersagli di fila e consegna a ogni porta!",woof:"BAU!",perfect:"PERFETTO!",nice:"Bene",wobbly:"Traballa!",crack:"Crac!",q_fall:["Destinatario: il fondo del vicolo.", "Quello non era lo zerbino.", "Gravità 1, Corriere 0."],q_face:["Consegnato… di faccia.", "Serviva una firma. È arrivata un’impronta della faccia.", "Atterraggio: creativo. Punteggio: zero."],q_wall:["Il muro non ha ordinato niente.", "Il muro: ancora imbattuto.", "Toc toc. Ha vinto il muro."],q_sea:["Splash! Pacchi in acqua.", "Il mare non ha ordinato niente.", "Consegnato ai pesci."],q_dog:["Il cane ha firmato per i tuoi pacchi.", "Bravo cane. Pessima consegna.", "Bau vuol dire «no»."],q_rope:["I tuoi pacchi sono stesi ad asciugare.", "Filo del bucato 1, Corriere 0.", "Bel bucato. Consegna terribile."],q_empty:["Previsioni di oggi: pioggia di pacchi al 100%.", "Tutto consegnato… alla strada.", "I pacchi hanno lasciato l’edificio."],q_win:["Firmato, sigillato, consegnato!", "Corriere a cinque stelle!", "Nemmeno un graffio. Forse.", "Din don, pacco!"],q_drop:["Consegnato! (Quasi tutto.)", "Montaggio a carico del cliente.", "Non se ne accorgeranno mai."]},
+de:{name:"Pogo Post",shop:"Shop",tag:"Hüpfen. Balancieren. Liefern. Nichts fallen lassen!",play:"SPIELEN",levels:"Level",back:"Zurück",how:"Halten zum Aufladen · loslassen zum Springen · in der Luft halten, um dich vorzubeugen",lvN:"Level {n}",chapN:"Kapitel {n}",ch1:"Sonnenstraße",ch2:"Windiger Hafen",ch3:"Regennacht",ch4:"Abenddächer",ch5:"Schneestadt",ch6:"Nebelhafen",ch7:"Böige Dächer",ch8:"Gewitternacht",ch9:"Schneesturm-Pier",ch10:"Dunsttürme",ch11:"Sturmdocks",ch12:"Wildes Wetter",ch13:"Neon im Regen",ch14:"Gefrorener Hafen",ch15:"Die letzte Lieferung",soon:"Demnächst",paused:"Pause",resume:"Weiter",retry:"Nochmal",next:"Nächstes Level",allDone:"Bald gibt es mehr Straßen!",win:"Zugestellt!",fail:"Hoppla!",st1:"Zugestellt",st2:"Nichts verloren",st3:"Unter {n} s",time:"{n} s",revive:"📺 Von hier weiter",skip:"📺 Level überspringen",adTest:"Hier läuft Werbung (im Test übersprungen)",adNo:"Gerade keine Werbung verfügbar. Versuch es später nochmal.",t1:"Halten, um die Feder zu spannen …",t2:"… loslassen zum Springen!",t3:"Länger halten = weiter springen",t4:"Kippst du nach hinten? In der Luft halten und vorbeugen!",balKey:"LEERTASTE halten, um das Gleichgewicht zu halten",balMouse:"Maus halten, um das Gleichgewicht zu halten",balScreen:"Bildschirm halten, um das Gleichgewicht zu halten",spaceKey:"LEERTASTE",holdMouse:"Maus halten",holdScreen:"Bildschirm halten",again:"Nochmal!",dailyT:"Tagesgeschenk",dailyGot:"+{n} Münzen · {d} Tage in Folge",dailyNext:"Komm morgen wieder: +{n} Münzen",claim:"Abholen",skinNext:"Noch {n} Münzen bis zum neuen Outfit",skinReady:"Du kannst ein neues Outfit kaufen!",tabSkin:"Outfits",tabPogo:"Pogos",tabTrail:"Spuren",tabBox:"Pakete",tabItem:"Items",itTape:"Klebeband",itTapeD:"Rettet einmal ein Paket",itScope:"Zielfernrohr",itScopeD:"Volle Ziellinie für ein Level",useOn:"Aktiv",useOff:"Aus",tapeSave:"Klebeband hat ein Paket gerettet!",have:"{n} vorhanden",holdAir:"Halten!",faceTip:"Tipp: In der Luft halten, um dich nach vorn zu lehnen und gerade zu landen.",t5:"Gerade landen. Ab zur Tür!",t_tramp:"Trampoline schleudern dich hoch!",t_frag:"Zerbrechlich! Sanft und gerade landen.",t_rope:"Wäscheleinen schnappen Pakete. Bleib tief!",t_dog:"Warte auf den Hund, dann spring drüber.",t_cake:"Torte obenauf! Halte sie gerade.",t_wind:"Rückenwind: Du fliegst weiter.",t_head:"Gegenwind: länger aufladen.",t_fan:"Ventilatoren schieben dich durch die Luft.",t_long:"Lange Pakete fangen mehr Wind.",t_chick:"Das Huhn flattert. Sanft landen!",t_rain:"Nasse Dächer! Du rutschst nach der Landung.",t_move:"Schwebeplatten gleiten. Spring im richtigen Moment!",t_snow:"Vereiste Dächer! Nach der Landung rutschst du viel weiter.",t_fog:"Dichter Nebel! Du siehst nicht weit.",t_gust:"Der Wind dreht ständig! Achte auf das Windschild.",t_storm:"Gewitter! Nasse Dächer und wechselnder Wind.",t_bull:"Triff die rote Zielmarke für Münzen. Serien bringen mehr!",pts:"{n} Pkt.",best:"Rekord {n}",endless:"Endloslauf",newBest:"Neuer Rekord!",deliv:"Zugestellt +{n}",t_endless:"Triff Zielmarken in Serie und liefere an jeder Tür!",woof:"WUFF!",perfect:"PERFEKT!",nice:"Gut",wobbly:"Wackelig!",crack:"Knack!",q_fall:["Empfänger: der Boden der Gasse.", "Das war nicht die Türschwelle.", "Schwerkraft 1, Kurier 0."],q_face:["Zugestellt … mit dem Gesicht.", "Unterschrift nötig. Gesichtsabdruck erhalten.", "Landung: kreativ. Punkte: null."],q_wall:["Die Wand hat nichts bestellt.", "Die Wand: ungeschlagen.", "Klopf, klopf. Die Wand gewinnt."],q_sea:["Platsch! Pakete baden gegangen.", "Das Meer hat nichts bestellt.", "Zugestellt an die Fische."],q_dog:["Der Hund hat für deine Pakete unterschrieben.", "Braver Hund. Schlechte Lieferung.", "Wuff heißt „nein“."],q_rope:["Deine Pakete trocknen an der Leine.", "Wäscheleine 1, Kurier 0.", "Schöne Wäsche. Miese Lieferung."],q_empty:["Wetter heute: 100 % Paketregen.", "Alles zugestellt … auf die Straße.", "Die Pakete haben das Gebäude verlassen."],q_win:["Unterschrieben, versiegelt, zugestellt!", "Fünf-Sterne-Kurier!", "Kein Kratzer. Wahrscheinlich.", "Ding dong, Paket!"],q_drop:["Zugestellt! (Größtenteils.)", "Etwas Montage erforderlich.", "Das merkt niemand."]},
+es:{name:"Pogo Post",shop:"Tienda",tag:"Rebota. Equilibra. Entrega. ¡Que no se caiga nada!",play:"JUGAR",levels:"Niveles",back:"Atrás",how:"Mantén para cargar · suelta para saltar · mantén en el aire para inclinarte hacia delante",lvN:"Nivel {n}",chapN:"Capítulo {n}",ch1:"Calle soleada",ch2:"Muelle ventoso",ch3:"Noche lluviosa",ch4:"Azoteas al atardecer",ch5:"Pueblo nevado",ch6:"Puerto brumoso",ch7:"Azoteas con rachas",ch8:"Noche de tormenta",ch9:"Muelle en ventisca",ch10:"Torres en la niebla",ch11:"Muelles del vendaval",ch12:"Clima loco",ch13:"Neón bajo la lluvia",ch14:"Puerto helado",ch15:"La última entrega",soon:"Próximamente",paused:"Pausa",resume:"Continuar",retry:"Reintentar",next:"Siguiente nivel",allDone:"¡Pronto habrá más calles!",win:"¡Entregado!",fail:"¡Uy!",st1:"Entregado",st2:"Nada se cayó",st3:"Menos de {n} s",time:"{n} s",revive:"📺 Reintentar desde aquí",skip:"📺 Saltar este nivel",adTest:"Aquí va un anuncio (la versión de prueba lo omite)",adNo:"No hay anuncios disponibles ahora. Inténtalo más tarde.",t1:"Mantén para aplastar el muelle…",t2:"…¡suelta para saltar!",t3:"Más tiempo = más lejos",t4:"¿Te vas hacia atrás? ¡Mantén en el aire para enderezarte!",balKey:"Mantén ESPACIO para no perder el equilibrio",balMouse:"Mantén el clic para no perder el equilibrio",balScreen:"Mantén pulsada la pantalla para no perder el equilibrio",spaceKey:"ESPACIO",holdMouse:"Mantén el clic",holdScreen:"Mantén pulsado",again:"¡Otra vez!",dailyT:"Regalo diario",dailyGot:"+{n} monedas · {d} días seguidos",dailyNext:"Vuelve mañana: +{n} monedas",claim:"Recoger",skinNext:"Faltan {n} monedas para un traje nuevo",skinReady:"¡Ya puedes comprar un traje nuevo!",tabSkin:"Trajes",tabPogo:"Pogos",tabTrail:"Estelas",tabBox:"Cajas",tabItem:"Objetos",itTape:"Cinta",itTapeD:"Salva un paquete una vez",itScope:"Mira",itScopeD:"Trayectoria completa durante un nivel",useOn:"Activo",useOff:"Apagado",tapeSave:"¡La cinta salvó un paquete!",have:"Tienes {n}",holdAir:"¡Mantén!",faceTip:"Consejo: mantén pulsado en el aire para inclinarte hacia delante y caer recto.",t5:"Aterriza recto. ¡Llega a la puerta!",t_tramp:"¡Los trampolines te lanzan altísimo!",t_frag:"¡Frágil! Aterriza suave y recto.",t_rope:"Los tendederos enganchan paquetes. ¡Ve bajo!",t_dog:"Espera al perro y luego sáltalo.",t_cake:"¡Tarta arriba! Mantenla nivelada.",t_wind:"Viento a favor: vuelas más lejos.",t_head:"Viento en contra: carga más tiempo.",t_fan:"Los ventiladores te empujan por el aire.",t_long:"Los paquetes largos atrapan más viento.",t_chick:"La gallina aletea. ¡Aterriza suave!",t_rain:"¡Tejados mojados! Resbalas al aterrizar.",t_move:"Las plataformas se deslizan. ¡Salta a tiempo!",t_snow:"¡Tejados helados! Al aterrizar resbalas mucho más.",t_fog:"¡Niebla espesa! No ves muy lejos.",t_gust:"¡El viento no para de cambiar! Mira el indicador.",t_storm:"¡Tormenta! Tejados mojados y viento cambiante.",t_bull:"Acierta en la diana roja para ganar monedas. ¡Las rachas dan más!",pts:"{n} pts",best:"récord {n}",endless:"Carrera infinita",newBest:"¡Nuevo récord!",deliv:"Entregado +{n}",t_endless:"¡Encadena dianas y entrega en cada puerta!",woof:"¡GUAU!",perfect:"¡PERFECTO!",nice:"Bien",wobbly:"¡Se tambalea!",crack:"¡Crac!",q_fall:["Destinatario: el fondo del callejón.", "Eso no era la puerta.", "Gravedad 1, Repartidor 0."],q_face:["Entregado… de cara.", "Hacía falta firma. Llegó una huella de cara.", "Aterrizaje: creativo. Puntos: cero."],q_wall:["La pared no pidió nada.", "La pared: invicta.", "Toc, toc. Ganó la pared."],q_sea:["¡Chof! Paquetes al agua.", "El mar no pidió nada.", "Entregado a los peces."],q_dog:["El perro ha firmado por tus paquetes.", "Buen chico. Mala entrega.", "Guau significa «no»."],q_rope:["Tus paquetes se están secando en la cuerda.", "Tendedero 1, Repartidor 0.", "Bonita colada. Pésima entrega."],q_empty:["Pronóstico de hoy: 100 % lluvia de paquetes.", "Todo entregado… a la calle.", "Los paquetes han abandonado el edificio."],q_win:["¡Firmado, sellado y entregado!", "¡Repartidor de cinco estrellas!", "Ni un rasguño. Probablemente.", "¡Din don, paquete!"],q_drop:["¡Entregado! (Casi todo.)", "Requiere algo de montaje.", "Nunca lo sabrán."]},
+tr:{name:"Pogo Post",shop:"Mağaza",tag:"Zıpla. Dengede kal. Teslim et. Hiçbir şeyi düşürme!",play:"OYNA",levels:"Bölümler",back:"Geri",how:"Basılı tut: güç topla · bırak: zıpla · havada basılı tut: öne eğil",lvN:"Bölüm {n}",chapN:"Kısım {n}",ch1:"Güneşli Sokak",ch2:"Rüzgârlı İskele",ch3:"Yağmurlu Gece",ch4:"Gün Batımı",ch5:"Karlı Kasaba",ch6:"Sisli Liman",ch7:"Rüzgârlı Çatılar",ch8:"Fırtınalı Gece",ch9:"Tipili İskele",ch10:"Puslu Kuleler",ch11:"Fırtına Rıhtımı",ch12:"Çılgın Hava",ch13:"Yağmurlu Neon",ch14:"Donmuş Liman",ch15:"Son Teslimat",soon:"Çok yakında",paused:"Duraklatıldı",resume:"Devam",retry:"Tekrar dene",next:"Sonraki bölüm",allDone:"Yeni sokaklar yakında!",win:"Teslim edildi!",fail:"Hay aksi!",st1:"Teslim edildi",st2:"Hiçbir şey düşmedi",st3:"{n} sn altında",time:"{n} sn",revive:"📺 Buradan tekrar dene",skip:"📺 Bu bölümü geç",adTest:"Reklam burada (test sürümü atlar)",adNo:"Şu anda reklam yok. Daha sonra tekrar dene.",t1:"Yayı sıkıştırmak için basılı tut…",t2:"…zıplamak için bırak!",t3:"Uzun bas = uzağa zıpla",t4:"Arkaya mı devriliyorsun? Havada basılı tut, öne eğil!",balKey:"Dengede kalmak için BOŞLUK’a basılı tut",balMouse:"Dengede kalmak için fareye basılı tut",balScreen:"Dengede kalmak için ekrana basılı tut",spaceKey:"BOŞLUK",holdMouse:"Fareyi basılı tut",holdScreen:"Ekrana basılı tut",again:"Tekrar!",dailyT:"Günlük hediye",dailyGot:"+{n} altın · {d} gün üst üste",dailyNext:"Yarın gel: +{n} altın",claim:"Al",skinNext:"Yeni kıyafet için {n} altın daha",skinReady:"Yeni kıyafet alabilirsin!",tabSkin:"Kıyafet",tabPogo:"Pogo",tabTrail:"İzler",tabBox:"Kutular",tabItem:"Eşyalar",itTape:"Bant",itTapeD:"Bir paketi bir kez kurtarır",itScope:"Nişangâh",itScopeD:"Bir bölüm boyunca tam nişan çizgisi",useOn:"Açık",useOff:"Kapalı",tapeSave:"Bant bir paketi kurtardı!",have:"{n} adet var",holdAir:"Basılı tut!",faceTip:"İpucu: Havada basılı tutarak öne eğil ve dik in.",t5:"Dik in. Kapıya ulaş!",t_tramp:"Trambolinler seni göğe fırlatır!",t_frag:"Kırılır! Yumuşak ve dik in.",t_rope:"Çamaşır ipleri paketlere takılır. Alçaktan git!",t_dog:"Köpeği bekle, sonra üstünden atla.",t_cake:"Pasta en üstte! Düz tut.",t_wind:"Arkadan rüzgâr: daha uzağa uçarsın.",t_head:"Karşıdan rüzgâr: daha uzun bas.",t_fan:"Vantilatörler seni havada iter.",t_long:"Uzun paketler daha çok rüzgâr alır.",t_chick:"Tavuk kanat çırpar. Yumuşak in!",t_rain:"Çatılar ıslak! İnince kayarsın.",t_move:"Uçan platformlar kayar. Doğru anda zıpla!",t_snow:"Buzlu çatılar! İnince çok daha fazla kayarsın.",t_fog:"Yoğun sis! İleriyi göremezsin.",t_gust:"Rüzgâr sürekli değişiyor! Rüzgâr işaretine bak.",t_storm:"Fırtına! Islak çatılar ve değişen rüzgâr.",t_bull:"Kırmızı hedefe bas, altın kazan. Seriler daha çok verir!",pts:"{n} puan",best:"rekor {n}",endless:"Sonsuz Koşu",newBest:"Yeni rekor!",deliv:"Teslim +{n}",t_endless:"Hedefleri art arda vur, her kapıya teslim et!",woof:"HAV!",perfect:"MÜKEMMEL!",nice:"Güzel",wobbly:"Sallanıyor!",crack:"Çat!",q_fall:["Alıcı: sokağın dibi.", "Orası kapı önü değildi.", "Yerçekimi 1, Kurye 0."],q_face:["Teslim edildi… yüzüstü.", "İmza gerekiyordu. Yüz izi geldi.", "İniş: yaratıcı. Puan: sıfır."],q_wall:["Duvar bir şey sipariş etmedi.", "Duvar: hâlâ yenilmedi.", "Tak tak. Duvar kazandı."],q_sea:["Şap! Paketler suya düştü.", "Deniz bir şey sipariş etmedi.", "Balıklara teslim edildi."],q_dog:["Köpek paketlerini teslim aldı.", "Aferin köpek. Kötü teslimat.", "Hav, “hayır” demek."],q_rope:["Paketlerin ipte kuruyor.", "Çamaşır ipi 1, Kurye 0.", "Çamaşırlar güzel. Teslimat berbat."],q_empty:["Bugün hava: %100 paket yağmuru.", "Her şey teslim edildi… sokağa.", "Paketler binayı terk etti."],q_win:["İmzalandı, mühürlendi, teslim edildi!", "Beş yıldızlı kurye!", "Çizik bile yok. Galiba.", "Ding dong, paket!"],q_drop:["Teslim edildi! (Çoğu.)", "Biraz montaj gerekir.", "Asla anlamayacaklar."]},
+ja:{name:"Pogo Post",shop:"ショップ",tag:"はねて、バランスをとって、お届け。ひとつも落とさないで！",play:"スタート",levels:"ステージ",back:"もどる",how:"長押しでためる · はなしてジャンプ · 空中で長押しすると前にかたむく",lvN:"ステージ {n}",chapN:"チャプター {n}",ch1:"ひだまり通り",ch2:"風のふ頭",ch3:"雨の夜",ch4:"夕焼けの屋上",ch5:"雪の町",ch6:"霧の港",ch7:"突風の屋上",ch8:"雷雨の夜",ch9:"吹雪のふ頭",ch10:"もやの高層街",ch11:"嵐のドック",ch12:"めちゃくちゃ天気",ch13:"ネオンの雨夜",ch14:"凍った港",ch15:"最後のお届け",soon:"近日公開",paused:"ポーズ",resume:"つづける",retry:"やりなおす",next:"次のステージ",allDone:"新しい街をじゅんび中！",win:"お届け完了！",fail:"おっと！",st1:"お届け完了",st2:"ひとつも落とさない",st3:"{n}秒以内",time:"{n}秒",revive:"📺 ここからやりなおす",skip:"📺 このステージをスキップ",adTest:"ここに広告が入ります（テスト版ではスキップ）",adNo:"今は広告を再生できません。あとでもう一度試してね。",t1:"長押しでバネをちぢめて…",t2:"…はなしてジャンプ！",t3:"長く押すほど遠くへとぶ",t4:"うしろにたおれそう？空中で長押しして前へ！",balKey:"スペースを長押ししてバランスを取ろう",balMouse:"クリック長押しでバランスを取ろう",balScreen:"画面を長押ししてバランスを取ろう",spaceKey:"スペース",holdMouse:"クリック長押し",holdScreen:"画面を長押し",again:"もう一回！",dailyT:"デイリーギフト",dailyGot:"+{n}コイン・{d}日連続",dailyNext:"明日また来てね：+{n}コイン",claim:"受け取る",skinNext:"あと{n}コインで新しい服",skinReady:"新しい服が買えるよ！",tabSkin:"服",tabPogo:"ホッピング",tabTrail:"エフェクト",tabBox:"箱",tabItem:"アイテム",itTape:"テープ",itTapeD:"荷物を1回守る",itScope:"照準",itScopeD:"1ステージの間、軌道を全部表示",useOn:"使用中",useOff:"使わない",tapeSave:"テープが荷物を守った！",have:"{n}個",holdAir:"長押し！",faceTip:"ヒント：空中で長押しすると前に傾いて、まっすぐ着地できます。",t5:"まっすぐ着地。ドアまで行こう！",t_tramp:"トランポリンで大ジャンプ！",t_frag:"われもの注意！そっとまっすぐ着地。",t_rope:"ものほしロープに荷物がひっかかる。低くとぼう！",t_dog:"犬が通りすぎてからとびこえよう。",t_cake:"いちばん上はケーキ！水平に。",t_wind:"追い風：遠くまでとべる。",t_head:"向かい風：長めにためよう。",t_fan:"扇風機が空中でおしてくる。",t_long:"長い荷物は風を受けやすい。",t_chick:"ニワトリがあばれる。そっと着地！",t_rain:"屋根がぬれている！着地するとすべる。",t_move:"うごく足場はタイミングを見てジャンプ！",t_snow:"屋根がこおっている！着地するとよくすべる。",t_fog:"こい霧！遠くが見えないよ。",t_gust:"風向きがどんどん変わる！右上の風の表示を見て。",t_storm:"雷雨！屋根はすべるし、風向きも変わる。",t_bull:"赤い的を踏むとコイン！連続でもっともらえる！",pts:"{n}点",best:"ベスト {n}",endless:"エンドレス",newBest:"新記録！",deliv:"お届け +{n}",t_endless:"的を連続でふんで、ドアごとにお届け！",woof:"ワン！",perfect:"パーフェクト！",nice:"ナイス",wobbly:"ぐらぐら！",crack:"パキッ！",q_fall:["お届け先：路地の底。", "そこは玄関じゃないよ。", "重力 1 − 0 配達員。"],q_face:["お届け完了…顔から。", "サインのかわりに顔のあとがつきました。", "着地：独創的。得点：ゼロ。"],q_wall:["カベは何も注文していません。", "カベ：いまだ無敗。", "コンコン。カベの勝ち。"],q_sea:["ドボン！荷物が水びたし。", "海は何も注文していません。", "お届け先：おさかな。"],q_dog:["犬がかわりに受け取りました。", "いい子だね。配達はダメだけど。", "ワン＝受け取り拒否。"],q_rope:["荷物はロープで乾かし中。", "ものほしロープ 1 − 0 配達員。", "洗濯物はきれい。配達はひどい。"],q_empty:["今日の天気：荷物の雨、確率100%。", "ぜんぶお届け…道路に。", "荷物たちは家出しました。"],q_win:["サインいただきました！", "星5つの配達員！", "キズひとつなし。たぶん。", "ピンポーン、お届けものです！"],q_drop:["お届け完了！（だいたい。）", "組み立てはお客さまで。", "きっとバレないよ。"]},
+ko:{name:"Pogo Post",shop:"상점",tag:"튀고, 균형 잡고, 배달하자. 하나도 떨어뜨리지 마!",play:"시작",levels:"스테이지",back:"뒤로",how:"길게 눌러 힘 모으기 · 떼면 점프 · 공중에서 누르면 앞으로 기울기",lvN:"스테이지 {n}",chapN:"챕터 {n}",ch1:"햇살 거리",ch2:"바람 부두",ch3:"비 오는 밤",ch4:"노을 옥상",ch5:"눈 내린 마을",ch6:"안개 항구",ch7:"돌풍 옥상",ch8:"뇌우의 밤",ch9:"눈보라 부두",ch10:"안개 빌딩숲",ch11:"폭풍 선착장",ch12:"변덕 날씨",ch13:"네온 빗속 밤",ch14:"얼어붙은 항구",ch15:"마지막 배달",soon:"곧 공개",paused:"일시정지",resume:"계속하기",retry:"다시 하기",next:"다음 스테이지",allDone:"새로운 거리가 곧 열려요!",win:"배달 완료!",fail:"이런!",st1:"배달 완료",st2:"하나도 안 떨어뜨림",st3:"{n}초 이내",time:"{n}초",revive:"📺 여기서 다시 하기",skip:"📺 이 스테이지 건너뛰기",adTest:"여기에 광고가 나옵니다 (테스트 버전은 건너뜀)",adNo:"지금은 광고를 볼 수 없어요. 나중에 다시 시도해 주세요.",t1:"길게 눌러 스프링을 누르고…",t2:"…떼면 점프!",t3:"오래 누를수록 멀리 뛰어요",t4:"뒤로 넘어가나요? 공중에서 눌러 앞으로!",balKey:"스페이스를 꾹 눌러 균형을 잡아요",balMouse:"마우스를 꾹 눌러 균형을 잡아요",balScreen:"화면을 꾹 눌러 균형을 잡아요",spaceKey:"스페이스",holdMouse:"마우스 꾹",holdScreen:"화면 꾹",again:"다시!",dailyT:"오늘의 선물",dailyGot:"+{n} 코인 · {d}일 연속",dailyNext:"내일 또 와요: +{n} 코인",claim:"받기",skinNext:"새 옷까지 {n} 코인",skinReady:"새 옷을 살 수 있어요!",tabSkin:"옷",tabPogo:"스카이콩콩",tabTrail:"효과",tabBox:"상자",tabItem:"아이템",itTape:"테이프",itTapeD:"택배 하나를 한 번 지켜줘요",itScope:"조준경",itScopeD:"한 판 동안 전체 조준선",useOn:"사용 중",useOff:"끔",tapeSave:"테이프가 택배를 지켰어요!",have:"{n}개 보유",holdAir:"꾹 눌러요!",faceTip:"팁: 공중에서 꾹 누르면 앞으로 기울어 똑바로 착지해요.",t5:"똑바로 착지. 문 앞까지!",t_tramp:"트램펄린을 밟으면 높이 튀어요!",t_frag:"깨지기 쉬워요! 살살, 똑바로 착지.",t_rope:"빨랫줄에 택배가 걸려요. 낮게 뛰세요!",t_dog:"개가 지나가면 뛰어넘으세요.",t_cake:"맨 위는 케이크! 수평을 유지해요.",t_wind:"뒷바람: 더 멀리 날아가요.",t_head:"맞바람: 더 오래 모으세요.",t_fan:"선풍기가 공중에서 밀어 줘요.",t_long:"긴 택배는 바람을 더 받아요.",t_chick:"닭이 퍼덕여요. 살살 착지!",t_rain:"지붕이 젖었어요! 착지하면 미끄러져요.",t_move:"움직이는 발판! 타이밍을 맞춰 점프!",t_snow:"지붕이 얼었어요! 착지하면 훨씬 더 미끄러져요.",t_fog:"짙은 안개! 멀리 보이지 않아요.",t_gust:"바람 방향이 계속 바뀌어요! 오른쪽 위 표시를 보세요.",t_storm:"뇌우! 지붕은 미끄럽고 바람도 바뀌어요.",t_bull:"빨간 과녁을 밟으면 코인! 연속이면 더 많이!",pts:"{n}점",best:"최고 {n}",endless:"무한 모드",newBest:"신기록!",deliv:"배달 +{n}",t_endless:"과녁을 연속으로 밟고 문마다 배달하세요!",woof:"멍!",perfect:"퍼펙트!",nice:"좋아요",wobbly:"흔들흔들!",crack:"쩍!",q_fall:["받는 사람: 골목 바닥.", "거긴 현관이 아니었어요.", "중력 1 : 0 배달원."],q_face:["배달 완료… 얼굴로.", "서명 대신 얼굴 도장을 받았습니다.", "착지: 창의적. 점수: 0점."],q_wall:["벽은 아무것도 주문하지 않았어요.", "벽: 여전히 무패.", "똑똑. 벽이 이겼어요."],q_sea:["풍덩! 택배가 물에 빠졌어요.", "바다는 아무것도 주문하지 않았어요.", "수령인: 물고기."],q_dog:["개가 대신 받았습니다.", "착한 강아지. 나쁜 배달.", "멍 = 수령 거부."],q_rope:["택배가 빨랫줄에서 마르는 중.", "빨랫줄 1 : 0 배달원.", "빨래는 좋았는데 배달은 엉망."],q_empty:["오늘의 날씨: 택배 비, 확률 100%.", "전부 배달 완료… 길바닥에.", "택배들이 집을 나갔습니다."],q_win:["서명 완료, 배달 완료!", "별 다섯 개 배달원!", "흠집 하나 없음. 아마도.", "딩동, 택배 왔어요!"],q_drop:["배달 완료! (대부분.)", "조립은 직접 하세요.", "아무도 모를 거예요."]},
+pt:{name:"Pogo Post",shop:"Loja",tag:"Salta. Equilibra. Entrega. Não deixes cair nada!",play:"JOGAR",levels:"Níveis",back:"Voltar",how:"Mantém para carregar · solta para saltar · mantém no ar para te inclinares para a frente",lvN:"Nível {n}",chapN:"Capítulo {n}",ch1:"Rua Ensolarada",ch2:"Cais Ventoso",ch3:"Noite Chuvosa",ch4:"Telhados ao pôr do sol",ch5:"Vila Nevada",ch6:"Porto Enevoado",ch7:"Telhados com Rajadas",ch8:"Noite de Trovoada",ch9:"Cais na Nevasca",ch10:"Torres na Névoa",ch11:"Docas da Ventania",ch12:"Tempo Maluco",ch13:"Neon na Chuva",ch14:"Porto Congelado",ch15:"A Última Entrega",soon:"Em breve",paused:"Pausa",resume:"Continuar",retry:"Tentar de novo",next:"Próximo nível",allDone:"Mais ruas em breve!",win:"Entregue!",fail:"Ups!",st1:"Entregue",st2:"Nada caiu",st3:"Menos de {n} s",time:"{n} s",revive:"📺 Tentar de novo a partir daqui",skip:"📺 Saltar este nível",adTest:"Aqui aparece um anúncio (a versão de teste ignora)",adNo:"Não há anúncios disponíveis agora. Tenta mais tarde.",t1:"Mantém para apertar a mola…",t2:"…solta para saltar!",t3:"Mais tempo = mais longe",t4:"A cair para trás? Mantém no ar para te endireitares!",balKey:"Segure ESPAÇO para manter o equilíbrio",balMouse:"Segure o clique para manter o equilíbrio",balScreen:"Segure a tela para manter o equilíbrio",spaceKey:"ESPAÇO",holdMouse:"Segure o clique",holdScreen:"Segure a tela",again:"De novo!",dailyT:"Presente diário",dailyGot:"+{n} moedas · {d} dias seguidos",dailyNext:"Volte amanhã: +{n} moedas",claim:"Pegar",skinNext:"Faltam {n} moedas para uma roupa nova",skinReady:"Você já pode comprar uma roupa nova!",tabSkin:"Roupas",tabPogo:"Pogos",tabTrail:"Rastros",tabBox:"Caixas",tabItem:"Itens",itTape:"Fita",itTapeD:"Salva um pacote uma vez",itScope:"Mira",itScopeD:"Mira completa por uma fase",useOn:"Ativo",useOff:"Desligado",tapeSave:"A fita salvou um pacote!",have:"Tem {n}",holdAir:"Segure!",faceTip:"Dica: segure no ar para se inclinar para a frente e cair em pé.",t5:"Aterra direito. Chega à porta!",t_tramp:"Os trampolins lançam-te bem alto!",t_frag:"Frágil! Aterra com cuidado e direito.",t_rope:"Os estendais prendem encomendas. Vai baixo!",t_dog:"Espera pelo cão e depois salta por cima.",t_cake:"Bolo no topo! Mantém-no nivelado.",t_wind:"Vento a favor: voas mais longe.",t_head:"Vento contra: carrega mais tempo.",t_fan:"As ventoinhas empurram-te no ar.",t_long:"Encomendas compridas apanham mais vento.",t_chick:"A galinha bate as asas. Aterra com cuidado!",t_rain:"Telhados molhados! Escorregas ao aterrar.",t_move:"As plataformas deslizam. Salta na altura certa!",t_snow:"Telhados gelados! Escorregas muito mais ao aterrar.",t_fog:"Nevoeiro cerrado! Não vês muito à frente.",t_gust:"O vento está sempre a mudar! Olha para o indicador.",t_storm:"Trovoada! Telhados molhados e vento instável.",t_bull:"Acerte o alvo vermelho para ganhar moedas. Sequências dão mais!",pts:"{n} pts",best:"recorde {n}",endless:"Corrida Infinita",newBest:"Novo recorde!",deliv:"Entregue +{n}",t_endless:"Acerta alvos seguidos e entrega em cada porta!",woof:"AU AU!",perfect:"PERFEITO!",nice:"Boa",wobbly:"A abanar!",crack:"Crac!",q_fall:["Destinatário: o fundo do beco.", "Aquilo não era a porta.", "Gravidade 1, Estafeta 0."],q_face:["Entregue… de cara.", "Era precisa assinatura. Chegou uma marca de cara.", "Aterragem: criativa. Pontos: zero."],q_wall:["A parede não encomendou nada.", "A parede: invicta.", "Truz, truz. Ganhou a parede."],q_sea:["Tchibum! Pacotes na água.", "O mar não encomendou nada.", "Entregue aos peixes."],q_dog:["O cão assinou pelas tuas encomendas.", "Lindo menino. Péssima entrega.", "Au au quer dizer «não»."],q_rope:["As tuas encomendas estão a secar na corda.", "Estendal 1, Estafeta 0.", "Bela roupa. Péssima entrega."],q_empty:["Previsão de hoje: 100% de chuva de encomendas.", "Tudo entregue… na rua.", "As encomendas saíram do edifício."],q_win:["Assinado, selado, entregue!", "Estafeta de cinco estrelas!", "Nem um arranhão. Provavelmente.", "Dlim dlão, encomenda!"],q_drop:["Entregue! (Quase tudo.)", "Requer alguma montagem.", "Nunca vão saber."]},
+ru:{name:"Pogo Post",shop:"Магазин",tag:"Прыгай. Держи равновесие. Доставляй. Ничего не урони!",play:"ИГРАТЬ",levels:"Уровни",back:"Назад",how:"Удерживай — заряд · отпусти — прыжок · удерживай в воздухе — наклон вперёд",lvN:"Уровень {n}",chapN:"Глава {n}",ch1:"Солнечная улица",ch2:"Ветреный причал",ch3:"Дождливая ночь",ch4:"Закатные крыши",ch5:"Снежный городок",ch6:"Туманная гавань",ch7:"Порывистые крыши",ch8:"Грозовая ночь",ch9:"Причал в метель",ch10:"Башни в дымке",ch11:"Штормовые доки",ch12:"Безумная погода",ch13:"Неон под дождём",ch14:"Замёрзшая гавань",ch15:"Последняя доставка",soon:"Скоро",paused:"Пауза",resume:"Продолжить",retry:"Заново",next:"Следующий уровень",allDone:"Скоро появятся новые улицы!",win:"Доставлено!",fail:"Ой!",st1:"Доставлено",st2:"Ничего не упало",st3:"Быстрее {n} с",time:"{n} с",revive:"📺 Продолжить отсюда",skip:"📺 Пропустить уровень",adTest:"Здесь будет реклама (в тестовой версии пропускается)",adNo:"Сейчас реклама недоступна. Попробуй позже.",t1:"Удерживай, чтобы сжать пружину…",t2:"…отпусти, чтобы прыгнуть!",t3:"Дольше держишь — дальше прыгаешь",t4:"Заваливаешься назад? Удерживай в воздухе, чтобы наклониться вперёд!",balKey:"Держи ПРОБЕЛ, чтобы удержать равновесие",balMouse:"Держи кнопку мыши, чтобы удержать равновесие",balScreen:"Держи палец на экране, чтобы удержать равновесие",spaceKey:"ПРОБЕЛ",holdMouse:"Держи кнопку",holdScreen:"Держи палец",again:"Ещё раз!",dailyT:"Ежедневный подарок",dailyGot:"+{n} монет · {d} дн. подряд",dailyNext:"Заходи завтра: +{n} монет",claim:"Забрать",skinNext:"Ещё {n} монет до нового наряда",skinReady:"Можно купить новый наряд!",tabSkin:"Наряды",tabPogo:"Пого-стики",tabTrail:"Шлейфы",tabBox:"Коробки",tabItem:"Предметы",itTape:"Скотч",itTapeD:"Спасает одну посылку один раз",itScope:"Прицел",itScopeD:"Полная линия прицела на один уровень",useOn:"Включено",useOff:"Выключено",tapeSave:"Скотч спас посылку!",have:"Есть: {n}",holdAir:"Держи!",faceTip:"Совет: удерживай в воздухе, чтобы наклониться вперёд и приземлиться ровно.",t5:"Приземляйся ровно. Доберись до двери!",t_tramp:"Батуты подбрасывают очень высоко!",t_frag:"Хрупкое! Приземляйся мягко и ровно.",t_rope:"Бельевые верёвки цепляют посылки. Прыгай ниже!",t_dog:"Подожди собаку, потом перепрыгни.",t_cake:"Сверху торт! Держи его ровно.",t_wind:"Попутный ветер: летишь дальше.",t_head:"Встречный ветер: заряжай дольше.",t_fan:"Вентиляторы несут тебя по воздуху.",t_long:"Длинные посылки сильнее ловят ветер.",t_chick:"Курица хлопает крыльями. Приземляйся мягко!",t_rain:"Мокрые крыши! После приземления скользишь.",t_move:"Платформы двигаются. Прыгай вовремя!",t_snow:"Обледенелые крыши! После приземления скользишь гораздо дальше.",t_fog:"Густой туман! Далеко не видно.",t_gust:"Ветер всё время меняется! Следи за указателем.",t_storm:"Гроза! Мокрые крыши и переменчивый ветер.",t_bull:"Попади в красную мишень — получишь монеты. Серии дают больше!",pts:"{n} очк.",best:"рекорд {n}",endless:"Бесконечный забег",newBest:"Новый рекорд!",deliv:"Доставлено +{n}",t_endless:"Попадай в мишени подряд и доставляй к каждой двери!",woof:"ГАВ!",perfect:"ИДЕАЛЬНО!",nice:"Хорошо",wobbly:"Шатается!",crack:"Хрясь!",q_fall:["Получатель: дно переулка.", "Это был не порог.", "Гравитация 1, Курьер 0."],q_face:["Доставлено… лицом вперёд.", "Нужна была подпись. Получен отпечаток лица.", "Приземление: творческое. Очки: ноль."],q_wall:["Стена ничего не заказывала.", "Стена: по-прежнему непобедима.", "Тук-тук. Стена победила."],q_sea:["Плюх! Посылки искупались.", "Море ничего не заказывало.", "Доставлено рыбам."],q_dog:["Собака расписалась за ваши посылки.", "Хороший пёс. Плохая доставка.", "Гав значит «нет»."],q_rope:["Ваши посылки сушатся на верёвке.", "Верёвка 1, Курьер 0.", "Бельё отличное. Доставка ужасная."],q_empty:["Прогноз на сегодня: 100% дождь из посылок.", "Всё доставлено… на улицу.", "Посылки покинули здание."],q_win:["Подписано, запечатано, доставлено!", "Пятизвёздочный курьер!", "Ни царапины. Наверное.", "Динь-дон, посылка!"],q_drop:["Доставлено! (В основном.)", "Требуется небольшая сборка.", "Они никогда не узнают."]}
+};
+const LANGS=[['en','English'],['fr','Français'],['it','Italiano'],['de','Deutsch'],['es','Español'],['tr','Türkçe'],['zh','中文'],['ja','日本語'],['ko','한국어'],['pt','Português'],['ru','Русский']];
+const MEM=new URLSearchParams(location.search).has('new')?{}:null; // ?new : play as a brand-new player without touching the saved progress
+const store={get(k,d){if(MEM)return k in MEM?JSON.parse(MEM[k]):d;try{const v=localStorage.getItem('pp_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){if(MEM){MEM[k]=JSON.stringify(v);return}try{localStorage.setItem('pp_'+k,JSON.stringify(v))}catch(e){}}};
+const QS=new URLSearchParams(location.search);
+function pickLang(){const c=[QS.get('lang'),store.get('lang',null)].concat(navigator.languages||[navigator.language||'en']);for(const x of c){if(!x)continue;const k=String(x).toLowerCase().slice(0,2);if(TXT[k])return k}return'en'}
+let LANG=pickLang();
+function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==null)s=k;if(o&&typeof s==='string')for(const a in o)s=s.replace('{'+a+'}',o[a]);return s}
+const pickQ=k=>{const a=T(k);return Array.isArray(a)?a[Math.random()*a.length|0]:a};
+
+/* ================= constants ================= */
+const DT=1/120,AIM_F=0.7,CRASH_EASY=1.45,QUICK_LV=5,AIM_LV=10,AIM_EB=12,AIR_LV=5,G=2000,CHARGE_T=0.85,V0=380,V1=480,LAUNCH=0.48,AIR_ALPHA=7.5,CRASH_TH=0.95,DROP_TH=0.62,TRAMP_V=1150,HEAD=96,BULL_R=18,RAIN_K=0.4,RAIN_F=2.2,SNOW_K=0.62,SNOW_F=1.3;
+const PK={box:{h:26,w:36},frag:{h:26,w:34},cake:{h:24,w:40},chick:{h:26,w:30},long:{h:18,w:70}};
+
+/* ================= levels =================
+ plats: [x, width, top]   tramps: [x, width] (sit on the platform below)
+ ropes: [x1, x2, height, sag]   dogs: [x1, x2, speed]   fans: [x, y, w, h, force]
+ pk: parcels bottom→top   par: seconds for the 3rd star   tip: first-time hint */
+const LEVELS=[
+ {pk:['box'],plats:[[0,240,120],[330,170,120],[600,160,150],[870,150,120],[1130,140,170],[1400,300,140]],tut:1},
+ {pk:['box','box'],plats:[[0,200,100],[290,120,160],[500,100,120],[700,100,200],[900,130,140],[1140,120,240],[1370,140,170],[1620,300,120]]},
+ {pk:['box','box'],plats:[[0,220,100],[290,250,40],[640,180,330],[900,140,280],[1130,130,330],[1370,240,60],[1760,160,360],[2010,300,260]],tramps:[[450,60],[1520,60]],tip:'t_tramp'},
+ {pk:['box','frag'],plats:[[0,200,340],[270,130,290],[480,120,240],[690,120,300],[900,120,230],[1110,130,170],[1330,120,110],[1540,300,150]],tip:'t_frag'},
+ {pk:['box','box','box'],plats:[[0,640,100],[685,200,100],[960,140,150],[1180,220,110],[1470,300,140]],ropes:[[180,520,330,8],[600,860,340,10],[1190,1300,340,6]],tip:'t_rope'},
+ {pk:['box','box'],plats:[[0,200,120],[290,440,120],[820,140,170],[1040,140,120],[1240,360,120],[1700,300,160]],dogs:[[330,640,1.4],[1300,1520,1.6]],tip:'t_dog'},
+ {pk:['box','cake'],plats:[[0,200,140],[290,120,180],[500,110,140],[700,120,210],[910,110,160],[1110,120,230],[1320,110,170],[1520,300,130]],tip:'t_cake'},
+ {pk:['box','frag','box'],plats:[[0,220,120],[310,420,120],[820,140,190],[1050,130,140],[1260,120,200],[1470,300,150]],ropes:[[360,540,340,10]],dogs:[[580,700,1.1]]},
+ {pk:['box','cake','box'],plats:[[0,200,120],[280,240,30],[660,160,320],[900,280,320],[1310,140,250],[1530,130,190],[1740,300,150]],tramps:[[460,60]],ropes:[[920,1160,540,10]]},
+ {pk:['box','frag','box','cake'],plats:[[0,200,140],[290,130,200],[500,330,120],[920,250,40],[1320,140,330],[1550,340,330],[1980,140,260],[2200,130,200],[2420,320,160]],tramps:[[1060,60]],ropes:[[560,800,365,10]],dogs:[[1590,1840,1.0]],boss:1},
+ /* ---- chapter 2: Windy Pier ---- */
+ {pk:['box','box'],wind:110,plats:[[0,220,120],[330,150,140],[600,140,110],[880,150,160],[1160,130,120],[1450,140,150],[1760,300,130]],tip:'t_wind'},
+ {pk:['box','box'],wind:-120,plats:[[0,220,140],[300,140,140],[530,130,180],[760,140,140],[990,120,200],[1210,140,150],[1450,300,140]],tip:'t_head'},
+ {pk:['box','box'],plats:[[0,220,140],[320,140,160],[560,120,140],[1100,160,150],[1360,130,180],[1600,120,140],[1850,300,150]],fans:[[700,40,380,420,850],[1470,100,110,400,-500]],tip:'t_fan'},
+ {pk:['box','long'],wind:60,plats:[[0,220,130],[320,140,150],[580,130,120],[840,140,170],[1110,130,130],[1380,140,160],[1660,300,140]],tip:'t_long'},
+ {pk:['box','chick'],wind:-40,plats:[[0,220,130],[300,150,150],[540,140,130],[790,150,170],[1040,140,140],[1290,150,170],[1550,300,140]],tip:'t_chick'},
+ {pk:['box','frag','box'],wind:-100,plats:[[0,220,150],[300,130,170],[520,120,150],[1040,150,160],[1290,130,200],[1520,120,160],[1760,300,150]],fans:[[660,40,360,420,850]]},
+ {pk:['box','long'],wind:70,plats:[[0,220,120],[300,520,120],[900,140,160],[1150,130,130],[1640,150,150],[1900,300,140]],ropes:[[420,720,345,10]],fans:[[1300,40,320,420,450]]},
+ {pk:['box','chick'],wind:80,plats:[[0,220,130],[310,440,130],[850,150,170],[1100,380,150],[1600,140,190],[1850,300,150]],dogs:[[350,700,1.3],[1150,1430,1.5]]},
+ {pk:['box','cake'],wind:-90,plats:[[0,220,140],[300,260,40],[660,170,330],[920,140,280],[1150,240,60],[1500,160,330],[1760,300,260]],tramps:[[440,60],[1290,60]]},
+ {pk:['box','long','frag','chick'],wind:70,plats:[[0,200,140],[290,140,180],[520,320,130],[930,250,40],[1330,140,330],[1560,340,330],[1990,140,260],[2460,140,220],[2700,320,170]],tramps:[[1070,60]],ropes:[[580,820,400,10]],dogs:[[1600,1850,1.0]],fans:[[2130,100,330,420,600]],boss:1},
+ /* ---- chapter 3: Rainy Night (wet roofs: you slide after landing) ---- */
+ {rain:1,pk:['box','box'],plats:[[0,240,120],[330,200,130],[640,200,110],[950,200,150],[1260,190,120],[1560,320,140]],tip:'t_rain'},
+ {rain:1,pk:['box','frag'],plats:[[0,220,300],[300,190,250],[590,180,200],[880,190,260],[1170,180,190],[1460,180,130],[1740,320,150]]},
+ {rain:1,wind:80,pk:['box','box','box'],plats:[[0,220,120],[340,200,140],[670,190,110],[1000,200,160],[1330,190,120],[1660,320,140]]},
+ {rain:1,pk:['box','cake'],plats:[[0,220,100],[290,250,40],[640,220,330],[950,190,280],[1230,180,330],[1500,260,60],[1890,220,360],[2200,320,260]],tramps:[[450,60],[1650,60]]},
+ {rain:1,pk:['box','box'],plats:[[0,220,120],[300,480,120],[870,190,170],[1150,190,120],[1420,420,120],[1930,320,160]],dogs:[[420,640,1.3],[1540,1720,1.5]]},
+ {rain:1,wind:-70,pk:['box','frag','box'],plats:[[0,640,100],[700,240,100],[1030,190,150],[1300,260,110],[1650,320,140]],ropes:[[180,520,330,8],[1310,1440,340,6]]},
+ {rain:1,pk:['box','long'],plats:[[0,220,140],[320,190,160],[610,180,140],[1120,260,150],[1460,190,180],[1740,320,150]],fans:[[760,40,380,420,450]]},
+ {rain:1,wind:60,pk:['box','chick','box'],plats:[[0,220,130],[310,460,130],[870,190,170],[1150,400,150],[1650,190,190],[1930,320,150]],dogs:[[430,650,1.3],[1270,1430,1.5]]},
+ {rain:1,wind:-60,pk:['box','cake','frag'],plats:[[0,220,140],[300,260,40],[660,220,330],[970,190,280],[1250,240,60],[1600,220,330],[1910,320,260]],tramps:[[440,60],[1390,60]]},
+ {rain:1,wind:50,pk:['box','frag','long','cake'],plats:[[0,220,140],[310,190,180],[590,360,130],[1040,250,40],[1440,200,330],[1730,380,330],[2200,190,260],[2660,280,220],[3030,340,170]],tramps:[[1180,60]],ropes:[[650,890,420,10]],dogs:[[1850,2000,1.0]],fans:[[2400,100,290,420,350]],boss:1},
+ /* ---- chapter 4: Sunset Heights (hover pads: [x, width, top, 0, slide distance, speed, phase]) ---- */
+ {pk:['box','box'],plats:[[0,240,120],[340,150,130,0,45,1.3,0],[640,170,120],[930,150,140,0,50,1.4,1],[1230,170,130],[1520,320,140]],tip:'t_move'},
+ {pk:['box','frag'],plats:[[0,220,200],[320,140,170,0,40,1.5,0],[600,140,220,0,40,1.2,2],[880,170,180],[1170,140,150,0,50,1.6,0],[1460,320,160]]},
+ {wind:70,pk:['box','box','box'],plats:[[0,220,130],[330,150,150,0,45,1.3,0],[650,160,120],[960,150,160,0,45,1.5,1],[1280,160,130],[1580,320,140]]},
+ {pk:['box','cake'],plats:[[0,220,100],[290,250,40],[640,150,330,0,40,1.2,0],[930,180,290],[1220,150,330,0,45,1.4,2],[1520,320,280]],tramps:[[450,60]]},
+ {pk:['box','chick'],plats:[[0,220,120],[300,460,120],[880,150,160,0,45,1.3,0],[1180,420,130],[1720,150,170,0,45,1.5,1],[2010,320,150]],dogs:[[420,650,1.3],[1300,1480,1.5]]},
+ {wind:-60,pk:['box','frag','box'],plats:[[0,640,100],[750,150,120,0,45,1.3,0],[1040,260,110],[1420,150,150,0,45,1.4,1],[1710,320,140]],ropes:[[180,520,330,8],[1050,1180,340,6]]},
+ {pk:['box','long'],plats:[[0,220,140],[320,170,160],[610,170,140],[1120,260,150],[1500,150,180,0,45,1.3,0],[1790,320,150]],fans:[[760,40,380,420,450]]},
+ {pk:['box','cake','box'],plats:[[0,220,150],[320,150,170,0,40,1.2,0],[610,150,140,0,40,1.5,1],[900,150,190,0,40,1.3,3],[1190,180,160],[1490,320,150]]},
+ {rain:1,pk:['box','frag'],plats:[[0,220,140],[330,190,150,0,40,1.2,0],[670,200,130],[990,190,160,0,40,1.4,2],[1330,200,140],[1650,320,140]]},
+ {wind:50,pk:['box','frag','long','cake'],plats:[[0,220,140],[310,180,180],[590,360,130],[1040,250,40],[1440,160,330,0,40,1.2,0],[1730,380,330],[2200,150,270,0,45,1.4,1],[2490,200,230],[2780,150,200,0,45,1.3,2],[3070,340,170]],tramps:[[1180,60]],ropes:[[650,890,420,10]],dogs:[[1850,2000,1.0]],boss:1},
+ /*GENERATED*/
+ /* ---- chapter 5 (levels 41-50) ---- */
+ {"snow":1,"pk":["box","box"],"tramps":[[468,60]],"plats":[[0,230,117],[348,190,60],[613,250,300],[999,264,277],[1366,289,292],[1789,276,293],[2169,287,303],[2563,320,320]],"tip":"t_snow","par":19},
+ {"snow":1,"pk":["box","chick"],"tramps":[[847,60],[1888,60]],"plats":[[0,253,153],[402,184,125,0,46,1.43,4.9],[727,190,60],[992,250,293],[1403,192,294,0,49,1.24,6.22],[1768,190,191],[2033,250,360],[2371,274,320],[2817,195,293,0,43,1.3,1.5],[3196,320,292]],"par":27},
+ {"snow":1,"pk":["box","box"],"tramps":[[2195,60]],"dogs":[[826,1004,1.09]],"plats":[[0,232,117],[333,290,124],[706,418,125],[1286,205,100,0,50,1.54,4],[1684,288,131],[2075,190,66],[2340,250,306],[2699,320,300]],"par":22},
+ {"snow":1,"pk":["box","cake"],"dogs":[[1220,1412,1.44]],"plats":[[0,242,116],[394,268,101],[789,184,98,0,43,1.18,1.44],[1100,432,72],[1658,256,106],[2064,185,97,0,44,1.53,0.04],[2436,320,100]],"par":19},
+ {"snow":1,"pk":["box","chick"],"tramps":[[479,60]],"dogs":[[1532,1741,1.47]],"plats":[[0,243,140],[359,190,60],[624,250,286],[1035,203,261,0,51,1.46,0.76],[1412,449,247],[1949,281,257],[2355,193,286,0,45,1.52,5.24],[2723,257,291],[3105,320,312]],"par":28},
+ {"snow":1,"pk":["box","box"],"dogs":[[2125,2303,1.25]],"plats":[[0,243,134],[419,207,156,0,49,1.28,2.62],[829,273,164],[1210,278,175],[1637,288,137],[2005,418,161],[2514,320,161]],"par":18},
+ {"snow":1,"pk":["box","cake"],"tramps":[[486,60]],"plats":[[0,251,135],[366,190,63],[631,250,279],[1035,279,292],[1417,266,301],[1837,275,307],[2205,279,320],[2600,280,320],[2971,320,293]],"par":22},
+ {"snow":1,"pk":["box","box"],"dogs":[[508,675,1.26]],"plats":[[0,259,139],[388,407,142],[882,258,181],[1238,285,207],[1675,274,216],[2036,267,226],[2442,276,198],[2854,320,214]],"par":22},
+ {"snow":1,"pk":["box","frag"],"plats":[[0,240,111],[404,202,116,0,42,1.34,3.85],[782,259,81],[1141,250,103],[1473,283,61],[1904,279,94],[2273,320,86]],"par":17},
+ {"snow":1,"pk":["box","box","frag"],"dogs":[[846,1052,1.24],[1777,1968,1.28],[3500,3709,1.35]],"plats":[[0,223,154],[334,279,119],[726,446,135],[1258,272,129],[1657,431,153],[2241,207,166,0,49,1.16,4],[2652,258,129],[3047,248,109],[3380,449,126],[3965,198,112,0,44,1.47,5.44],[4311,256,92],[4719,261,60],[5120,320,79]],"boss":1,"par":38},
+ /* ---- chapter 6 (levels 51-60) ---- */
+ {"fog":1,"pk":["box","box"],"ropes":[[1327,1596,367,8]],"dogs":[[455,673,1.29],[1909,2082,1.09]],"plats":[[0,244,132],[335,458,143],[917,213,167],[1217,489,159],[1789,413,177],[2357,224,177],[2695,320,161]],"tip":"t_fog","par":28},
+ {"fog":1,"pk":["box","cake"],"dogs":[[433,636,1.01],[1329,1547,1.49],[2928,3139,1.32]],"plats":[[0,231,129],[313,443,101],[902,204,106],[1209,458,128],[1794,229,89],[2173,199,133],[2523,204,115],[2808,451,113],[3408,320,98]],"par":35},
+ {"fog":1,"pk":["box","box"],"ropes":[[1407,1627,279,8]],"dogs":[[496,670,1.29]],"plats":[[0,251,123],[376,414,95],[944,223,93],[1297,440,71],[1897,229,60],[2231,204,60],[2547,210,79],[2890,320,95]],"par":30},
+ {"fog":1,"pk":["box","box"],"dogs":[[2149,2350,1.48]],"plats":[[0,244,110],[356,205,105],[715,190,64],[1068,198,60],[1379,194,60],[1712,220,60],[2029,441,60],[2603,320,62]],"par":26},
+ {"fog":1,"pk":["box","frag"],"ropes":[[1276,1547,296,8]],"dogs":[[756,959,1.47],[2241,2406,1.09]],"plats":[[0,234,112],[324,198,69],[636,443,69],[1166,491,88],[1816,212,82],[2121,405,72],[2662,217,74],[3014,320,84]],"par":31},
+ {"fog":1,"pk":["box","cake"],"ropes":[[453,727,366,8],[1600,1840,337,8]],"dogs":[[1058,1246,1.08],[2190,2406,1.42],[3077,3283,1.05]],"plats":[[0,259,138],[343,494,160],[938,428,140],[1490,460,131],[2070,456,141],[2627,219,123],[2957,446,94],[3527,320,120]],"par":37},
+ {"fog":1,"pk":["box","box","box"],"ropes":[[483,742,375,8],[1440,1694,376,8],[2335,2579,361,8]],"plats":[[0,246,135],[373,479,141],[989,217,140],[1330,474,142],[1910,195,119],[2225,464,127],[2808,320,134]],"par":31},
+ {"fog":1,"pk":["box","cake"],"ropes":[[1658,1951,364,8]],"dogs":[[816,987,1.01]],"plats":[[0,225,140],[359,208,166],[696,411,145],[1235,197,175],[1548,513,158],[2226,218,165],[2560,205,183],[2858,320,163]],"par":31},
+ {"fog":1,"pk":["box","chick","box"],"ropes":[[1412,1645,294,8],[2582,2849,294,8]],"plats":[[0,237,142],[321,187,123],[609,217,97],[978,211,67],[1302,453,60],[1865,187,60],[2141,218,60],[2472,487,60],[3091,320,89]],"par":33},
+ {"fog":1,"pk":["box","box","cake"],"ropes":[[2938,3204,327,8]],"dogs":[[470,669,1.31]],"plats":[[0,228,113],[350,439,102],[893,184,104],[1220,191,101],[1514,184,81],[1875,185,97],[2202,190,116],[2527,182,94],[2828,486,95],[3482,214,100],[3798,320,78]],"boss":1,"par":38},
+ /* ---- chapter 7 (levels 61-70) ---- */
+ {"gust":79,"gp":0.56,"pk":["box","cake"],"tramps":[[442,60]],"fans":[[2173,40,344,420,646]],"plats":[[0,230,115],[322,190,60],[587,250,276],[943,194,294],[1224,209,320],[1603,185,300],[1932,221,266],[2537,248,279],[2904,320,289]],"tip":"t_gust","par":27},
+ {"gust":74,"gp":1.7,"pk":["box","frag"],"tramps":[[784,60],[1791,60]],"plats":[[0,250,144],[330,221,120],[664,190,60],[929,250,300],[1342,200,307],[1671,190,202],[1936,250,360],[2277,186,320],[2610,213,320],[2964,185,320],[3282,320,307]],"par":28},
+ {"gust":67,"gp":5.51,"pk":["box","box","frag"],"tramps":[[1995,60]],"fans":[[251,40,332,420,641],[1160,40,337,420,490],[2410,40,306,420,604]],"plats":[[0,231,146],[603,259,142],[953,187,182],[1517,235,184],[1875,190,89],[2140,250,304],[2736,255,288],[3112,204,254],[3458,218,281],[3775,320,272]],"par":35},
+ {"gust":68,"gp":5.9,"pk":["box","box"],"tramps":[[2012,60]],"fans":[[599,40,319,420,475],[2427,40,312,420,633]],"plats":[[0,260,130],[392,187,147],[938,226,130],[1309,203,103],[1606,195,144],[1892,190,60],[2157,250,289],[2759,248,296],[3098,320,315]],"par":28},
+ {"gust":87,"gp":4.02,"pk":["box","box"],"tramps":[[1660,60]],"plats":[[0,222,151],[310,195,99],[606,186,127],[934,186,86],[1218,202,126],[1540,190,60],[1805,250,295],[2207,187,320],[2479,195,292],[2808,320,282]],"par":28},
+ {"gust":89,"gp":2.49,"pk":["box","box"],"tramps":[[472,60],[1762,60]],"plats":[[0,225,118],[352,190,60],[617,250,298],[1030,206,298],[1348,200,284],[1642,190,212],[1907,250,360],[2331,193,320],[2634,217,320],[2983,213,317],[3291,320,320]],"par":30},
+ {"gust":64,"gp":2.17,"pk":["box","box","box"],"tramps":[[1795,60]],"fans":[[607,40,300,420,535],[2493,40,328,420,526]],"plats":[[0,242,114],[389,198,102],[927,251,98],[1355,199,136],[1675,190,61],[1940,250,287],[2276,197,236],[2841,241,245],[3167,198,230],[3480,320,211]],"par":36},
+ {"gust":71,"gp":5.2,"pk":["box","chick"],"tramps":[[2257,60]],"fans":[[244,40,357,420,568],[1175,40,296,420,457]],"plats":[[0,224,116],[621,225,106],[955,200,117],[1491,246,108],[1833,182,68],[2137,190,60],[2402,250,279],[2776,202,320],[3117,320,320]],"par":33},
+ {"gust":89,"gp":3.96,"pk":["box","long"],"tramps":[[1096,60]],"plats":[[0,238,160],[380,187,206],[667,182,160],[976,190,61],[1241,250,284],[1665,211,266],[2006,211,258],[2313,197,272],[2600,320,248]],"par":31},
+ {"gust":65,"gp":2.53,"pk":["box","box","box"],"tramps":[[2918,60]],"fans":[[608,40,319,420,579],[1500,40,343,420,589],[3333,40,330,420,485]],"plats":[[0,258,118],[389,199,167],[947,229,179],[1288,192,153],[1863,244,172],[2190,191,184],[2526,175,130],[2798,190,60],[3063,250,288],[3683,258,271],[4118,179,280],[4385,196,262],[4728,320,239]],"boss":1,"par":42},
+ /* ---- chapter 8 (levels 71-80) ---- */
+ {"rain":1,"storm":1,"gust":53,"gp":3.35,"pk":["box","box","box"],"tramps":[[1160,60],[2294,60]],"dogs":[[1765,1928,1.09]],"plats":[[0,247,150],[335,237,175],[718,226,179],[1040,190,74],[1305,250,298],[1645,403,296],[2174,190,181],[2439,250,360],[2850,219,320],[3217,216,320],[3563,320,320]],"tip":"t_storm","par":32},
+ {"rain":1,"storm":1,"gust":54,"gp":3.92,"pk":["box","cake"],"dogs":[[859,1072,1.09]],"plats":[[0,251,143],[431,218,186],[739,453,178],[1279,239,141],[1598,219,196],[1928,246,172],[2259,238,138],[2608,320,161]],"par":23},
+ {"rain":1,"storm":1,"gust":67,"gp":0.39,"pk":["box","box","frag"],"tramps":[[1845,60],[3406,60]],"ropes":[[1262,1504,411,8]],"dogs":[[449,614,1.02],[2458,2670,1.45]],"plats":[[0,225,129],[329,405,138],[839,220,173],[1152,462,177],[1725,190,92],[1990,250,312],[2338,452,312],[2949,224,297],[3286,190,201],[3551,250,360],[3935,320,320]],"par":33},
+ {"rain":1,"storm":1,"gust":54,"gp":0.02,"pk":["box","cake"],"tramps":[[1731,60]],"ropes":[[1144,1371,287,8]],"dogs":[[2775,2966,1.02]],"plats":[[0,223,153],[398,224,131],[711,211,92],[1034,447,81],[1611,190,60],[1876,250,305],[2306,226,293],[2655,431,310],[3226,320,306]],"par":27},
+ {"rain":1,"storm":1,"gust":75,"gp":0.53,"pk":["box","cake"],"tramps":[[2057,60]],"ropes":[[441,687,370,8]],"plats":[[0,222,143],[331,466,164],[915,234,107],[1246,228,87],[1601,222,134],[1937,190,60],[2202,250,298],[2593,220,320],[2954,320,304]],"par":24},
+ {"rain":1,"storm":1,"gust":78,"gp":4.16,"pk":["box","box"],"tramps":[[1620,60]],"ropes":[[1024,1292,353,8],[2540,2819,492,8],[3547,3775,428,8]],"dogs":[[482,680,1.17]],"plats":[[0,245,110],[362,438,128],[914,488,145],[1500,190,60],[1765,250,303],[2105,209,280],[2430,499,284],[3074,238,236],[3437,448,220],[3989,320,237]],"par":38},
+ {"rain":1,"storm":1,"gust":64,"gp":5.14,"pk":["box","cake","box"],"ropes":[[1310,1571,310,8]],"dogs":[[823,998,1.47],[2256,2472,1.21]],"plats":[[0,235,113],[374,242,108],[703,415,102],[1200,481,78],[1804,240,97],[2136,456,120],[2710,214,169],[3053,320,174]],"par":28},
+ {"rain":1,"storm":1,"gust":66,"gp":1.72,"pk":["box","frag"],"tramps":[[452,60]],"ropes":[[2042,2331,491,8]],"plats":[[0,225,149],[332,190,81],[597,250,302],[940,226,269],[1296,231,230],[1618,210,262],[1932,509,283],[2581,223,266],[2975,224,264],[3300,320,276]],"par":27},
+ {"rain":1,"storm":1,"gust":70,"gp":3.41,"pk":["box","box","cake"],"tramps":[[494,60],[2013,60],[3212,60]],"ropes":[[2628,2898,552,8]],"dogs":[[1106,1268,1.07]],"plats":[[0,254,132],[374,190,60],[639,250,289],[986,402,269],[1564,215,281],[1893,190,162],[2158,250,360],[2518,490,320],[3092,190,250],[3357,250,360],[3729,320,320]],"par":37},
+ {"rain":1,"storm":1,"gust":64,"gp":1.86,"pk":["box","chick","cake","box"],"tramps":[[1656,60],[3571,60]],"ropes":[[4203,4468,578,8]],"dogs":[[800,964,1.27],[2663,2881,1.37]],"plats":[[0,241,157],[340,223,129],[680,404,113],[1216,200,73],[1536,190,60],[1801,250,285],[2230,212,292],[2543,458,299],[3146,222,320],[3451,190,252],[3716,250,360],[4093,485,320],[4723,320,320]],"boss":1,"par":37},
+ /* ---- chapter 9 (levels 81-90) ---- */
+ {"snow":1,"wind":76,"pk":["box","box","box"],"dogs":[[2021,2237,1.16]],"plats":[[0,245,120],[374,189,94,0,46,1.28,0.81],[746,243,137],[1124,229,105],[1533,248,89],[1901,456,94],[2494,190,82,0,45,1.46,2.59],[2839,320,72]],"par":21},
+ {"snow":1,"wind":-80,"pk":["box","cake"],"dogs":[[842,1057,1.05]],"plats":[[0,227,132],[388,238,166],[722,455,144],[1318,243,184],[1692,248,214],[2098,186,229,0,50,1.47,5.83],[2427,229,267],[2848,246,293],[3223,320,297]],"par":26},
+ {"snow":1,"wind":-75,"pk":["box","box"],"dogs":[[2866,3032,1.35]],"plats":[[0,235,155],[423,229,216],[797,204,245,0,49,1.47,1.79],[1219,232,212],[1617,228,180],[2024,234,214],[2383,239,203],[2746,406,200],[3248,320,192]],"par":26},
+ {"snow":1,"wind":-45,"pk":["box","box"],"dogs":[[878,1048,1.16]],"plats":[[0,250,112],[417,253,144],[758,410,172],[1294,229,172],[1617,253,134],[2034,232,130],[2443,190,130,0,49,1.5,4.38],[2813,231,92],[3174,320,109]],"par":24},
+ {"snow":1,"wind":43,"pk":["box","box","frag"],"dogs":[[445,631,1.16]],"fans":[[1488,40,311,420,479]],"plats":[[0,240,137],[325,426,123],[865,231,131],[1236,186,126,0,46,1.16,2.26],[1819,245,131],[2226,232,69],[2574,249,99],[2918,229,129],[3279,320,128]],"par":25},
+ {"snow":1,"wind":46,"pk":["box","frag","box"],"fans":[[1538,40,326,420,490]],"plats":[[0,252,116],[427,203,132,0,51,1.19,0.43],[877,252,157],[1279,239,205],[1884,249,207],[2300,238,264],[2715,204,293,0,50,1.3,4.4],[3107,320,285]],"par":22},
+ {"snow":1,"wind":41,"pk":["box","long","box"],"dogs":[[1203,1385,1.48],[2641,2828,1.06]],"fans":[[1525,40,298,420,451]],"plats":[[0,241,153],[381,203,153,0,49,1.28,3.46],[733,252,177],[1083,422,173],[1843,245,159],[2180,230,118],[2521,427,117],[3075,320,95]],"par":29},
+ {"snow":1,"wind":44,"pk":["box","long","chick"],"dogs":[[498,696,1.13],[2621,2818,1.23],[3564,3776,1.26]],"plats":[[0,253,131],[378,438,115],[957,250,131],[1404,234,194],[1747,253,248],[2138,190,252,0,51,1.45,2.33],[2501,437,230],[3109,246,285],[3444,452,294],[4036,320,300]],"par":31},
+ {"snow":1,"wind":-52,"pk":["box","box","chick"],"dogs":[[442,655,1.36],[2059,2267,1.11]],"plats":[[0,237,148],[322,453,161],[878,233,159],[1245,203,159,0,40,1.22,1.17],[1578,250,130],[1939,448,117],[2499,230,143],[2877,219,189],[3232,320,166]],"par":25},
+ {"snow":1,"wind":-41,"pk":["box","cake","box","frag"],"dogs":[[450,660,1.1]],"fans":[[1158,40,299,420,467],[2841,40,311,420,542],[3824,40,304,420,617]],"plats":[[0,233,133],[330,450,133],[911,227,94],[1477,233,84],[1827,220,88],[2179,191,81,0,38,1.23,5.26],[2604,217,135],[3172,248,125],[3577,188,111,0,39,1.2,1.54],[4148,221,94],[4489,230,75],[4868,320,60]],"boss":1,"par":35},
+ /* ---- chapter 10 (levels 91-100) ---- */
+ {"fog":1,"pk":["box","box","frag"],"ropes":[[1215,1498,408,8]],"plats":[[0,244,118],[430,169,175],[767,160,159,0,49,1.27,5.79],[1105,503,174],[1710,185,158],[2053,177,196],[2362,157,178,0,48,1.42,4.87],[2775,162,115],[3112,150,143,0,47,1.34,0.31],[3456,159,203],[3746,320,179]],"par":39},
+ {"fog":1,"pk":["box","box","cake"],"ropes":[[1193,1489,412,8],[2832,3094,456,8]],"plats":[[0,244,148],[429,183,173],[777,174,181,0,42,1.39,3.33],[1083,516,180],[1765,178,231],[2095,156,214,0,42,1.36,4.26],[2462,175,200],[2722,482,224],[3346,166,261],[3620,320,235]],"par":44},
+ {"fog":1,"pk":["box","frag","box"],"ropes":[[802,1043,431,8]],"plats":[[0,230,160],[391,157,175,0,51,1.52,3.26],[692,461,197],[1318,174,147],[1623,163,150,0,42,1.38,4.65],[2021,178,204],[2353,151,210,0,50,1.34,2.64],[2669,159,245],[2919,320,274]],"par":36},
+ {"fog":1,"pk":["box","box","box"],"ropes":[[1169,1453,340,8],[2776,3059,294,8]],"plats":[[0,248,159],[381,169,138,0,38,1.22,5.21],[756,179,126],[1059,504,106],[1705,170,109,0,48,1.36,2.42],[2028,183,63],[2370,167,60,0,45,1.42,0.82],[2666,503,60],[3300,167,88,0,50,1.36,3.29],[3652,320,113]],"par":44},
+ {"fog":1,"pk":["box","box","cake"],"ropes":[[1422,1648,292,8],[3027,3292,406,8]],"plats":[[0,240,149],[384,173,121,0,40,1.4,5.62],[765,185,62],[1075,156,60],[1312,446,60],[1893,163,60,0,46,1.36,5.56],[2276,184,129],[2591,163,157,0,38,1.35,2.28],[2917,485,174],[3562,168,241],[3839,320,247]],"par":44},
+ {"fog":1,"pk":["box","chick","chick"],"plats":[[0,244,149],[440,163,139],[716,161,166],[1024,163,177,0,39,1.46,5.33],[1443,165,196],[1755,158,221,0,41,1.29,2.34],[2152,168,222],[2524,186,235],[2842,320,222]],"par":34},
+ {"fog":1,"pk":["box","box","box"],"ropes":[[1793,2024,387,8],[2964,3228,341,8]],"plats":[[0,251,112],[404,168,118,0,51,1.44,3.65],[749,184,128],[1086,158,171],[1377,168,150,0,52,1.49,0.22],[1683,451,153],[2294,157,171,0,50,1.49,0.37],[2616,156,127],[2854,484,107],[3491,155,86,0,42,1.52,1.65],[3818,320,72]],"par":42},
+ {"fog":1,"pk":["box","frag","frag"],"ropes":[[446,722,404,8],[2704,2970,438,8]],"plats":[[0,226,158],[336,496,170],[975,158,140,0,49,1.17,1.39],[1359,184,200],[1660,164,230],[1998,155,197],[2289,150,201,0,38,1.15,5.39],[2594,486,204],[3218,155,235],[3485,320,252]],"par":43},
+ {"fog":1,"pk":["box","frag","box"],"ropes":[[779,1015,318,8],[1658,1916,294,8],[2523,2819,314,8]],"plats":[[0,258,157],[378,175,99],[669,456,84],[1314,154,60],[1548,478,60],[2160,162,82],[2413,516,80],[3058,156,60,0,39,1.38,3.11],[3364,182,93],[3647,320,100]],"par":39},
+ {"fog":1,"pk":["box","cake","frag","frag"],"ropes":[[446,686,399,8],[2473,2729,325,8]],"plats":[[0,244,154],[336,460,141],[960,166,118,0,49,1.54,1.2],[1356,162,65],[1656,161,60,0,50,1.55,1.36],[2092,175,60],[2363,476,67],[2964,165,60],[3246,151,60],[3552,159,82,0,46,1.37,0.43],[3934,146,71],[4227,169,67,0,48,1.3,0.09],[4541,320,60]],"boss":1,"par":53},
+ /* ---- chapter 11 (levels 101-110) ---- */
+ {"gust":84,"gp":2.4,"wind":35,"pk":["box","frag","frag"],"tramps":[[477,60],[2058,60]],"fans":[[3171,40,333,420,505]],"plats":[[0,245,111],[357,190,60],[622,250,282],[1013,168,255],[1308,150,310],[1631,175,313,0,49,1.46,4.74],[1938,190,238],[2203,250,360],[2606,174,320,0,49,1.41,1.49],[3001,150,280],[3524,223,263],[3840,320,269]],"par":32},
+ {"gust":77,"gp":4.11,"wind":-36,"pk":["box","long","cake"],"tramps":[[1142,60],[3303,60],[4522,60]],"fans":[[1557,40,337,420,529],[2496,40,316,420,456],[3718,40,333,420,631]],"plats":[[0,235,132],[401,163,119],[701,159,118,0,41,1.16,3.4],[1022,190,60],[1287,250,289],[1914,242,286],[2326,150,299],[2832,242,317],[3183,190,203],[3448,250,360],[4071,248,320],[4402,190,243],[4667,250,360],[5047,320,320]],"par":48},
+ {"gust":87,"gp":3.57,"wind":35,"pk":["box","long","box"],"tramps":[[3501,60]],"fans":[[2680,40,329,420,604]],"plats":[[0,256,136],[394,153,146,0,42,1.26,1.83],[761,155,114],[1084,174,135,0,49,1.4,0.97],[1471,152,118],[1833,169,117],[2222,153,166],[2504,156,146],[3029,225,134],[3381,190,60],[3646,250,289],[4015,320,282]],"par":37},
+ {"gust":72,"gp":4.07,"wind":39,"pk":["box","frag","box"],"tramps":[[1408,60],[3066,60]],"fans":[[562,40,350,420,502],[3481,40,293,420,562]],"plats":[[0,221,156],[384,158,221],[932,236,226],[1288,190,150],[1553,250,360],[2021,154,320],[2324,156,307,0,44,1.54,5.76],[2664,163,320],[2946,190,246],[3211,250,360],[3794,259,320],[4172,320,320]],"par":36},
+ {"gust":88,"gp":1.62,"wind":29,"pk":["box","frag","box"],"tramps":[[3870,60]],"fans":[[253,40,359,420,497],[1531,40,312,420,516],[2474,40,310,420,579]],"plats":[[0,233,155],[632,233,175],[1068,147,253],[1349,162,237],[1863,244,239],[2308,146,178],[2804,226,179],[3164,161,152,0,47,1.36,4.55],[3504,157,208],[3750,190,89],[4015,250,322],[4397,320,320]],"par":56},
+ {"gust":81,"gp":3.64,"wind":29,"pk":["box","box","box"],"tramps":[[1086,60],[2975,60]],"fans":[[252,40,334,420,521],[2211,40,300,420,547]],"plats":[[0,232,152],[606,248,171],[966,190,105],[1231,250,339],[1611,167,320,0,40,1.54,3.89],[2019,172,320],[2531,224,303],[2855,190,199],[3120,250,360],[3490,173,320,0,39,1.45,1.55],[3849,144,289],[4228,170,215],[4537,320,202]],"par":40},
+ {"gust":80,"gp":2.24,"wind":31,"pk":["box","long","frag"],"tramps":[[1456,60],[2727,60]],"fans":[[647,40,329,420,456]],"plats":[[0,248,137],[484,143,205],[996,254,187],[1336,190,108],[1601,250,351],[1979,156,303],[2310,151,320,0,45,1.52,5.72],[2607,190,210],[2872,250,360],[3267,156,320],[3569,154,312,0,46,1.18,4.3],[3888,320,320]],"par":35},
+ {"gust":99,"gp":6.16,"wind":-37,"pk":["box","cake","long","long"],"tramps":[[2393,60]],"fans":[[251,40,330,420,556],[1162,40,354,420,486],[3156,40,346,420,527]],"plats":[[0,231,120],[601,256,107],[988,154,153],[1536,251,156],[1961,156,179,0,48,1.38,2.41],[2273,190,63],[2538,250,284],[2967,169,320],[3522,236,320],[3905,145,320],[4199,320,291]],"par":45},
+ {"gust":90,"gp":5.59,"wind":26,"pk":["box","chick","cake"],"tramps":[[3373,60]],"fans":[[260,40,306,420,544],[1212,40,300,420,606],[2167,40,316,420,475]],"plats":[[0,240,119],[586,242,100],[971,171,109,0,50,1.26,3.08],[1532,249,106],[1938,166,80,0,43,1.36,2.9],[2503,233,83],[2967,162,72],[3253,190,60],[3518,250,277],[3944,146,320],[4187,320,320]],"par":41},
+ {"gust":80,"gp":1.48,"wind":26,"pk":["box","box","chick","box"],"tramps":[[464,60],[1426,60],[2991,60],[3969,60],[5241,60]],"fans":[[1841,40,293,420,580]],"plats":[[0,237,126],[344,190,60],[609,250,286],[997,166,285,0,40,1.41,3.27],[1306,190,180],[1571,250,360],[2154,221,320],[2537,156,320,0,51,1.31,4.2],[2871,190,237],[3136,250,360],[3611,137,285],[3849,190,207],[4114,250,360],[4596,155,320],[4884,156,318],[5121,190,256],[5386,250,360],[5748,320,320]],"boss":1,"par":44},
+ /* ---- chapter 12 (levels 111-120) ---- */
+ {"snow":1,"pk":["box","box","box","cake"],"tramps":[[1945,60]],"ropes":[[1315,1605,384,8],[2971,3214,515,8]],"dogs":[[3540,3753,1.07]],"plats":[[0,231,156],[464,200,73],[899,206,108],[1205,510,126],[1825,190,60],[2090,250,292],[2534,214,254],[2861,463,257],[3420,453,258],[4032,189,254,0,40,1.48,3.4],[4417,196,285],[4708,320,294]],"par":36},
+ {"fog":1,"pk":["box","box","cake"],"tramps":[[3430,60]],"ropes":[[4035,4307,545,8]],"dogs":[[440,650,1.06],[2251,2434,1.15]],"fans":[[1096,40,294,420,631],[4437,40,358,420,572]],"plats":[[0,240,134],[320,450,110],[925,151,166],[1410,252,179],[1825,171,165,0,39,1.22,4.82],[2131,423,142],[2777,142,118],[3074,143,105],[3310,190,60],[3575,250,296],[3925,492,313],[4815,226,320],[5141,320,320]],"par":48},
+ {"gust":75,"gp":3.74,"pk":["box","chick","box","cake"],"tramps":[[457,60],[1468,60]],"dogs":[[3487,3677,1.31]],"plats":[[0,240,116],[337,190,60],[602,250,289],[1100,137,320],[1348,190,217],[1613,250,360],[2105,147,320],[2476,159,240],[2813,142,197],[3100,160,143],[3367,430,157],[4031,156,202],[4308,320,174]],"par":41},
+ {"rain":1,"storm":1,"gust":56,"gp":4.51,"pk":["box","box","chick"],"ropes":[[455,727,358,8],[2368,2609,320,8]],"dogs":[[2936,3134,1.2],[3887,4084,1.17]],"fans":[[1238,40,294,420,623],[4224,40,316,420,614]],"plats":[[0,225,130],[345,492,124],[1050,168,60],[1552,228,65],[1916,184,87,0,46,1.41,1.73],[2258,461,86],[2816,438,94],[3471,168,92],[3767,437,74],[4560,248,92],[4901,320,65]],"par":46},
+ {"snow":1,"fog":1,"pk":["box","box","box"],"tramps":[[2709,60]],"ropes":[[450,727,376,8],[4122,4344,439,8]],"plats":[[0,245,153],[340,497,142],[1001,189,163,0,51,1.44,3.66],[1496,192,179],[1849,192,173,0,45,1.31,1.7],[2273,186,173],[2589,190,69],[2854,250,292],[3294,197,245],[3654,206,227,0,52,1.23,2.15],[4012,442,205],[4564,320,179]],"par":34},
+ {"fog":1,"gust":84,"gp":0.41,"pk":["box","frag","chick","chick"],"tramps":[[3400,60]],"ropes":[[1462,1723,503,8],[2469,2731,475,8]],"plats":[[0,228,128],[439,154,144],[786,154,217],[1097,149,234],[1352,481,243],[2080,152,218],[2359,482,215],[2981,152,187,0,43,1.37,2.44],[3280,190,119],[3545,250,339],[4046,153,299],[4390,148,219],[4633,320,229]],"par":48},
+ {"snow":1,"gust":94,"gp":6.09,"pk":["box","box","box"],"tramps":[[436,60],[1992,60],[3373,60]],"ropes":[[4382,4669,547,8]],"dogs":[[1461,1649,1.2]],"plats":[[0,229,160],[316,190,60],[581,250,295],[973,203,289,0,40,1.53,3.53],[1341,428,265],[1872,190,168],[2137,250,360],[2567,207,286],[2949,208,260],[3253,190,169],[3518,250,360],[3970,187,320],[4272,507,313],[4920,320,305]],"par":36},
+ {"rain":1,"storm":1,"gust":64,"gp":2.49,"pk":["box","chick","cake","box"],"tramps":[[2867,60]],"ropes":[[1293,1517,327,8],[4286,4575,553,8]],"fans":[[1647,40,326,420,520]],"plats":[[0,240,114],[489,165,60],[831,174,73,0,52,1.47,4.7],[1183,444,69],[1993,258,70],[2424,193,60,0,50,1.22,3.29],[2747,190,60],[3012,250,284],[3484,166,320],[3900,188,320],[4176,509,295],[4779,320,310]],"par":43},
+ {"snow":1,"wind":55,"pk":["box","chick","cake","frag"],"tramps":[[1463,60]],"ropes":[[867,1107,332,8],[2079,2321,552,8]],"dogs":[[3903,4093,1.48]],"plats":[[0,220,122],[448,196,68],[757,460,74],[1343,190,60],[1608,250,304],[1969,462,294],[2683,205,320],[3069,200,312,0,52,1.46,3.86],[3488,202,286],[3783,430,285],[4348,196,314,0,43,1.22,2.2],[4727,320,311]],"par":35},
+ {"fog":1,"rain":1,"storm":1,"gust":57,"gp":4.49,"pk":["box","long","box","box"],"ropes":[[1752,2048,371,8],[2784,3054,390,8],[4743,5009,388,8],[5741,5985,401,8]],"fans":[[609,40,351,420,560],[3551,40,358,420,601]],"plats":[[0,225,128],[425,164,115],[980,221,98],[1389,167,129],[1642,516,119],[2394,172,123],[2674,490,138],[3316,173,120,0,42,1.3,0.46],[3929,252,113],[4357,164,150],[4633,486,136],[5354,182,133],[5631,464,149],[6214,320,149]],"boss":1,"par":58},
+ /* ---- chapter 13 (levels 121-130) ---- */
+ {"rain":1,"pk":["box","box","box"],"tramps":[[1633,60],[3397,60]],"ropes":[[1023,1282,408,8]],"dogs":[[474,685,1.49],[4458,4660,1.46]],"plats":[[0,234,143],[354,451,166],[913,479,174],[1513,190,86],[1778,250,307],[2179,181,320,0,50,1.24,2.28],[2615,164,320],[2996,161,230],[3277,190,120],[3542,250,357],[4060,166,274],[4338,442,264],[5002,181,186],[5398,158,194],[5686,320,197]],"par":48},
+ {"rain":1,"pk":["box","chick","box"],"tramps":[[3303,60]],"ropes":[[2236,2501,463,8]],"dogs":[[436,620,1.41],[1339,1507,1.36]],"plats":[[0,231,160],[316,424,155],[932,181,192],[1219,408,221],[1783,180,210,0,39,1.5,6.26],[2126,485,229],[2877,178,254],[3183,190,151],[3448,250,360],[3865,192,320,0,44,1.46,4.76],[4302,173,320],[4742,176,313],[5047,179,320,0,42,1.15,6.15],[5379,320,298]],"par":49},
+ {"rain":1,"pk":["box","frag","box"],"tramps":[[1898,60]],"ropes":[[479,752,340,8],[2961,3241,554,8],[4971,5265,538,8]],"dogs":[[3578,3752,1.03],[4450,4622,1.31],[5608,5789,1.24]],"plats":[[0,252,127],[369,493,106],[1077,172,142],[1501,181,170],[1778,190,93],[2043,250,332],[2555,179,320],[2851,500,320],[3458,414,307],[4061,162,320],[4330,412,293],[4861,514,304],[5488,421,308],[6022,320,311]],"par":51},
+ {"rain":1,"pk":["box","chick","cake"],"tramps":[[783,60],[3195,60]],"ropes":[[2248,2492,517,8],[4557,4780,480,8]],"dogs":[[1390,1581,1.05]],"plats":[[0,236,119],[365,173,94,0,41,1.52,4.89],[663,190,60],[928,250,277],[1270,431,260],[1891,157,296],[2138,464,285],[2799,181,293],[3075,190,186],[3340,250,360],[3733,179,320,0,44,1.2,6.03],[4148,176,239],[4447,443,248],[5031,320,270]],"par":45},
+ {"rain":1,"pk":["box","cake","box"],"tramps":[[1695,60]],"ropes":[[2820,3117,552,8],[4388,4625,540,8]],"dogs":[[453,619,1.49],[2297,2472,1.42],[3866,4062,1.3]],"plats":[[0,241,142],[333,406,125],[914,174,214],[1305,164,264],[1575,190,162],[1840,250,360],[2177,415,320],[2710,517,320],[3399,182,318,0,43,1.45,2.62],[3746,436,311],[4278,457,308],[4975,170,320],[5309,173,266],[5622,320,244]],"par":46},
+ {"rain":1,"pk":["box","frag","frag"],"tramps":[[2250,60],[4174,60]],"ropes":[[1611,1907,313,8]],"dogs":[[3274,3440,1.01]],"plats":[[0,230,118],[472,156,60],[888,158,60],[1182,178,60,0,44,1.32,3.07],[1501,516,79],[2130,190,60],[2395,250,303],[2879,177,320],[3154,406,298],[3803,170,278],[4054,190,210],[4319,250,360],[4739,188,320,0,46,1.23,2.83],[5114,320,293]],"par":42},
+ {"rain":1,"pk":["box","cake","box","box"],"tramps":[[1431,60],[2437,60],[4188,60]],"ropes":[[475,740,412,8],[4784,5035,578,8]],"plats":[[0,252,160],[365,485,154],[1060,170,159],[1311,190,60],[1576,250,292],[2068,158,320],[2317,190,244],[2582,250,360],[2974,182,320,0,42,1.27,1.8],[3383,172,260],[3811,165,320],[4068,190,210],[4333,250,360],[4674,471,320],[5316,158,320],[5599,320,313]],"par":46},
+ {"rain":1,"pk":["box","box","box","chick"],"tramps":[[477,60],[1821,60],[4603,60]],"dogs":[[3667,3867,1.18],[5223,5407,1.1]],"plats":[[0,250,127],[357,190,60],[622,250,296],[1045,170,320],[1414,170,289],[1701,190,197],[1966,250,360],[2455,170,320],[2888,178,320],[3222,173,320,0,43,1.3,3.99],[3547,440,313],[4150,184,290,0,48,1.42,0.86],[4483,190,194],[4748,250,360],[5103,424,320],[5658,320,320]],"par":43},
+ {"rain":1,"pk":["box","box","frag"],"ropes":[[1367,1611,336,8]],"dogs":[[840,1036,1.47],[3098,3289,1.43],[4033,4247,1.35]],"plats":[[0,241,114],[443,175,118],[720,436,116],[1257,464,102],[1853,193,107,0,41,1.27,1.4],[2288,165,62],[2627,192,60,0,45,1.4,3.1],[2978,431,81],[3613,180,60],[3913,454,67],[4504,171,70,0,50,1.25,5.17],[4845,320,60]],"par":42},
+ {"rain":1,"pk":["box","box","cake","box"],"tramps":[[1008,60],[4167,60]],"ropes":[[1621,1914,564,8],[3588,3817,526,8]],"dogs":[[452,662,1.04],[2686,2889,1.32],[5183,5389,1.45],[6080,6258,1.5],[7002,7173,1.28]],"plats":[[0,234,119],[332,450,119],[888,190,60],[1153,250,292],[1511,513,306],[2268,173,233],[2566,443,263],[3203,169,257],[3478,449,268],[4047,190,160],[4312,250,360],[4762,178,320],[5063,446,305],[5701,177,244],[5960,418,233],[6589,178,239],[6882,411,244],[7440,320,260]],"boss":1,"par":60},
+ /* ---- chapter 14 (levels 131-140) ---- */
+ {"snow":1,"pk":["box","box","frag","cake"],"dogs":[[468,669,1.42]],"fans":[[1222,40,329,420,462]],"plats":[[0,237,121],[348,441,124],[1005,197,135],[1571,233,123],[1958,188,120],[2366,204,72],[2817,193,60],[3265,189,70],[3652,205,97],[4048,192,95],[4463,190,176],[4768,320,155]],"par":32},
+ {"snow":1,"wind":-19,"pk":["box","cake","frag"],"tramps":[[1903,60]],"dogs":[[436,624,1.37],[1369,1566,1.28],[4286,4447,1.36]],"fans":[[4975,40,354,420,561]],"plats":[[0,222,139],[316,428,169],[984,185,110],[1249,437,115],[1783,190,60],[2048,250,288],[2518,191,221],[2935,205,179],[3397,207,185],[3862,190,130],[4166,401,116],[4765,190,88],[5349,236,69],[5680,320,88]],"par":40},
+ {"snow":1,"pk":["box","box","box","chick"],"tramps":[[1806,60],[3970,60]],"dogs":[[2402,2598,1.27],[4573,4763,1.36]],"fans":[[997,40,344,420,455],[3153,40,336,420,549]],"plats":[[0,239,149],[415,192,229],[776,201,258],[1361,223,255],[1686,190,188],[1951,250,360],[2282,436,320],[2927,206,320],[3509,255,320],[3850,190,205],[4115,250,360],[4453,430,320],[5115,205,286],[5528,182,218],[5807,320,203]],"par":40},
+ {"snow":1,"wind":-15,"pk":["box","long","box","cake"],"tramps":[[1389,60],[2351,60]],"dogs":[[861,1062,1.32],[3778,3962,1.18],[4743,4938,1.49]],"plats":[[0,242,125],[408,207,124],[741,441,126],[1269,190,60],[1534,250,300],[1942,201,320],[2231,190,253],[2496,250,360],[2952,185,320],[3352,200,320],[3658,424,320],[4328,202,291],[4623,435,311],[5158,320,292]],"par":46},
+ {"snow":1,"pk":["box","box","cake"],"dogs":[[2229,2404,1.1],[3350,3545,1.23],[4746,4957,1.37]],"fans":[[721,40,317,420,499],[2544,40,294,420,626],[5097,40,322,420,494]],"plats":[[0,251,132],[512,189,178],[1058,257,178],[1489,183,91],[1840,188,107],[2109,415,130],[2858,254,148],[3230,435,125],[3907,183,186],[4298,205,162],[4626,451,156],[5439,228,167],[5758,320,162]],"par":38},
+ {"snow":1,"wind":21,"pk":["box","chick","box","box"],"tramps":[[4157,60]],"dogs":[[436,656,1.28],[3228,3388,1.05]],"fans":[[2055,40,316,420,479],[4935,40,342,420,476]],"plats":[[0,223,122],[316,460,141],[1016,193,209],[1425,190,238],[1852,183,189],[2391,247,198],[2799,198,164],[3108,400,168],[3713,207,238],[4037,190,134],[4302,250,354],[4711,204,320],[5297,258,320],[5685,320,320]],"par":41},
+ {"snow":1,"pk":["box","box","box","frag"],"tramps":[[486,60],[3429,60]],"dogs":[[1871,2084,1.28],[2890,3075,1.4],[4910,5088,1.38]],"plats":[[0,246,127],[366,190,60],[631,250,291],[1075,203,320],[1483,188,312],[1751,453,308],[2457,207,320],[2770,425,299],[3309,190,209],[3574,250,360],[4048,196,320],[4488,189,256],[4790,418,255],[5462,189,197],[5741,320,178]],"par":42},
+ {"snow":1,"wind":-19,"pk":["box","long","box","long"],"tramps":[[912,60],[3313,60],[4354,60]],"dogs":[[1542,1719,1.07]],"plats":[[0,256,137],[482,191,96],[792,190,60],[1057,250,293],[1422,417,287],[2038,194,212],[2452,185,289],[2885,181,254],[3193,190,137],[3458,250,360],[3927,202,320],[4234,190,257],[4499,250,360],[4929,205,304],[5261,320,320]],"par":43},
+ {"snow":1,"pk":["box","cake","frag","frag"],"tramps":[[475,60],[2831,60]],"dogs":[[2289,2492,1.05],[4464,4682,1.38]],"fans":[[3246,40,351,420,568],[5177,40,329,420,490]],"plats":[[0,255,130],[355,190,60],[620,250,300],[1031,185,254],[1459,205,290],[1868,183,217],[2169,443,216],[2711,190,132],[2976,250,360],[3617,237,320],[4058,198,320],[4344,458,320],[4956,201,320],[5526,254,320],[5908,320,320]],"par":41},
+ {"snow":1,"wind":-16,"pk":["box","frag","box","box"],"tramps":[[2189,60],[3385,60],[4431,60],[6227,60]],"dogs":[[470,636,1.22]],"fans":[[2604,40,300,420,509]],"plats":[[0,227,117],[350,406,97],[997,204,151],[1410,202,197],[1759,192,170],[2069,190,95],[2334,250,322],[2924,256,317],[3265,190,234],[3530,250,360],[4040,189,320],[4311,190,205],[4576,250,360],[4973,200,320],[5397,187,305],[5781,205,266],[6107,190,148],[6372,250,360],[6772,320,320]],"boss":1,"par":45},
+ /* ---- chapter 15 (levels 141-150) ---- */
+ {"snow":1,"pk":["box","chick","chick","frag"],"tramps":[[2387,60]],"ropes":[[461,685,397,8],[1382,1672,399,8]],"plats":[[0,241,149],[351,444,137],[956,189,128,0,42,1.47,3.41],[1272,510,139],[1929,202,140,0,52,1.36,2.64],[2267,190,60],[2532,250,294],[2962,206,320],[3402,196,262],[3766,183,246,0,45,1.31,5.66],[4165,204,217],[4517,201,173],[4845,320,177]],"par":35},
+ {"fog":1,"pk":["box","cake","box","chick"],"ropes":[[455,705,391,8],[2559,2793,340,8]],"dogs":[[1695,1900,1.27],[3480,3690,1.32]],"plats":[[0,228,120],[345,470,133],[979,173,142,0,49,1.2,6.07],[1351,132,102],[1575,445,102],[2232,137,60],[2449,454,82],[3105,151,104],[3360,450,80],[3968,151,60],[4338,144,60],[4605,320,78]],"par":53},
+ {"gust":92,"gp":1.82,"pk":["box","box","chick","box"],"tramps":[[1366,60]],"ropes":[[788,1034,423,8]],"dogs":[[3375,3580,1.26]],"fans":[[2523,40,359,420,570],[4116,40,356,420,511],[5026,40,298,420,639]],"plats":[[0,256,135],[410,150,175],[678,466,163],[1246,190,89],[1511,250,307],[2020,134,320],[2367,136,300],[2902,242,284],[3255,445,280],[3951,145,297],[4492,230,282],[4876,130,320],[5344,245,316],[5706,320,311]],"par":59},
+ {"rain":1,"storm":1,"gust":74,"gp":0.86,"pk":["box","frag","frag","box"],"tramps":[[4026,60]],"dogs":[[863,1036,1.31],[3163,3350,1.15]],"fans":[[2398,40,296,420,505]],"plats":[[0,247,149],[478,172,67],[743,413,84],[1402,169,82],[1812,186,92],[2209,169,60],[2714,246,60],[3043,427,83],[3651,169,97],[3906,190,60],[4171,250,295],[4565,181,320],[4878,320,311]],"par":38},
+ {"snow":1,"fog":1,"pk":["box","chick","cake","box"],"ropes":[[2677,2901,420,8]],"fans":[[246,40,295,420,637]],"plats":[[0,226,120],[561,260,124],[964,207,96,0,43,1.34,3.64],[1448,182,68],[1861,189,60],[2291,183,146],[2567,444,162],[3160,208,199],[3566,202,145],[3963,194,203],[4294,205,206,0,49,1.32,3.77],[4657,320,219]],"par":33},
+ {"fog":1,"gust":102,"gp":3.27,"pk":["box","long","long","cake"],"tramps":[[781,60],[3016,60]],"dogs":[[4589,4777,1.48]],"fans":[[1805,40,355,420,625],[3431,40,315,420,497]],"plats":[[0,234,158],[357,152,135,0,40,1.24,0.02],[661,190,60],[926,250,286],[1318,135,320],[1653,132,280],[2180,254,300],[2637,151,320],[2896,190,258],[3161,250,360],[3766,245,320],[4169,151,320,0,45,1.49,0.77],[4469,428,320],[4993,320,320]],"par":63},
+ {"snow":1,"gust":86,"gp":1.61,"pk":["box","box","box"],"tramps":[[3292,60]],"ropes":[[1587,1841,311,8]],"plats":[[0,222,123],[405,187,60],[784,196,67],[1151,204,60],[1477,474,77],[2090,190,103,0,41,1.19,3.25],[2506,197,71],[2868,185,105],[3172,190,60],[3437,250,287],[3813,206,310,0,41,1.21,3.69],[4294,196,223],[4619,197,199,0,45,1.31,3.24],[5010,320,176]],"par":36},
+ {"rain":1,"storm":1,"gust":76,"gp":4.06,"pk":["box","box","cake","chick"],"tramps":[[2305,60],[4450,60]],"ropes":[[3897,4138,558,8]],"dogs":[[3351,3547,1.13]],"plats":[[0,258,155],[417,194,161,0,49,1.42,0.8],[816,178,81],[1137,181,72,0,40,1.17,1.02],[1526,185,60],[1846,181,89,0,41,1.48,6.01],[2185,190,60],[2450,250,282],[2931,172,301],[3231,436,320],[3787,461,300],[4330,190,197],[4595,250,360],[4990,182,320,0,44,1.27,0.46],[5355,320,298]],"par":43},
+ {"snow":1,"wind":-63,"pk":["box","chick","chick","box"],"tramps":[[3531,60]],"ropes":[[435,715,382,8],[2394,2667,401,8]],"dogs":[[3004,3173,1.34]],"fans":[[845,40,348,420,522],[4685,40,329,420,463]],"plats":[[0,226,147],[325,500,122],[1213,246,137],[1607,189,135],[2017,184,144],[2284,493,141],[2884,409,114],[3411,190,60],[3676,250,286],[4088,181,296],[4457,208,281],[5034,257,261],[5429,198,254,0,40,1.22,4.48],[5800,320,231]],"par":42},
+ {"fog":1,"rain":1,"storm":1,"gust":75,"gp":5.12,"pk":["box","box","box","cake"],"tramps":[[1218,60],[2211,60],[4194,60],[5420,60]],"ropes":[[3644,3878,578,8],[6507,6762,578,8]],"dogs":[[6029,6195,1.4]],"fans":[[4609,40,334,420,526]],"plats":[[0,239,117],[474,179,138],[834,169,126],[1098,190,60],[1363,250,276],[1760,186,293,0,40,1.23,3.84],[2091,190,177],[2356,250,360],[2864,185,320],[3223,183,320],[3534,454,320],[4074,190,238],[4339,250,360],[4963,221,320],[5300,190,216],[5565,250,360],[5909,406,320],[6397,475,320],[7028,183,295,0,40,1.42,0.92],[7367,320,270]],"boss":1,"par":58},
+ /*ENDGENERATED*/
+];
+function prepLevel(L,i){L.i=i;L.goal=L.plats.length-1;L.start=L.plats[0][0]+40;L.tramps=L.tramps||[];L.ropes=L.ropes||[];L.dogs=L.dogs||[];L.fans=L.fans||[];
+ const topAt=x=>{for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return 0};
+ L.tramps.forEach(t=>t[2]=topAt(t[0]+t[1]/2));L.dogs.forEach(d=>d[3]=topAt((d[0]+d[1])/2));
+ // bullseye: centre of every platform; none on the start, the goal, or a platform with a bounce pad
+ L.bull=L.plats.map((p,k)=>k===0||k===L.goal||L.tramps.some(t=>t[0]>=p[0]&&t[0]<=p[0]+p[1])?null:p[0]+p[1]/2);L.nb=L.bull.filter(b=>b!=null).length}
+// narrow rooftops (tools/narrow-levels.js): level index -> [[platform, new width],...] and the re-checked par; the roof keeps its centre
+const NARROW={/*NARROW*/1:{p:[[4,91]],par:18},2:{p:[[4,91]],par:18},3:{p:[[1,91]],par:16},5:{p:[[3,98]],par:19},7:{p:[[2,98]],par:18},8:{p:[[2,112]],par:18},9:{p:[[4,98]],par:23},10:{p:[[4,91],[3,105]],par:17},11:{p:[[3,98]],par:18},12:{p:[[1,98]],par:19},13:{p:[[1,98],[5,98]],par:18},14:{p:[[2,98],[5,105]],par:17},15:{p:[[1,91]],par:19},16:{p:[[3,91]],par:18},17:{p:[[2,105]],par:18},18:{p:[[3,98]],par:17},19:{p:[[1,98]],par:20},20:{p:[[3,124]],par:14},21:{p:[[1,122],[3,102]],par:16},22:{p:[[1,105]],par:15},23:{p:[[4,108]],par:18},24:{p:[[3,122]],par:18},25:{p:[[1,112]],par:17},26:{p:[[1,114]],par:15},27:{p:[[2,108]],par:18},28:{p:[[5,116]],par:16},30:{p:[[2,102]],par:19},31:{p:[[3,119]],par:17},32:{p:[[4,109]],par:18},33:{p:[[3,110]],par:15},36:{p:[[1,119]],par:18},37:{p:[[4,123]],par:19},38:{p:[[4,124]],par:18},39:{p:[[7,123]],par:29},40:{p:[[3,121]],par:20},41:{p:[[7,124]],par:27},46:{p:[[6,114],[2,115]],par:22},47:{p:[[3,113]],par:22},49:{p:[[11,114]],par:39},50:{p:[[2,84]],par:28},51:{p:[[5,98]],par:35},52:{p:[[5,102]],par:30},53:{p:[[3,96],[4,84]],par:26},54:{p:[[6,95]],par:31},55:{p:[[5,95]],par:37},56:{p:[[2,93]],par:32},57:{p:[[1,105]],par:31},58:{p:[[3,82],[5,102]],par:33},59:{p:[[6,98],[2,84]],par:39},60:{p:[[4,91],[3,99]],par:27},61:{p:[[6,86],[7,81]],par:28},64:{p:[[8,91],[7,103]],par:28},65:{p:[[6,96],[4,87]],par:30},66:{p:[[3,101],[8,95]],par:36},67:{p:[[6,97],[2,104]],par:34},68:{p:[[7,91],[5,105]],par:32},70:{p:[[1,125],[7,116]],par:32},71:{p:[[5,109],[6,113]],par:23},72:{p:[[7,113]],par:33},73:{p:[[5,124]],par:30},74:{p:[[4,123],[7,107]],par:24},75:{p:[[4,111]],par:38},76:{p:[[6,118]],par:28},77:{p:[[5,112],[2,109]],par:31},78:{p:[[4,116]],par:37},79:{p:[[6,110],[5,115]],par:37},81:{p:[[1,111],[7,122]],par:27},83:{p:[[4,106]],par:27},90:{p:[[4,102],[1,80]],par:39},91:{p:[[8,82]],par:44},92:{p:[[7,105]],par:36},93:{p:[[2,88]],par:44},94:{p:[[3,105]],par:44},95:{p:[[6,83],[1,87]],par:35},96:{p:[[7,90]],par:42},97:{p:[[8,85]],par:43},98:{p:[[8,97]],par:39},99:{p:[[3,97],[10,102]],par:53},100:{p:[[9,100],[3,99]],par:38},101:{p:[[7,88],[1,101]],par:48},102:{p:[[6,84],[8,104]],par:37},103:{p:[[5,105]],par:36},104:{p:[[5,102]],par:56},105:{p:[[8,96]],par:40},106:{p:[[5,82],[8,89]],par:41},107:{p:[[7,98]],par:45},108:{p:[[1,94],[6,84]],par:42},109:{p:[[16,96],[6,94],[13,83]],par:49},111:{p:[[2,102]],par:48},112:{p:[[5,81]],par:45},113:{p:[[2,109]],par:46},115:{p:[[2,90],[11,100]],par:50},116:{p:[[10,107]],par:38},119:{p:[[5,114]],par:61},120:{p:[[4,120]],par:50},122:{p:[[3,122]],par:51},123:{p:[[11,123],[3,110]],par:46},124:{p:[[11,119],[2,122]],par:46},125:{p:[[1,109],[11,106]],par:42},127:{p:[[7,119]],par:43},128:{p:[[8,109]],par:42},129:{p:[[5,110],[3,119]],par:61},134:{p:[[4,123]],par:39},141:{p:[[3,92],[7,90]],par:53},143:{p:[[11,113],[4,105],[5,113]],par:42},145:{p:[[4,94],[6,84]],par:63},146:{p:[[9,119]],par:37},147:{p:[[12,122],[8,105]],par:43},149:{p:[[4,124],[9,124],[8,122]],par:63}};
+LEVELS.forEach((L,i)=>{const n=NARROW[i];if(!n)return;for(const [k,w] of n.p){const q=L.plats[k];q[0]+=Math.round((q[1]-w)/2);q[1]=w}if(n.par)L.par=n.par});
+LEVELS.forEach(prepLevel);
+const PAR=[16,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20, 14,16,14,18,18,17,15,17,16,22, 19,17,18,14,20,24,17,19,18,29];LEVELS.forEach((L,i)=>L.par=L.par||PAR[i]||20);
+const CHAPTERS=15,PER=10;
+
+/* ================= simulation (deterministic, fixed step) ================= */
+/* ---- endless run: platforms are generated ahead of the player; every candidate is checked with the real physics ----
+ plat[3] = look (0 street, 1 pier + wind, 2 night street); every 8th platform is a doorstep (delivery bonus + one more parcel) */
+const ZLEN=12;
+function mkEndless(seed){return{endless:1,i:100,pk:['box','box'],plats:[[0,260,120,0]],tramps:[],ropes:[],dogs:[],fans:[],winds:[],bull:[null],gold:[],cp:[],cpPk:[],goal:-1,start:40,nb:0,par:0,wind:0,g:{seed:seed|0,zone:0,w:null}}}
+// jump from platform idx (standing at fraction fx, starting at time t0) with 21 charge levels; count the ones that end somewhere accepted
+function tryFrom(L,idx,fx,t0,acc){const pv=L.plats[idx];let ok=0;
+ for(let c=0;c<=1.001;c+=0.05){const s=newState(L,1);s.t=t0;s.x=PX(pv,t0)+pv[1]*fx;s.y=pv[2];s.on=idx;s.lastP=idx;s.stack=[{t:'box',crack:0}];
+  const C=Math.max(1,Math.round(c*CHARGE_T/DT));for(let k=0;k<C;k++)step(s,L,true);step(s,L,false);for(let k=0;k<700&&s.on<0&&!s.dead;k++)step(s,L,false);if(!s.dead&&acc(s))ok++}
+ return ok}
+function reachable(L,idx,acc){const pv=L.plats[idx],nx=L.plats[idx+1],mp=pv[4]?pv:nx&&nx[4]?nx:null,per=mp?6.2832/mp[5]:0;let best=0;
+ for(const fx of [0.5,0.8])for(let k=0;k<(mp?4:1);k++)best=Math.max(best,tryFrom(L,idx,fx,k*per/4,acc));return best>=3}
+function genNext(L){const g=L.g,n=L.plats.length,pv=L.plats[n-1],R=()=>rnd(g),zone=n/ZLEN|0,type=zone%3,d=Math.min(1,n/80),end=pv[0]+pv[1]+(pv[4]||0);
+ if(zone!==g.zone){g.zone=zone;const edge=end+10;if(g.w){g.w[1]=edge;g.w=null}if(type===1){g.w=[edge,1e9,(R()<0.5?-1:1)*Math.round(45+Math.min(55,zone*7))];L.winds.push(g.w)}}
+ const cp=n%8===0,m8=n%8,r0=R(),dg=L.dogs;L.dogs=[];
+ let kind=cp?'cp':pv[4]?'':n>10&&m8>0&&m8<7&&r0<0.1?'tramp':n>14&&r0<0.23?'move':n>18&&r0<0.36?'dog':'';
+ if(kind==='tramp'){ // low roof with a bounce pad at its far end, then a high roof
+  for(let k=0;k<6;k++){const gap=70+R()*(60+60*d)-k*8,p1=[Math.round(end+gap),190,Math.round(Math.max(60,pv[2]-60-R()*80)),type],tr=[p1[0]+120,60,p1[2]],p2=[tr[0]+145,250,Math.round(p1[2]+215+R()*40),type];
+   L.plats.push(p1,p2);L.tramps.push(tr);
+   if(reachable(L,n-1,s=>s.on===n+1||s.on===n&&s.x<tr[0]-8)&&tryFrom(L,n,0.1,0,s=>s.on===n+1)>=3){L.bull.push(null,p2[0]+p2[1]/2);L.nb++;L.dogs=dg;return}
+   L.plats.length=n;L.tramps.pop()}
+  kind=''}
+ let p;for(let k=0;k<10;k++){const mv=kind==='move'&&k<6,amp=mv?Math.round(40+R()*25):0,gap=k===9?70:mv?60+R()*70:Math.max(60,70+R()*(70+110*d)-k*10),w=cp?260:kind==='dog'?390:mv?140:Math.round(Math.max(92,165-65*d+R()*55)),dh=k<9?(R()-0.5)*(110+110*d)*(1-k*0.08):0;
+  p=[Math.round(end+gap+amp),w,Math.round(Math.min(300,Math.max(90,pv[2]+dh))),type];if(mv)p.push(amp,+(1.1+R()*0.6).toFixed(2),+(R()*6.28).toFixed(2));
+  L.plats.push(p);const ok=k===9||reachable(L,n-1,s=>s.on===n);L.plats.pop();if(ok)break}
+ L.dogs=dg;L.plats.push(p);L.bull.push(p[0]+p[1]/2);L.nb++;
+ if(!cp&&n>5&&R()<0.12)L.gold[n]=1;
+ if(cp){L.cp[n]=1;const r=R();L.cpPk[n]=n<24?'box':r<0.35?'box':r<0.6?'frag':r<0.82?'cake':'chick'}
+ if(kind==='dog'&&!p[4])L.dogs.push([p[0]+120,p[0]+p[1]-120,1+R()*0.4,p[2]])}
+function ensure(L,x){while(L.plats[L.plats.length-1][0]<x+1800)genNext(L)}
+
+function rnd(s){s.seed=(s.seed+0x6D2B79F5)|0;let t=s.seed;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}
+function newState(L,seed){const p=L.plats[0];return{x:L.start,y:p[2],vx:0,vy:0,th:0,om:0,on:0,charge:0,charging:false,needRel:false,prevHold:false,
+ stack:L.pk.map(t=>({t,crack:0})),psi:0,psv:0,t:0,dead:null,won:false,seed:seed|0,chickT:1.2,lost:0,ev:[],safe:null,jumps:0,airT:0,score:0,combo:0,maxC:0,hits:0,lastP:0,claim:L.plats.map(()=>0),cpd:[]}}
+function snap(s,L){s.safe={dx:s.x-PX(L.plats[s.on],s.t),y:s.y,on:s.on,stack:s.stack.map(p=>({t:p.t,crack:p.crack})),lost:s.lost,score:s.score,combo:s.combo,hits:s.hits,lastP:s.lastP,claim:s.claim.slice(),cpd:s.cpd.slice()}}
+function ev(s,k,o){s.ev.push(Object.assign({k},o||{}))}
+function stackH(s){let h=0;for(const p of s.stack)h+=PK[p.t].h;return h}
+function headPos(s){return{x:s.x+Math.sin(s.th)*HEAD,y:s.y+Math.cos(s.th)*HEAD}}
+function dogX(d,t){return d[0]+(d[1]-d[0])*(0.5-0.5*Math.cos(t*d[2]))}
+function ropeY(r,x){const k=(x-r[0])/(r[1]-r[0]);return r[2]-r[3]*4*k*(1-k)}
+function PX(p,t){return p[4]?p[0]+p[4]*Math.sin(t*p[5]+p[6]):p[0]}
+function windAt(L,x,t){if(!L.winds)return(L.wind||0)+(L.gust?L.gust*Math.sin((t||0)*0.9+(L.gp||0)):0);for(let k=L.winds.length-1;k>=0;k--){const w=L.winds[k];if(x>=w[0])return x<w[1]?w[2]:0}return 0}
+function die(s,why){if(s.dead||s.won)return;s.dead=why;ev(s,'crash',{why})}
+function loseAt(s,i,why){const p=s.stack[i];if(!p)return;if(s.tape&&why!=='break'){s.tape=0;s.psi*=0.25;s.psv*=0.2;ev(s,'tape');return}s.stack.splice(i,1);s.lost++;ev(s,'lose',{t:p.t,i,why,dir:Math.sign(s.psi)||1});if(!s.stack.length)die(s,'empty')}
+function jump(s){const v=V0+V1*s.charge;s.vx=v*Math.sin(LAUNCH);s.vy=v*Math.cos(LAUNCH);const Tf=2*s.vy/G;
+ s.th=0.3;s.om=-(0.3+0.6*s.charge)/Tf;s.on=-1;s.charging=false;s.jumps++;s.airT=0;ev(s,'jump',{c:s.charge})}
+function land(s,L,i,pvy){
+ const p=L.plats[i];
+ for(const tr of L.tramps){if(tr[2]===p[2]&&s.x>=tr[0]-6&&s.x<=tr[0]+tr[1]+6){s.vy=Math.max(-pvy*0.9,TRAMP_V);s.om=-s.th*1.5;s.psv-=0.5;ev(s,'bounce');return}}
+ const th=s.th,impact=-pvy;
+ if(Math.abs(th)>(!L.endless&&L.i<3?CRASH_EASY:CRASH_TH)){s.y=p[2];die(s,'face');return}
+ s.on=i;s.y=p[2];s.vy=0;
+ const q=Math.abs(th),hard=q>0.42||impact>1350;
+ s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
+ if(q<0.12){s.psv*=0.25;s.psi*=0.4} // perfect landing: the tower settles straight away
+ for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
+ s.vx=L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
+ // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
+ if(i>s.lastP){for(let k=Math.max(1,s.lastP);k<i;k++)if(L.bull[k]!=null&&!s.claim[k]){if(s.combo>1)ev(s,'cbreak');s.combo=0;break}
+  if(L.endless){s.score+=5*(i-s.lastP);if(L.cp[i]&&!s.cpd[i]){s.cpd[i]=1;const b=20*s.stack.length;s.score+=b;let got=null;if(s.stack.length<4){got=L.cpPk[i];s.stack.push({t:got,crack:0})}ev(s,'cp',{i,b,got})}}
+  s.lastP=i}
+ const bx=L.bull[i];if(bx!=null&&!s.claim[i]&&Math.abs(s.x-bx-PX(p,s.t)+p[0])<=BULL_R){s.claim[i]=1;s.combo++;s.hits++;if(s.combo>s.maxC)s.maxC=s.combo;const gold=!!(L.gold&&L.gold[i]),pts=10*s.combo*(gold?3:1);s.score+=pts;ev(s,'bull',{i,n:s.combo,pts,gold})}
+ ev(s,'land',{q,hard,perfect:q<0.12,impact});
+ if(s.dead)return;
+ if(i===L.goal){s.won=true;ev(s,'win')}else snap(s,L);
+}
+function step(s,L,hold){
+ if(s.dead){s.t+=DT;return}
+ if(s.won){s.om+=(-70*s.th-13*s.om)*DT;s.th+=s.om*DT;s.psv+=(-20*s.psi-4*s.psv)*DT;s.psi+=s.psv*DT;return}
+ s.t+=DT;const dt=DT;
+ if(!hold)s.needRel=false;s.holdT=hold?(s.holdT||0)+DT:0;
+ const omPrev=s.om;
+ const hasLong=s.stack.some(p=>p.t==='long'),mul=hasLong?2.5:1;
+ if(s.on>=0){
+  if(hold&&!s.needRel){if(!s.charging){s.charging=true;s.charge=0;ev(s,'charge')}s.charge=Math.min(1,s.charge+dt/CHARGE_T)}
+  else if(s.charging)jump(s);
+  if(s.on>=0){
+   const p=L.plats[s.on];if(p[4])s.x+=PX(p,s.t)-PX(p,s.t-DT);
+   if(s.vx){s.x+=s.vx*dt;s.vx*=Math.exp(-(L.snow?SNOW_F:RAIN_F)*dt);if(Math.abs(s.vx)<5)s.vx=0;const px=PX(p,s.t);if(s.x<px-6||s.x>px+p[1]+6){s.on=-1;s.vy=0;s.om=s.vx*0.004;ev(s,'slip')}}
+   const tgt=s.charging?s.charge*0.28:0;s.om+=(-70*(s.th-tgt)-13*s.om)*dt;s.th+=s.om*dt;
+  }
+ }else{
+  s.airT+=dt;s.vy-=G*dt;
+  const wnd=windAt(L,s.x,s.t);if(wnd)s.vx+=wnd*mul*dt;
+  if(hasLong)s.vx-=s.vx*0.22*dt;
+  for(const f of L.fans){if(s.x>f[0]&&s.x<f[0]+f[2]&&s.y+60>f[1]&&s.y<f[1]+f[3]){s.vx+=f[4]*mul*dt;s.psv+=f[4]*0.0014*mul*dt}}
+  if(hold&&!s.needRel)s.om+=AIR_ALPHA*dt;
+  s.th+=s.om*dt;
+  const py=s.y,pvy=s.vy;s.x+=s.vx*dt;s.y+=s.vy*dt;
+  let landed=false;
+  if(s.vy<=0)for(let i=0;i<L.plats.length;i++){const p=L.plats[i],px=PX(p,s.t);if(py>=p[2]-0.01&&s.y<=p[2]&&s.x>=px-6&&s.x<=px+p[1]+6){s.y=p[2];land(s,L,i,pvy);landed=true;break}}
+  if(!landed&&!s.dead){for(const p of L.plats){const px=PX(p,s.t);if(s.x>px&&s.x<px+p[1]&&s.y<p[2]-2){die(s,'wall');break}}
+   if(s.y<-420)die(s,'fall')}
+ }
+ if(s.dead||s.won)return;
+ // clotheslines
+ const hp=headPos(s);
+ for(const r of L.ropes){if(hp.x<r[0]||hp.x>r[1])continue;const ry=ropeY(r,hp.x);
+  if(ry>s.y+24&&ry<hp.y){die(s,'rope');return}
+  let base=hp.y;const ca=Math.cos(s.th+s.psi*0.8);let k=0;
+  for(;k<s.stack.length;k++){const top=base+PK[s.stack[k].t].h*ca;if(top>ry-2&&base<ry+60)break;base=top}
+  if(k<s.stack.length&&base<ry+60){while(s.stack.length>k){const pk=s.stack[s.stack.length-1];ev(s,'snag',{t:pk.t,x:hp.x,y:ry,r:L.ropes.indexOf(r)});loseAt(s,s.stack.length-1,'rope');if(s.dead)return}s.psv*=0.5}}
+ // dogs
+ for(const d of L.dogs){const dx=dogX(d,s.t);if(Math.abs(s.x-dx)<28&&s.y<d[3]+34&&s.y>d[3]-6){die(s,'dog');return}}
+ // parcel stack
+ const n=s.stack.length;
+ if(n){const oma=(s.om-omPrev)/dt;let k=22/(1+0.1*n);if(s.on<0)k*=0.6;
+  const grav=s.on>=0?7*(1+0.08*n)*Math.sin(s.psi+s.th*0.6):0;
+  const a=-k*s.psi-3.5*s.psv+grav-0.18*oma;s.psv+=a*dt;s.psi+=s.psv*dt;
+  if(s.stack.some(p=>p.t==='chick')){s.chickT-=dt;if(s.chickT<=0){s.chickT=0.9+rnd(s)*1.3;s.psv+=(rnd(s)<0.5?-1:1)*(1.1+rnd(s)*0.8);ev(s,'cluck')}}
+  if(s.on>=0&&Math.abs(s.psi+s.th)>0.5){const ci=s.stack.findIndex(p=>p.t==='cake');if(ci>=0){loseAt(s,ci,'cake');s.psi*=0.7;if(s.dead)return}}
+  if(Math.abs(s.psi)>DROP_TH){loseAt(s,s.stack.length-1,'wobble');s.psi*=0.4;s.psv*=0.4}
+ }
+}
+
+/* ================= save ================= */
+let EB=store.get('eb',0);
+/* coins + outfits (cosmetic only) */
+const SKINS=[{c:0,hat:'cap',cap:'#3d7bff',jk:'#ff9a1f',pk:'#3d7bff',st:'#8a5a12',lg:'#3d4f8a',pg:'#ff4f6d'},
+ {c:100,hat:'cap',cap:'#3fbf88',jk:'#fff3c4',pk:'#3fbf88',st:'#2f8f66',lg:'#3d4f8a',pg:'#3d7bff'},
+ {c:150,hat:'beanie',cap:'#ff4f6d',jk:'#ffffff',pk:'#ffffff',st:'#b03a4c',lg:'#2b2340',pg:'#ffc23d'},
+ {c:250,hat:'cap',cap:'#8b5cf6',jk:'#ffd6f0',pk:'#8b5cf6',st:'#6a43c9',lg:'#5b5a8f',pg:'#3fbf88'},
+ {c:350,hat:'band',cap:'#2b2340',jk:'#3d4f8a',pk:'#7fd8ff',st:'#7fd8ff',lg:'#2b2340',pg:'#7fd8ff'},
+ {c:500,hat:'helmet',cap:'#ffc23d',jk:'#ff9f43',pk:'#fff6c9',st:'#fff6c9',lg:'#3d4f8a',pg:'#ff6b4a'},
+ {c:700,hat:'beanie',cap:'#ffffff',jk:'#ff6b4a',pk:'#7fc0ff',st:'#ffffff',lg:'#b03a4c',pg:'#ffffff'},
+ {c:1500,hat:'crown',cap:'#ffc23d',jk:'#ffc23d',pk:'#fff6c9',st:'#e09a00',lg:'#e09a00',pg:'#ffc23d'},
+ {c:200,hat:'helmet',cap:'#ffffff',jk:'#7fc0ff',pk:'#3d7bff',st:'#3d7bff',lg:'#3d4f8a',pg:'#3d7bff'},
+ {c:400,hat:'band',cap:'#ff4f6d',jk:'#ffffff',pk:'#ff4f6d',st:'#2b2340',lg:'#ffffff',pg:'#ff4f6d'},
+ {c:600,hat:'cap',cap:'#ff8fc7',jk:'#2b2340',pk:'#ff8fc7',st:'#ff8fc7',lg:'#5b5a8f',pg:'#ff8fc7'},
+ {c:1000,hat:'helmet',cap:'#3fbf88',jk:'#2b2340',pk:'#3fbf88',st:'#3fbf88',lg:'#2b2340',pg:'#3fbf88'}];
+let COINS=store.get('coins',0),OWN=store.get('own',[1]),SKI=store.get('skin',0),SK=SKINS[SKI]||SKINS[0];
+// more things to buy: pogo sticks (k 0 = the outfit's own colour), jump trails, box styles, consumable items
+const POGOS=[{c:0},{c:80,col:'#2b2340'},{c:100,col:'#3fd0c9'},{c:120,col:'#ff8fc7'},{c:180,col:'#c9d3e6'},{c:250,col:'#9cff57'},{c:300,col:'#ffc23d'},{c:800,rb:1}];
+const TRAILS=[{c:0},{c:120,k:'bub'},{c:150,k:'star'},{c:200,k:'heart'},{c:250,k:'conf'},{c:400,k:'spark'},{c:600,k:'rb'}];
+const BOXES=[{c:0,f:'#e7b06a',t:'#c98a43'},{c:100,f:'#8fd694',t:'#4f9a5a'},{c:120,f:'#7fb7ff',t:'#3d6fd6'},{c:150,f:'#ff6b6b',t:'#ffd23d',rib:1},{c:200,f:'#fff3dc',t:'#e04848',pz:1},{c:900,f:'#ffc23d',t:'#e09a00',sh:1}];
+const ITEMS=[{id:'tape',c:40},{id:'scope',c:30}];
+const COS={pogo:{list:POGOS,own:store.get('ownP',[1]),sel:store.get('pogo',0),k:'P'},trail:{list:TRAILS,own:store.get('ownT',[1]),sel:store.get('trail',0),k:'T'},box:{list:BOXES,own:store.get('ownB',[1]),sel:store.get('boxs',0),k:'B'}};
+let INV=store.get('inv',{tape:0,scope:0}),USE=store.get('use',{tape:1,scope:1});
+const pgCol=()=>{const q=POGOS[COS.pogo.sel]||POGOS[0];return q.rb?`hsl(${(GS.time*160)%360},85%,58%)`:q.col||SK.pg};
+function addCoins(n){if(n>0){COINS+=n;store.set('coins',COINS)}}
+// daily gift: from the 2nd day on, the first visit of each day gives coins; consecutive days give more (up to day 7)
+const dayNo=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5),dailyAmt=d=>10+10*Math.min(7,d);
+let DL=store.get('dl',null),GIFT=null;
+{const td=dayNo();if(!DL)DL={d:td,s:1};else if(DL.d<td){const st=DL.d===td-1?Math.min(7,DL.s+1):1;GIFT={n:dailyAmt(st),d:st};DL={d:td,s:st};addCoins(GIFT.n)}store.set('dl',DL)}
+function nextSkinCost(){let c=1e9;SKINS.forEach((k,i)=>{if(!OWN[i]&&k.c>0&&k.c<c)c=k.c});return c<1e9?c:0}
+function goalLine(){const c=nextSkinCost(),parts=[];if(c){const pct=Math.min(100,Math.round(COINS/c*100));parts.push(COINS>=c?'<b>'+T('skinReady')+'</b>':T('skinNext',{n:c-COINS})+`<span class="pbar"><i style="width:${pct}%"></i></span>`)}
+ parts.push('🎁 '+T('dailyNext',{n:dailyAmt(Math.min(7,DL.s+1))}));return '<div class="goals">'+parts.map(t=>'<div>'+t+'</div>').join('')+'</div>'}
+function showGift(){if(!GIFT)return;$('gTxt').textContent=T('dailyGot',{n:GIFT.n,d:GIFT.d});$('giftL').hidden=false;GIFT=null;try{SFX.star(2)}catch(e){}}
+let BS=store.get('bs',[]),BA=store.get('ba',[]);
+let LP=store.get('lvp',[]),muted=store.get('mute',false),adMute=false,platMute=false,plays=0,failsHere=0;
+function curLevel(){for(let i=0;i<LEVELS.length;i++)if(!LP[i])return i;return LEVELS.length-1}
+const lvOpen=i=>i<LEVELS.length&&(i===0||LP[i-1]>0);
+
+/* ================= canvas ================= */
+const cv=$('cv'),ctx=cv.getContext('2d');
+let CW=0,CH=0,DPR=1,S=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);CW=innerWidth;CH=innerHeight;cv.width=CW*DPR|0;cv.height=CH*DPR|0;S=Math.min(CH/600,CW/500)}
+addEventListener('resize',resize);resize();
+
+/* ================= audio ================= */
+let AC=null,chOsc=null,chGain=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended'&&!adMute)AC.resume();return AC}
+function tone(f,f2,dur,type,vol,delay){if(muted||adMute||platMute)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
+function noise(dur,vol,freq){if(muted||adMute||platMute)return;const a=ac();if(!a)return;const n=a.sampleRate*dur|0,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=freq||1200;const g=a.createGain();g.gain.value=vol||0.2;s.connect(f).connect(g).connect(a.destination);s.start()}
+function chargeSnd(on,c){if(muted||adMute||platMute)on=false;const a=on?ac():AC;if(!a)return;
+ if(on&&!chOsc){chOsc=a.createOscillator();chGain=a.createGain();chOsc.type='triangle';chGain.gain.value=0.0001;chOsc.connect(chGain).connect(a.destination);chOsc.start();chGain.gain.exponentialRampToValueAtTime(0.05,a.currentTime+0.05)}
+ if(chOsc){if(on){chOsc.frequency.setTargetAtTime(160+c*420+(c>=1?Math.sin(performance.now()/40)*30:0),a.currentTime,0.02)}else{try{chGain.gain.setTargetAtTime(0.0001,a.currentTime,0.02);chOsc.stop(a.currentTime+0.1)}catch(e){}chOsc=null}}}
+/* background music: a small looping tune, scheduled a little ahead on the audio clock */
+const MEL=[76,0,79,76,72,0,74,76, 72,0,76,72,69,0,72,0, 77,0,81,77,72,0,74,77, 79,0,74,79,83,0,79,0,
+ 81,0,77,81,84,0,81,77, 79,0,74,79,83,0,79,74, 76,0,79,76,71,0,74,76, 72,0,69,72,74,0,71,0],ROOT=[36,33,41,43,41,43,40,45];
+let mGain=null,mNext=0,mStep=0;
+function mNote(m,t,dur,type,vol){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=440*Math.pow(2,(m-69)/12);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(mGain);o.start(t);o.stop(t+dur+0.02)}
+function musicTick(){if(!AC||AC.state!=='running')return;if(!mGain){mGain=AC.createGain();mGain.connect(AC.destination);mNext=0}
+ const on=!(muted||platMute||adMute);mGain.gain.setTargetAtTime(on?(GS.mode==='crash'?0.35:1):0,AC.currentTime,0.08);
+ const far=GS.L&&GS.L.endless&&GS.s?Math.min(1,GS.s.lastP/90):0,sd=60/(124+26*far)/2;
+ if(mNext<AC.currentTime)mNext=AC.currentTime+0.06;
+ while(mNext<AC.currentTime+0.3){const k=mStep%64,b=k%8,r=ROOT[k>>3],m=MEL[k],t=mNext;
+  if(on){if(m)mNote(m,t,sd*1.7,'triangle',0.05);
+   if(b===0)mNote(r,t,sd*1.8,'sine',0.11);else if(b===4)mNote(r+7,t,sd*1.6,'sine',0.09);else if(b===2||b===6)mNote(r+12,t,sd*0.8,'square',0.018);
+   if(b%2===1){const n=AC.sampleRate*0.03|0,bf=AC.createBuffer(1,n,AC.sampleRate),d=bf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const src=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain();src.buffer=bf;hp.type='highpass';hp.frequency.value=6000;g.gain.value=0.035;src.connect(hp).connect(g).connect(mGain);src.start(t)}}
+  mNext+=sd;mStep++}}
+setInterval(musicTick,90);
+function buzz(p){if(muted||platMute||adMute)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+const SFX={
+ jump(c){tone(220+c*120,700+c*500,0.22,'square',0.06);tone(400,900,0.12,'sine',0.12)},
+ land(q){noise(0.12,0.25,500);tone(140,70,0.12,'sine',0.25)},
+ bull(n){const f=523*Math.pow(2,Math.min(n-1,9)*2/12);tone(f,0,0.2,'sine',0.22);tone(f*1.5,0,0.28,'sine',0.13,0.07)},
+ perfect(){[784,1046,1318].forEach((f,i)=>tone(f,0,0.12,'triangle',0.12,i*0.06))},
+ lose(){tone(600,180,0.3,'triangle',0.12);noise(0.15,0.15,2500)},
+ crack(){noise(0.08,0.25,6000);tone(2400,1800,0.05,'square',0.04)},
+ smash(){noise(0.35,0.35,5000);tone(1800,600,0.2,'square',0.05)},
+ crash(){noise(0.5,0.45,900);tone(300,60,0.6,'sawtooth',0.1)},
+ splash(){noise(0.7,0.45,1300);noise(0.25,0.25,4000);tone(420,110,0.35,'sine',0.16)},
+ bounce(){tone(200,900,0.25,'sine',0.25);tone(300,1200,0.2,'triangle',0.08)},
+ bark(){tone(520,300,0.09,'square',0.08);tone(520,280,0.1,'square',0.08,0.13)},
+ cluck(){tone(900,600,0.07,'square',0.05);tone(1000,700,0.06,'square',0.04,0.09)},
+ win(){[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,0,0.18,'triangle',0.13,i*0.08))},
+ star(k){tone(880+k*220,0,0.16,'triangle',0.15)},
+ click(){tone(700,0,0.05,'triangle',0.08)}
+};
+
+/* ================= game state ================= */
+const GS={mode:'title',L:null,s:null,acc:0,hold:false,cam:{x:0,y:0,z:1},fx:[],debris:[],pops:[],shake:0,slow:0,time:0,
+ anim:{sq:0,sqv:0,blink:2,face:0,wave:0},coinFly:[],runCoins:0,wallet:0,endT:0,revived:false,tutStep:0,tipSeen:{},quip:''};
+const LV=()=>GS.L;
+
+function restart(){if(GS.L.endless)startEndless();else startLevel(GS.L.i)}
+function startEndless(){const L=mkEndless((Math.random()*1e9)|0);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L)}
+function startLevel(i,keepRevive,EL){
+ const L=EL||LEVELS[i];GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
+ GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.groundT=0;GS.poofed=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;if(!L.endless&&L.i>=3&&GS.scopeLv!==L.i){GS.scope=false;if(INV.scope>0&&USE.scope){INV.scope--;store.set('inv',INV);GS.scope=true;GS.scopeLv=L.i}}else if(L.endless)GS.scope=false;if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&!L.tut&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.tutStep=L.tut?1:0;GS.anim.face=0;GS.dogBark=0;
+ GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;
+ hideTip();if(L.endless){if(!store.get('te',0)){store.set('te',1);showTip(T('t_endless'),5)}}
+ else if(!L.tut&&L.nb&&!store.get('tb',0)){store.set('tb',1);showTip(T('t_bull'),5)}
+ else if(L.tip&&!GS.tipSeen[L.tip]){GS.tipSeen[L.tip]=1;showTip(T(L.tip),4.5)}
+ showLayer(null);$('pauseB').hidden=false;plays++;gp(true);
+}
+function revive(){const s=GS.s;if(!s.safe)return;const sf=s.safe;Object.assign(s,{x:PX(GS.L.plats[sf.on],s.t)+sf.dx,y:sf.y,on:sf.on,vx:0,vy:0,th:0,om:0,psi:0,psv:0,charging:false,charge:0,needRel:true,dead:null,
+ stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.groundT=0;GS.poofed=false;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
+
+/* ================= events → fx ================= */
+function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
+function burst(x,y,cols,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(sp||260)*(0.4+Math.random());GS.fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v+150,r:3+Math.random()*4,col:cols[i%cols.length],t:0,life:0.6+Math.random()*0.5,kind:Math.random()<0.4?'sq':'dot',rot:Math.random()*6,vr:(Math.random()-0.5)*14})}}
+function pkWorld(s,i){const hp=headPos(s);let h=0;for(let k=0;k<i;k++)h+=PK[s.stack[k].t].h;const a=s.th+s.psi*0.8;return{x:hp.x+Math.sin(a)*(h+PK[s.stack[i]?s.stack[i].t:'box'].h/2),y:hp.y+Math.cos(a)*(h+13),a}}
+function flyPk(t,x,y,vx,vy,vr,extra){GS.debris.push(Object.assign({kind:'pk',t,x,y,vx,vy,rot:0,vr,life:0,crack:0},extra||{}))}
+function handleEvents(){const s=GS.s;if(!s.ev.length)return;const evs=s.ev.splice(0);let bulled=false;
+ for(const e of evs){
+  if(e.k==='charge'){}
+  else if(e.k==='jump'){GS.airUsed=false;GS.coached=false;SFX.jump(e.c);buzz(8);GS.anim.sqv=6;chargeSnd(false);burst(s.x,s.y+4,['#fff','#e8e1d6'],6,140)}
+  else if(e.k==='land'){if(!e.perfect)GS.pfN=0;if(GS.airUsed&&AIRN<3){AIRN++;store.set('air2',AIRN)}SFX.land(e.q);buzz(e.hard?28:12);GS.anim.sqv=-7-e.impact/220;burst(s.x,s.y+2,['#fff','#e8e1d6'],e.hard?12:6,e.hard?260:160);
+   if(e.perfect){GS.pfN=(GS.pfN||0)+1;const n=Math.min(3,GS.pfN);let lab=T('perfect');if(GS.L.endless){s.score+=5*n;lab+=' +'+5*n}else{addCoins(n);GS.runCoins=(GS.runCoins||0)+n;lab+=' +'+n;const k=S*GS.cam.z;for(let j=0;j<n;j++)GS.coinFly.push({x0:W(s.x)+(j-1)*8*k,y0:H(s.y+HEAD),t:-j*0.08,v:j===n-1?n:0})}SFX.perfect();wobbleText(s.x,s.y+HEAD+stackH(s)+50,lab+(n>1?'  ×'+n:''),'#3fbf88',1.1+0.1*n);GS.fx.push({kind:'ring',x:s.x,y:s.y,t:0,life:0.45})}
+   else if(e.q>0.42){wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('wobbly'),'#ff5d7a',1);GS.shake=6}
+   if(e.hard)GS.shake=Math.max(GS.shake,5)}
+  else if(e.k==='bull'){bulled=true;SFX.bull(e.n);buzz([18,40,18]);const bp=GS.L.plats[e.i],bx=GS.L.bull[e.i]+PX(bp,s.t)-bp[0],by=bp[2];
+   if(GS.L.endless)wobbleText(bx,by-30,'+'+e.pts+(e.n>1?'  ×'+e.n:''),'#ffc23d',(e.n>1?1.3:1.1)*(e.gold?1.3:1));
+   else{const n=Math.min(5,e.n)*(e.gold?2:1);GS.runCoins=(GS.runCoins||0)+n;addCoins(n);wobbleText(bx,by-30,'+'+n+(e.n>1?'  ×'+e.n:''),'#ffc23d',(e.n>1?1.3:1.1));
+    const k=S*GS.cam.z;for(let j=0;j<Math.min(n,6);j++)GS.coinFly.push({x0:W(bx)+(j-2)*6*k,y0:H(by+10),t:-j*0.07,v:j===Math.min(n,6)-1?n:0})} // coins fly to the wallet (top left)
+   if(e.gold){[1568,2093,2637].forEach((f,k)=>tone(f,0,0.14,'triangle',0.09,0.12+k*0.06));burst(bx,by+10,['#ffc23d','#fff6c9'],22,420)}
+   GS.fx.push({kind:'ring',x:bx,y:by,t:0,life:0.55,col:'#ffc23d'});burst(bx,by+6,['#ffc23d','#fff','#ff6b4a'],10+Math.min(14,e.n*3),300);GS.bump=1}
+  else if(e.k==='cp'){const p=GS.L.plats[e.i];[659,784,1046,1318].forEach((f,k)=>tone(f,0,0.16,'triangle',0.13,k*0.07));wobbleText(p[0]+p[1]*0.75,p[2]+150,T('deliv',{n:e.b}),'#3fbf88',1.2);
+   burst(p[0]+p[1]*0.75,p[2]+90,['#ff6b4a','#ffc23d','#3fbf88','#3d7bff','#c48bff'],26,340);GS.bump=1}
+  else if(e.k==='bounce'){SFX.bounce();GS.anim.sqv=8;GS.trampHit=performance.now()}
+  else if(e.k==='crack'){SFX.crack();const p=pkWorld(s,e.i);wobbleText(p.x+40,p.y,T('crack'),'#ff5d7a',0.9);burst(p.x,p.y,['#cfe9ff','#fff'],8,180)}
+  else if(e.k==='break'){SFX.smash();const p=pkWorld(s,e.i);burst(p.x,p.y,['#cfe9ff','#9ad3ff','#fff'],22,320)}
+  else if(e.k==='tape'){INV.tape=Math.max(0,INV.tape-1);store.set('inv',INV);SFX.bounce();wobbleText(s.x,s.y+HEAD+stackH(s)+50,T('tapeSave'),'#3fbf88',1.1)}
+  else if(e.k==='lose'){SFX.lose();if(e.why==='rope'||e.why==='break')continue;const hp=headPos(s);const h=stackH(s);flyPk(e.t,hp.x+e.dir*20,hp.y+h+14,e.dir*(180+Math.random()*120)+s.vx*0.5,260+Math.random()*120,e.dir*(5+Math.random()*4))}
+  else if(e.k==='snag'){GS.debris.push({kind:'hang',t:e.t,x:e.x,r:e.r,life:0,sw:(Math.random()-0.5)*0.6});burst(e.x,e.y,['#fff'],5,120)}
+  else if(e.k==='cluck'){SFX.cluck();GS.anim.flap=0.35}
+  else if(e.k==='win'){onWin()}
+  else if(e.k==='crash'){onCrash(e.why)}
+ }}
+function onWin(){const s=GS.s;GS.mode='win';gp(false);chargeSnd(false);GS.endT=0;SFX.win();
+ for(let k=0;k<6;k++)setTimeout(()=>burst(s.x+(Math.random()-0.3)*200,s.y+120+Math.random()*120,['#ff6b4a','#ffc23d','#3fbf88','#3d7bff','#c48bff'],18,320),k*110);
+ const L=GS.L,st=1+(s.lost===0?1:0)+(s.t<=L.par?1:0);GS.result={st,time:s.t,lost:s.lost,score:s.score,hits:s.hits,nb:L.nb,best:Math.max(BS[L.i]||0,s.score)};
+ if(s.score>(BS[L.i]||0)){BS[L.i]=s.score;store.set('bs',BS)}if(L.nb&&s.hits>=L.nb&&!BA[L.i]){BA[L.i]=1;store.set('ba',BA)}
+ const prev=LP[L.i]||0;if(st>prev){LP[L.i]=st;store.set('lvp',LP)}failsHere=0;
+ const extra=5+Math.max(0,st-Math.floor(prev))*10;GS.result.coins=extra+(GS.runCoins||0);addCoins(extra);
+ setTimeout(showWin,1000)}
+function onCrash(why){const s=GS.s;if(why==='fall'&&!seaHere(GS.L,s)){GS.grounded=true;s.y=GROUND_Y;s.th=Math.sign(s.th||1)*1.45;burst(s.x,GROUND_Y+4,['#d9d3e6','#ffffff','#b8b3c9'],22,320)}buzz(70);GS.mode='crash';gp(false);chargeSnd(false);GS.endT=0;GS.slow=0.7;GS.shake=why==='sea'?8:14;if(why!=='sea')SFX.crash();GS.anim.face=1;GS.cam.zt=1.12;
+ if(why==='sea'){ // parcels pop back up out of the water, then sink again
+  let h=0;for(const p of s.stack){flyPk(p.t,s.x+(Math.random()-0.5)*30,SEA_Y-10-h,(Math.random()-0.5)*260,380+Math.random()*260,(Math.random()-0.5)*8,{crack:p.crack});h+=8}}
+ else{ const hp=headPos(s);let h=0;for(let i=0;i<s.stack.length;i++){const p=s.stack[i];const ph=PK[p.t].h;const a=-1.2+Math.random()*2.4;const v=420+Math.random()*380;
+  flyPk(p.t,hp.x+Math.sin(s.th)*h,hp.y+h+ph/2,Math.sin(a)*v+s.vx*0.3,Math.cos(a)*v*0.9+260,(Math.random()-0.5)*20,{crack:p.crack});h+=ph}
+ burst(hp.x,hp.y+h/2,['#e7b06a','#fff','#ffc23d','#ff6b4a','#c98a43'],40,520);
+ for(let i=0;i<14;i++)GS.fx.push({kind:'paper',x:hp.x,y:hp.y+h/2,vx:(Math.random()-0.5)*520,vy:300+Math.random()*400,rot:Math.random()*6,vr:(Math.random()-0.5)*10,t:0,life:2.2,col:['#fff','#fff3c4','#ffd8cc'][i%3]});}
+ GS.newBest=false;if(GS.L.endless){GS.endScore=s.score;if(s.score>EB){EB=s.score;store.set('eb',EB);GS.newBest=true}const cn=Math.floor(s.score/15)-(GS.paid||0);GS.endCoins=Math.max(0,cn);GS.paid=(GS.paid||0)+GS.endCoins;addCoins(GS.endCoins)}
+ s.stack=[];failsHere++;
+ GS.quip=why==='face'&&AIRN<3?T('faceTip'):pickQ('q_'+why);if(why==='dog')SFX.bark();
+ if(!GS.L.endless&&GS.L.i<QUICK_LV)setTimeout(()=>{if(GS.mode==='crash'){restart();showTip(T('again'),1.1)}},why==='wall'||why==='fall'?1400:950); // early levels: straight back in, no panel
+ else setTimeout(showFail,why==='wall'?1900:1500)}
+
+/* ================= UI ================= */
+/* 小游戏版界面：小游戏里没有网页元素，所有面板和按钮都画在画布上。
+ * 状态仍记在 $('id') 的替身对象上（hidden / textContent / disabled / onclick），
+ * 所以游戏其余代码不用改；UI.draw() 每帧把当前打开的面板画出来，并登记可点区域。 */
+const LAYERS=['title','mapL','shopL','pauseL','winL','failL'];
+const C_O='#ff6b4a',C_Y='#ffc23d',C_G='#3fbf88',C_SEC='#8b7bd8',C_CARD='#fffdf8',C_INK='#2b2340';
+const FONT='"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+const UI={hits:[],press:null,t0:0,win:null,fail:null,nope:null,tipAt:0};
+function showLayer(id){LAYERS.forEach(l=>$(l).hidden=l!==id);if(id)$('pauseB').hidden=true;UI.t0=performance.now();UI.press=null}
+function applyText(){$('muteB').textContent=muted?'🔇':'🔊'}
+function goTitle(){gp(false);GS.mode='title';GS.L=LEVELS[0];GS.s=newState(GS.L,1);GS.s.stack=['box','frag','cake'].map(t=>({t,crack:0}));GS.debris=[];GS.fx=[];GS.cam.z=1;showLayer('title');$('pauseB').hidden=true;applyText();showGift()}
+function goalData(){const c=nextSkinCost();return{cost:c,pct:c?Math.min(1,COINS/c):1,ready:c&&COINS>=c,left:c-COINS,daily:dailyAmt(Math.min(7,DL.s+1))}}
+function showWin(){hideTip();const r=GS.result,L=GS.L;
+ [0,1,2].forEach(k=>{if(k<r.st)setTimeout(()=>SFX.star(k),150+k*250)});
+ const chips=[[T('st1'),1],[T('st2'),!r.lost],[T('st3',{n:L.par})+' · '+T('time',{n:r.time.toFixed(1)}),r.time<=L.par]].map(([t,on])=>({t:(on?'★ ':'☆ ')+t,on,coin:0}));
+ chips.push({t:'+'+r.coins,on:1,coin:1});if(r.nb)chips.push({t:'🎯 '+r.hits+'/'+r.nb,on:r.hits>=r.nb,coin:0});
+ UI.win={st:r.st,quip:pickQ(r.lost?'q_drop':'q_win'),chips,goal:goalData()};
+ const last=L.i>=LEVELS.length-1;$('wNext').textContent=last?T('allDone'):T('next');$('wNext').disabled=false;showLayer('winL');autoNext(last)}
+function showFail(){hideTip();$('fRevive').disabled=$('fSkip').disabled=false;
+ UI.fail={quip:GS.quip,endless:!!GS.L.endless,score:GS.endScore,best:EB,newBest:GS.newBest,coins:GS.endCoins||0};
+ $('fMap').textContent=GS.L.endless?T('back'):T('levels');const fr=$('fRevive');fr.hidden=GS.revived||!GS.s.safe||GS.s.safe.on===0&&GS.s.jumps<2;
+ $('fSkip').hidden=failsHere<3||GS.L.i>=LEVELS.length-1;showLayer('failL')}
+$('wNext').onclick=()=>{clearInterval(GS.anT);const i=GS.L.i;if(i>=LEVELS.length-1){openMap();return}adBreak(()=>startLevel(i+1))};
+function autoNext(last){clearInterval(GS.anT);if(last)return;let n=4;const b=$('wNext'),lab=T('next');b.textContent=lab+' ('+n+')';GS.anT=setInterval(()=>{if($('winL').hidden){clearInterval(GS.anT);return}n--;if(n<=0){clearInterval(GS.anT);b.click()}else b.textContent=lab+' ('+n+')'},1000)}
+$('wRetry').onclick=()=>{clearInterval(GS.anT);adBreak(()=>startLevel(GS.L.i))};$('wMap').onclick=()=>{clearInterval(GS.anT);openMap()};
+$('fRetry').onclick=()=>adBreak(restart);$('fMap').onclick=()=>{if(GS.L.endless)goTitle();else openMap()};
+$('fRevive').onclick=()=>Ads.rewarded(ok=>{if(ok)revive()},$('fRevive'),true);
+$('fSkip').onclick=()=>Ads.rewarded(ok=>{if(!ok)return;const i=GS.L.i;if(!LP[i]){LP[i]=0.5;store.set('lvp',LP)}failsHere=0;startLevel(i+1)},$('fSkip'),true);
+let mapCh=0;
+function openMap(ch){gp(false);if(ch!=null)mapCh=ch;else mapCh=Math.min(CHAPTERS-1,curLevel()/PER|0);GS.mode=GS.mode==='play'?'paused':GS.mode;showLayer('mapL')}
+$('mapBack').onclick=()=>goTitle();$('gOk').onclick=()=>{$('giftL').hidden=true};
+let shopTab='skin';
+function buyFx(id){tone(180,120,0.15,'square',0.06);UI.nope={id,t:performance.now()}}
+function openShop(){gp(false);if(!Ads.busy)$('sAd').disabled=false;$('sAd').hidden=!Ads.has();showLayer('shopL')}
+$('tShop').onclick=()=>{SFX.click();openShop()};$('sBack').onclick=()=>goTitle();$('sAd').onclick=()=>Ads.rewarded(ok=>{if(ok){addCoins(60);SFX.star(1);openShop()}},$('sAd'));
+$('tPlay').onclick=()=>{SFX.click();startLevel(curLevel())};$('tMap').onclick=()=>openMap();$('tEnd').onclick=()=>{SFX.click();startEndless()};
+function pause(){if(GS.mode!=='play')return;GS.mode='paused';GS.hold=false;chargeSnd(false);gp(false);$('pSub').textContent=GS.L.endless?T('endless'):T('lvN',{n:GS.L.i+1});showLayer('pauseL')}
+function resume(){if(GS.mode!=='paused')return;GS.mode='play';GS.s.needRel=true;showLayer(null);$('pauseB').hidden=false;gp(true)}
+$('pauseB').onclick=()=>pause();$('pGo').onclick=resume;$('pRetry').onclick=restart;$('pMap').onclick=()=>openMap();
+$('muteB').onclick=()=>{muted=!muted;store.set('mute',muted);applyText();if(muted)chargeSnd(false)};
+let tipT=0;function showTip(t,d){const e=$('tip');e.textContent=t;e.hidden=false;UI.tipAt=performance.now();tipT=d||0}
+function hideTip(){$('tip').hidden=true;tipT=0}
+
+/* ---------- drawing helpers ---------- */
+const ui={
+ font(sz,w){return(w||900)+' '+sz+'px '+FONT},
+ text(c,s,x,y,o){o=o||{};c.font=ui.font(o.size||16,o.weight);c.textAlign=o.align||'center';c.textBaseline='middle';
+  if(o.stroke){c.lineJoin='round';c.lineWidth=o.sw||4;c.strokeStyle=o.stroke;c.strokeText(s,x,y)}c.fillStyle=o.color||C_INK;c.fillText(s,x,y)},
+ // split text into lines that fit maxW (works for Chinese: breaks between any two characters, keeps latin words together)
+ wrap(c,s,maxW,size,w){c.font=ui.font(size,w);const out=[];let line='';const toks=String(s).match(/[A-Za-z0-9'’.,!?%-]+|\s+|./gu)||[];
+  for(const t of toks){const nx=line+t;if(line&&c.measureText(nx).width>maxW){out.push(line.trim());line=t.trim()}else line=nx}if(line.trim())out.push(line.trim());return out},
+ panel(c,x,y,w,h){c.save();c.fillStyle='rgba(0,0,0,0.13)';rr(c,x,y+14,w,h+4,26);c.fill();c.fillStyle=C_INK;rr(c,x,y+8,w,h,26);c.fill();
+  c.fillStyle=C_CARD;c.strokeStyle=C_INK;c.lineWidth=4;rr(c,x,y,w,h,26);c.fill();c.stroke();c.restore()},
+ dim(c,a){c.fillStyle='rgba(43,35,64,'+(a==null?0.33:a)+')';c.fillRect(0,0,CW,CH)},
+ hit(id,x,y,w,h,fn){UI.hits.push({id,x,y,w,h,fn})},
+ // a chunky button like the web version's .btn
+ btn(c,id,x,y,w,h,o){const off=!!o.disabled,pr=UI.press&&UI.press.id===id&&!off,dy=pr?3:0,r=o.r||16;c.save();if(off)c.globalAlpha=0.45;
+  c.fillStyle=C_INK;rr(c,x,y+(pr?3:5),w,h,r);c.fill();c.fillStyle=o.bg||C_O;c.strokeStyle=C_INK;c.lineWidth=3;rr(c,x,y+dy,w,h,r);c.fill();c.stroke();
+  const fg=o.fg||'#fff',cy=y+dy+h/2;
+  if(o.small){ui.text(c,o.label,x+w/2,cy-9,{size:o.fs||21,color:fg});ui.text(c,o.small,x+w/2,cy+13,{size:13,weight:800,color:fg})}
+  else if(o.coin!=null){c.font=ui.font(o.fs||17);const t1=o.label+' · ',t2=''+o.coin,w1=c.measureText(t1).width,w2=c.measureText(t2).width,cr=(o.fs||17)*0.42,tw=w1+cr*2+4+w2;let tx=x+w/2-tw/2;
+   ui.text(c,t1,tx,cy,{size:o.fs||17,color:fg,align:'left'});tx+=w1+cr;coinIcon(c,tx,cy,cr);ui.text(c,t2,tx+cr+4,cy,{size:o.fs||17,color:fg,align:'left'})}
+  else ui.text(c,o.label,x+w/2,cy,{size:o.fs||21,color:fg});
+  c.restore();if(!off)ui.hit(id,x,y,w,h+5,o.fn||(()=>$(id).click()))},
+ star(c,x,y,r,on,sc){c.save();c.translate(x,y);c.scale(sc,sc);c.beginPath();for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5,rr2=k%2?r*0.45:r;c.lineTo(Math.cos(a)*rr2,Math.sin(a)*rr2)}c.closePath();
+  c.lineJoin='round';c.lineWidth=3;c.strokeStyle=C_INK;c.fillStyle=on?C_Y:'#e6dff0';c.fill();c.stroke();c.restore()}
+};
+const ease=k=>k<=0?0:k>=1?1:1-Math.pow(1-k,3);
+const popS=k=>k<=0?0.2:k<0.7?0.2+1.05*(k/0.7):k<1?1.25-0.25*((k-0.7)/0.3):1;
+
+/* ---------- shop icons (canvas copies of the web version's SVG icons, 40-wide box) ---------- */
+function rrp(c,x,y,w,h,r,fill,lw){rr(c,x,y,w,h,Math.min(r,w/2,h/2));if(fill){c.fillStyle=fill;c.fill()}if(lw!==0){c.lineWidth=lw||2;c.stroke()}}
+function circ(c,x,y,r,fill,lw){c.beginPath();c.arc(x,y,r,0,7);if(fill){c.fillStyle=fill;c.fill()}if(lw!==0){c.lineWidth=lw||2;c.stroke()}}
+function poly(c,pts,fill){c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();if(fill){c.fillStyle=fill;c.fill()}c.lineWidth=2;c.stroke()}
+function dome(c,col){c.beginPath();c.moveTo(10,11);c.arc(20,11,10,Math.PI,0);c.closePath();c.fillStyle=col;c.fill();c.lineWidth=2;c.stroke()}
+function iconSkin(c,k){const q=SKINS[k];c.strokeStyle=C_INK;c.lineJoin='round';
+ rrp(c,18,30,4,26,2,q.pg);rrp(c,8,47,24,5,2,'#c9d3e6');rrp(c,13,38,5,10,2,q.lg);rrp(c,22,38,5,10,2,q.lg);rrp(c,9,21,22,20,7,q.jk);
+ c.beginPath();c.moveTo(11,24);c.lineTo(28,39);c.strokeStyle=q.st;c.lineWidth=2.5;c.stroke();c.strokeStyle=C_INK;
+ rrp(c,15,28,9,6,2,q.pk,1.5);c.beginPath();c.ellipse(11.5,14,4,6.5,0,0,7);c.fillStyle='#7a4526';c.fill();c.lineWidth=2;c.stroke();
+ circ(c,20,12,10,'#ffd2b0');c.beginPath();c.moveTo(10,11);c.arc(20,11,10,Math.PI,0);c.quadraticCurveTo(25,7,21,10);c.quadraticCurveTo(16,7,10,11);c.closePath();c.fillStyle='#7a4526';c.fill();c.stroke();
+ if(q.hat==='band'){rrp(c,9.5,5.5,21,5,2.5,q.cap);rrp(c,1,6,9,3.5,1.7,q.cap)}
+ else if(q.hat==='crown')poly(c,[[10,9],[10,0],[15,5],[20,-1],[25,5],[30,0],[30,9]],q.cap);
+ else if(q.hat==='beanie'){dome(c,q.cap);rrp(c,9,7.5,22,5,2.5,q.pk)}
+ else if(q.hat==='helmet'){dome(c,q.cap);c.fillStyle='#fff';c.fillRect(18.5,2,3,8);rrp(c,8,8.5,24,4,2,q.cap)}
+ else{dome(c,q.cap);rrp(c,23,8,13,4.5,2.2,q.cap)}
+ circ(c,17,15,1.6,C_INK,0);circ(c,24,15,1.6,C_INK,0)}
+function iconOf(c,tab,q){c.strokeStyle=C_INK;c.lineJoin='round';c.lineCap='round';
+ if(tab==='pogo'){let col=q.col||'#ff4f6d';if(q.rb){col=c.createLinearGradient(0,0,0,58);col.addColorStop(0,'#ff4f6d');col.addColorStop(0.5,'#ffc23d');col.addColorStop(1,'#3d7bff')}
+  rrp(c,8,6,24,5,2.5,col);rrp(c,17,6,6,36,3,col);c.beginPath();[44,48,52].forEach(y=>{c.moveTo(14,y);c.lineTo(26,y)});c.lineWidth=2;c.stroke();rrp(c,17,52,6,5,2,'#c9d3e6');return}
+ if(tab==='trail'){const k=q.k;
+  if(k==='star')poly(c,[[20,8],[24,17],[33,18],[26,24],[28,33],[20,28],[12,33],[14,24],[7,18],[16,17]],'#ffc23d');
+  else if(k==='heart'){c.beginPath();c.moveTo(20,40);c.bezierCurveTo(4,28,8,14,20,22);c.bezierCurveTo(32,14,36,28,20,40);c.closePath();c.fillStyle='#ff5d8f';c.fill();c.lineWidth=2;c.stroke()}
+  else if(k==='bub'){c.strokeStyle='#7fc0ff';circ(c,16,22,8,null,3);circ(c,27,34,5,null,3)}
+  else if(k==='conf'){[[8,14,'#ff4f6d'],[22,10,'#3fbf88'],[14,28,'#3d7bff'],[26,30,'#ffc23d']].forEach(([x,y,f])=>{c.fillStyle=f;c.fillRect(x,y,8,5)})}
+  else if(k==='spark'){c.beginPath();c.moveTo(20,6);c.lineTo(20,46);c.moveTo(2,26);c.lineTo(38,26);c.strokeStyle='#ffc23d';c.lineWidth=4;c.stroke();c.strokeStyle=C_INK;circ(c,20,26,6,'#fff6c9')}
+  else if(k==='rb'){[[10,30,5,'#ff4f6d'],[18,22,5,'#ffc23d'],[26,16,5,'#3fbf88'],[33,10,4,'#3d7bff']].forEach(([x,y,r,f])=>circ(c,x,y,r,f,0))}
+  else{c.save();c.setLineDash&&c.setLineDash([3,4]);c.beginPath();c.moveTo(10,40);c.lineTo(30,12);c.strokeStyle='#bbb';c.lineWidth=3;c.stroke();c.restore()}return}
+ if(tab==='box'){rrp(c,4,12,32,28,3,q.f);c.fillStyle=q.t;if(q.pz){c.beginPath();c.arc(20,26,6,0,7);c.fill()}else c.fillRect(17,13,6,26);if(q.rib)c.fillRect(5,23,30,5);c.fillStyle='rgba(255,255,255,0.53)';c.fillRect(8,16,7,5);return}
+ if(tab==='item'){if(q.id==='tape'){circ(c,20,25,14,'#d9c9a3');circ(c,20,25,6,'#fff');c.beginPath();c.moveTo(32,30);c.lineTo(38,34);c.lineWidth=2;c.stroke()}
+  else{circ(c,20,25,13,'#fff');c.beginPath();c.moveTo(20,8);c.lineTo(20,42);c.moveTo(3,25);c.lineTo(37,25);c.lineWidth=2;c.stroke();circ(c,20,25,4,'#ff4f6d')}}}
+
+/* ---------- screens ---------- */
+function bottomY(){return SAFE.bottom-10}
+function drawTitle(c,now){const k=ease((now-UI.t0)/400);c.save();
+ const name=T('name'),fs=Math.min(92,Math.max(46,CW*0.15));c.translate(CW/2,SAFE.top+40+fs*0.5);c.rotate(-4*Math.PI/180);
+ c.font=ui.font(fs);c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';c.fillStyle='rgba(0,0,0,0.2)';c.fillText(name,0,12);
+ c.fillStyle=C_INK;c.fillText(name,0,6);c.lineWidth=6;c.strokeStyle=C_INK;c.strokeText(name,0,0);c.fillStyle=C_Y;c.fillText(name,0,0);c.restore();
+ // subtitle pill
+ const tag=T('tag');c.font=ui.font(14,800);const tw=c.measureText(tag).width+28,ty=SAFE.top+40+fs*1.15;
+ c.save();c.fillStyle=C_INK;rr(c,CW/2-tw/2,ty+3,tw,26,13);c.fill();c.fillStyle=C_CARD;c.strokeStyle=C_INK;c.lineWidth=3;rr(c,CW/2-tw/2,ty,tw,26,13);c.fill();c.stroke();c.restore();
+ ui.text(c,tag,CW/2,ty+13,{size:14,weight:800});
+ // buttons at the bottom
+ const w=Math.min(400,CW-32),x=CW/2-w/2,gift=T('dailyNext',{n:dailyAmt(Math.min(7,DL.s+1))});let y=bottomY()-26-(65+10)*2-(44+5)+(1-k)*60;
+ c.save();c.globalAlpha=k;
+ ui.btn(c,'tPlay',x,y,w,60,{label:T('play'),small:T('lvN',{n:curLevel()+1})});y+=75;
+ ui.btn(c,'tEnd',x,y,w,EB?60:50,{label:T('endless'),small:EB?T('best',{n:EB}):null,bg:C_Y,fg:C_INK});y+=(EB?60:50)+15;
+ const hw=(w-10)/2;ui.btn(c,'tMap',x,y,hw,40,{label:T('levels'),bg:C_SEC,fs:17});ui.btn(c,'tShop',x+hw+10,y,hw,40,{label:T('shop'),coin:COINS,bg:C_SEC,fs:17});
+ ui.text(c,'🎁 '+gift,CW/2,y+66,{size:13,weight:800,color:C_INK,stroke:'rgba(255,253,248,0.8)',sw:4});c.restore()}
+function drawPanelLayer(c,h,fn,dim){if(dim!==false)ui.dim(c);const w=Math.min(400,CW-32),x=CW/2-w/2,y=Math.max(SAFE.top,(CH-h)/2);ui.panel(c,x,y,w,h);fn(x+20,y+20,w-40)}
+function drawPause(c){drawPanelLayer(c,212,(x,y,w)=>{ui.text(c,T('paused'),x+w/2,y+16,{size:26});ui.text(c,$('pSub').textContent,x+w/2,y+48,{size:15,weight:800,color:'rgba(43,35,64,0.75)'});
+ ui.btn(c,'pGo',x,y+70,w,48,{label:T('resume')});const hw=(w-10)/2;ui.btn(c,'pRetry',x,y+130,hw,40,{label:T('retry'),bg:C_SEC,fs:17});ui.btn(c,'pMap',x+hw+10,y+130,hw,40,{label:T('levels'),bg:C_SEC,fs:17})})}
+function chipsLayout(c,chips,w){c.font=ui.font(13);const rows=[[]];let rw=0;chips.forEach(ch=>{ch.w=c.measureText(ch.t).width+20+(ch.coin?16:0);if(rw+ch.w>w&&rows[rows.length-1].length){rows.push([]);rw=0}rows[rows.length-1].push(ch);rw+=ch.w+6});return rows}
+function drawWin(c,now){const d=UI.win;if(!d)return;const age=(now-UI.t0)/1000;const w0=Math.min(400,CW-32)-40;
+ const ql=ui.wrap(c,d.quip,w0,17),rows=chipsLayout(c,d.chips,w0),g=d.goal;const h=20+34+62+ql.length*22+8+rows.length*30+(g.cost?24:0)+22+12+56+52+16;
+ drawPanelLayer(c,h,(x,y,w)=>{ui.text(c,T('win'),x+w/2,y+16,{size:26});let yy=y+40;
+  for(let k=0;k<3;k++){const t=age-(0.1+k*0.25),on=k<d.st;ui.star(c,x+w/2+(k-1)*58,yy+28,25,on&&t>0,on?popS(t/0.45):1)}yy+=62;
+  ql.forEach(l=>{ui.text(c,l,x+w/2,yy+11,{size:17,color:'#8b5cf6'});yy+=22});yy+=8;
+  rows.forEach(r=>{let rw=r.reduce((a,ch)=>a+ch.w+6,-6),cx=x+w/2-rw/2;r.forEach(ch=>{c.fillStyle=ch.on?'#ffe08a':'#f1ecf6';rr(c,cx,yy,ch.w,24,12);c.fill();
+   if(ch.coin){coinIcon(c,cx+16,yy+12,6.5);ui.text(c,ch.t,cx+26,yy+12.5,{size:13,align:'left'})}else ui.text(c,ch.t,cx+ch.w/2,yy+12.5,{size:13});cx+=ch.w+6});yy+=30});
+  if(g.cost){if(g.ready)ui.text(c,T('skinReady'),x+w/2,yy+10,{size:14,color:C_O});else{const s=T('skinNext',{n:g.left});c.font=ui.font(14,800);const sw=c.measureText(s).width,bw=70,tx=x+w/2-(sw+8+bw)/2;
+    ui.text(c,s,tx,yy+10,{size:14,weight:800,align:'left'});const bx=tx+sw+8;c.save();c.fillStyle='#fff';c.strokeStyle=C_INK;c.lineWidth=2;rr(c,bx,yy+6,bw,8,4);c.fill();c.stroke();c.fillStyle=C_Y;if(g.pct>0){rr(c,bx+1,yy+7,Math.max(6,(bw-2)*g.pct),6,3);c.fill()}c.restore()}yy+=24}
+  ui.text(c,'🎁 '+T('dailyNext',{n:g.daily}),x+w/2,yy+10,{size:14,weight:800});yy+=34;
+  ui.btn(c,'wNext',x,yy,w,48,{label:$('wNext').textContent});yy+=60;const hw=(w-10)/2;ui.btn(c,'wRetry',x,yy,hw,40,{label:T('retry'),bg:C_SEC,fs:17});ui.btn(c,'wMap',x+hw+10,yy,hw,40,{label:T('levels'),bg:C_SEC,fs:17})},false)}
+function drawFail(c){const d=UI.fail;if(!d)return;const w0=Math.min(400,CW-32)-40,ql=ui.wrap(c,d.quip,w0,17);
+ const bts=[['fRetry',T('retry'),C_O,'#fff',48]];if(!$('fRevive').hidden)bts.push(['fRevive',T('revive'),C_G,'#fff',44]);if(!$('fSkip').hidden)bts.push(['fSkip',T('skip'),C_Y,C_INK,44]);bts.push(['fMap',$('fMap').textContent,C_SEC,'#fff',40]);
+ const h=20+34+ql.length*22+10+(d.endless?32:0)+bts.reduce((a,b)=>a+b[4]+12,0)+12;
+ drawPanelLayer(c,h,(x,y,w)=>{ui.text(c,T('fail'),x+w/2,y+16,{size:26});let yy=y+40;ql.forEach(l=>{ui.text(c,l,x+w/2,yy+11,{size:17,color:'#8b5cf6'});yy+=22});yy+=10;
+  if(d.endless){const s=T('pts',{n:d.score})+'  ·  '+(d.newBest?'🏆 '+T('newBest'):T('best',{n:d.best}))+(d.coins?'  ·  +'+d.coins:'');ui.text(c,s,x+w/2,yy+12,{size:18,color:C_O});yy+=32}
+  bts.forEach(([id,lab,bg,fg,bh])=>{ui.btn(c,id,x,yy,w,bh,{label:lab,bg,fg,fs:bh>44?21:17,disabled:$(id).disabled});yy+=bh+12})},false)}
+function drawMap(c,now){const w=Math.min(440,CW-32),gw=w-40,cell=(gw-8*4)/5,h=20+34+50+26+cell*2+8+24+52+10;
+ ui.dim(c);const x0=CW/2-w/2,y0=Math.max(SAFE.top,(CH-h)/2);ui.panel(c,x0,y0,w,h);const x=x0+20;let y=y0+20;
+ ui.text(c,T('levels'),CW/2,y+16,{size:26});y+=40;
+ const open=lvOpen(mapCh*PER);
+ const tab=(id,tx,tw,label,o)=>{const pr=UI.press&&UI.press.id===id;c.save();if(o.off)c.globalAlpha=0.3;c.fillStyle=o.bg||'#fff';c.strokeStyle=C_INK;c.lineWidth=3;rr(c,tx,y,tw,42,12);c.fill();c.stroke();
+  if(o.sub){ui.text(c,o.sub,tx+tw/2,y+12,{size:11,weight:800,color:'rgba(43,35,64,0.7)'});ui.text(c,label,tx+tw/2,y+29,{size:16})}else ui.text(c,label,tx+tw/2,y+21+(pr?1:0),{size:18});c.restore();if(o.fn&&!o.off)ui.hit(id,tx,y,tw,42,o.fn)};
+ tab('mPrev',x,52,'◀',{off:mapCh===0,fn:()=>{SFX.click();openMap(mapCh-1)}});
+ tab('mMid',x+58,gw-116,(open?'':'🔒 ')+T('ch'+(mapCh+1)),{sub:T('chapN',{n:mapCh+1}),bg:C_Y});
+ tab('mNext',x+gw-52,52,'▶',{off:mapCh===CHAPTERS-1,fn:()=>{SFX.click();openMap(mapCh+1)}});y+=50;
+ const tot=LP.reduce((a,b)=>a+(b>=1?b:0),0);ui.text(c,'⭐ '+tot+' / '+LEVELS.length*3,CW/2,y+11,{size:15,weight:800,color:'rgba(43,35,64,0.75)'});y+=26;
+ const cur=curLevel();
+ for(let j=0;j<PER;j++){const i=mapCh*PER+j,L=LEVELS[i],cx=x+(j%5)*(cell+8),cy=y+(j/5|0)*(cell+8);
+  const op=L&&lvOpen(i),st=L&&LP[i]>=1?LP[i]:0,isCur=L&&i===cur&&!LP[i],id='lv'+i,pr=UI.press&&UI.press.id===id;
+  const sc=isCur?1+0.06*(0.5-0.5*Math.cos(now/1000*Math.PI*2)):1;c.save();c.translate(cx+cell/2,cy+cell/2);c.scale(sc,sc);c.translate(-cell/2,-cell/2+(pr?3:0));
+  const lockC='#b9add0';c.fillStyle=op?C_INK:lockC;rr(c,0,pr?1:4,cell,cell,14);c.fill();
+  c.fillStyle=!op?'#eee8f2':isCur?'#ffd8cc':L.boss?'#ffe9b0':'#fff';c.strokeStyle=op?C_INK:lockC;c.lineWidth=3;rr(c,0,0,cell,cell,14);c.fill();c.stroke();
+  if(!L){ui.text(c,'🔒',cell/2,cell*0.38,{size:16});ui.text(c,T('soon'),cell/2,cell*0.7,{size:10,weight:800,color:lockC})}
+  else if(!op)ui.text(c,'🔒',cell/2,cell/2,{size:18});
+  else{ui.text(c,(L.boss?'👑':'')+(i+1),cell/2,cell*0.42,{size:L.boss?15:20});ui.text(c,'★'.repeat(st)+'☆'.repeat(3-st),cell/2,cell*0.74,{size:11,color:'#e0a000'});if(BA[i])ui.text(c,'🎯',cell-2,2,{size:14})}
+  c.restore();if(op)ui.hit(id,cx,cy,cell,cell+4,()=>{SFX.click();startLevel(i)})}
+ y+=cell*2+8+12;ui.btn(c,'mapBack',x,y,gw,40,{label:T('back'),bg:C_SEC,fs:17})}
+function drawShop(c,now){const w=Math.min(440,CW-32),gw=w-40,items=shopTab==='item',cols=items?2:4,list=shopTab==='skin'?SKINS.map((q,k)=>k).sort((a,b)=>SKINS[a].c-SKINS[b].c):items?ITEMS:COS[shopTab].list;
+ const ch=items?150:84,rows=Math.ceil(list.length/cols),showAd=!$('sAd').hidden,h=20+34+26+44+rows*(ch+8)+(showAd?58:0)+52+10;
+ ui.dim(c);const x0=CW/2-w/2,y0=Math.max(SAFE.top,(CH-h)/2);ui.panel(c,x0,y0,w,h);const x=x0+20;let y=y0+20;
+ ui.text(c,T('shop'),CW/2,y+16,{size:26});y+=38;c.font=ui.font(15,800);const cw=c.measureText(''+COINS).width;coinIcon(c,CW/2-cw/2-6,y+10,7);ui.text(c,''+COINS,CW/2+8,y+10,{size:15,weight:800});y+=26;
+ const tabs=[['skin','tabSkin'],['pogo','tabPogo'],['trail','tabTrail'],['box','tabBox'],['item','tabItem']],tw=(gw-4*6)/5;
+ tabs.forEach(([id,key],k)=>{const tx=x+k*(tw+6);c.fillStyle=shopTab===id?C_Y:'#fff';c.strokeStyle=C_INK;c.lineWidth=3;rr(c,tx,y,tw,34,12);c.fill();c.stroke();ui.text(c,T(key),tx+tw/2,y+17,{size:tw<62?12:13});
+  ui.hit('tab'+id,tx,y,tw,34,()=>{SFX.click();shopTab=id;UI.nope=null})});y+=44;
+ const cwid=(gw-8*(cols-1))/cols,buy=(id,cost,ok)=>{if(COINS<cost){buyFx(id);return false}COINS-=cost;store.set('coins',COINS);ok();return true};
+ list.forEach((q0,j)=>{const cx=x+(j%cols)*(cwid+8),cy=y+(j/cols|0)*(ch+8),id='sk'+shopTab+j,pr=UI.press&&UI.press.id===id;
+  let own,sel,cost,icon,fn;
+  if(shopTab==='skin'){const k=q0,q=SKINS[k];own=!!OWN[k];sel=k===SKI;cost=q.c;icon=()=>iconSkin(c,k);
+   fn=()=>{if(!OWN[k]){if(!buy(id,q.c,()=>{OWN[k]=1;store.set('own',OWN);SFX.star(2)}))return}else SFX.click();SKI=k;SK=SKINS[k];store.set('skin',k)}}
+  else if(items){const q=q0;cost=q.c;icon=()=>iconOf(c,'item',q);fn=null}
+  else{const C=COS[shopTab],k=j,q=q0;own=!!C.own[k];sel=k===C.sel;cost=q.c;icon=()=>shopTab==='pogo'&&k===0?iconOf(c,'pogo',{col:SK.pg}):iconOf(c,shopTab,q);
+   fn=()=>{if(!C.own[k]){if(!buy(id,q.c,()=>{C.own[k]=1;store.set('own'+C.k,C.own);SFX.star(2)}))return}else SFX.click();C.sel=k;store.set(shopTab==='box'?'boxs':shopTab,k)}}
+  const nope=UI.nope&&UI.nope.id===id?(now-UI.nope.t)/300:1,shx=nope<1?Math.sin(nope*Math.PI*4)*4:0;
+  c.save();c.translate(cx+shx,cy+(sel?-2:0)+(pr?3:0));c.fillStyle=C_INK;rr(c,0,pr?1:4,cwid,ch,14);c.fill();c.fillStyle=sel?'#ffe08a':own?'#eef9f3':'#fff';c.strokeStyle=C_INK;c.lineWidth=3;rr(c,0,0,cwid,ch,14);c.fill();c.stroke();
+  if(items){const q=q0,on=USE[q.id];c.save();c.translate(cwid/2-20,4);icon();c.restore();
+   ui.text(c,T(q.id==='tape'?'itTape':'itScope'),cwid/2,62,{size:14});
+   ui.wrap(c,T(q.id==='tape'?'itTapeD':'itScopeD'),cwid-12,11,800).slice(0,2).forEach((l,n)=>ui.text(c,l,cwid/2,79+n*14,{size:11,weight:800,color:'rgba(43,35,64,0.75)'}));
+   ui.text(c,T('have',{n:INV[q.id]||0}),cwid/2,110,{size:11,weight:800,color:'rgba(43,35,64,0.75)'});
+   c.font=ui.font(14);const pw=c.measureText(''+q.c).width;coinIcon(c,cwid/2-pw/2-6,128,6);ui.text(c,''+q.c,cwid/2+6,128,{size:14});
+   // the 使用中 / 不用 pill toggles; the rest of the card buys one more
+   const ul=T(on?'useOn':'useOff');c.font=ui.font(11);const uw=c.measureText(ul).width+16;c.fillStyle=on?C_G:'#fff';c.strokeStyle=C_INK;c.lineWidth=2;rr(c,cwid-uw-6,ch-26,uw,20,10);c.fill();c.stroke();ui.text(c,ul,cwid-uw/2-6,ch-16,{size:11,color:on?'#fff':C_INK});
+   c.restore();
+   ui.hit(id,cx,cy,cwid,ch+4,()=>{if(!buy(id,q.c,()=>{INV[q.id]=(INV[q.id]||0)+1;store.set('inv',INV);SFX.star(1)}))return});
+   ui.hit(id+'u',cx+cwid-uw-12,cy+ch-32,uw+12,32,()=>{USE[q.id]=USE[q.id]?0:1;store.set('use',USE);SFX.click()});return}
+  c.save();c.translate(cwid/2-14,4);c.scale(0.7,0.7);icon();c.restore();
+  if(sel)ui.text(c,'✓',cwid/2,ch-14,{size:14});else if(!own){c.font=ui.font(14);const pw=c.measureText(''+cost).width;coinIcon(c,cwid/2-pw/2-5,ch-14,6);ui.text(c,''+cost,cwid/2+6,ch-14,{size:14})}
+  c.restore();ui.hit(id,cx,cy,cwid,ch+4,fn)});
+ y+=rows*(ch+8)+4;
+ if(showAd){const lab='📺 +60';ui.btn(c,'sAd',x,y,gw,44,{label:lab,bg:C_G,fs:17,disabled:$('sAd').disabled});y+=56}
+ ui.btn(c,'sBack',x,y,gw,40,{label:T('back'),bg:C_SEC,fs:17})}
+function drawGift(c){drawPanelLayer(c,170,(x,y,w)=>{ui.text(c,'🎁 '+T('dailyT'),x+w/2,y+16,{size:26});ui.text(c,$('gTxt').textContent,x+w/2,y+58,{size:19,weight:800});
+ ui.btn(c,'gOk',x,y+86,w,46,{label:T('claim'),bg:C_Y,fg:C_INK})})}
+function drawTip(c,now){const e=$('tip');if(e.hidden)return;const k=ease((now-UI.tipAt)/300),mw=Math.min(380,CW*0.9)-28,ls=ui.wrap(c,e.textContent,mw,17);
+ c.font=ui.font(17);const tw=Math.max(...ls.map(l=>c.measureText(l).width))+28,th=ls.length*22+16,x=CW/2-tw/2,y=(CH<=500?CH-10-th:CH*0.22)+(1-k)*10;
+ c.save();c.globalAlpha=k;c.fillStyle=C_INK;rr(c,x,y+5,tw,th,16);c.fill();c.fillStyle='#fff';c.strokeStyle=C_INK;c.lineWidth=3;rr(c,x,y,tw,th,16);c.fill();c.stroke();
+ ls.forEach((l,n)=>ui.text(c,l,CW/2,y+8+11+n*22,{size:17}));c.restore()}
+function iconBtn(c,id,x,y,label){const pr=UI.press&&UI.press.id===id;c.save();c.fillStyle=C_INK;rr(c,x,y+3,46,46,14);c.fill();c.fillStyle='#fff';c.strokeStyle=C_INK;c.lineWidth=3;rr(c,x,y+(pr?2:0),46,46,14);c.fill();c.stroke();
+ ui.text(c,label,x+23,y+23+(pr?2:0),{size:20});c.restore();ui.hit(id,x-6,y-6,58,58,()=>$(id).click())}
+// opening screen with the 健康游戏忠告 that Chinese game platforms expect
+UI.splashEnd=performance.now()+2200;
+function drawSplash(c,now){const k=Math.min(1,(UI.splashEnd-now)/300);c.save();c.globalAlpha=k;c.fillStyle='#9fd8ff';c.fillRect(0,0,CW,CH);
+ const fs=Math.min(72,CW*0.15);c.save();c.translate(CW/2,CH*0.36);c.rotate(-4*Math.PI/180);c.font=ui.font(fs);c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
+ c.fillStyle=C_INK;c.fillText(T('name'),0,6);c.lineWidth=6;c.strokeStyle=C_INK;c.strokeText(T('name'),0,0);c.fillStyle=C_Y;c.fillText(T('name'),0,0);c.restore();
+ const L=['抵制不良游戏，拒绝盗版游戏。','注意自我保护，谨防受骗上当。','适度游戏益脑，沉迷游戏伤身。','合理安排时间，享受健康生活。'];
+ ui.text(c,'健康游戏忠告',CW/2,SAFE.bottom-120,{size:14,weight:900,color:C_INK});L.forEach((l,n)=>ui.text(c,l,CW/2,SAFE.bottom-96+n*20,{size:13,weight:700,color:'rgba(43,35,64,0.8)'}));c.restore()}
+// draws whatever is open; called after the game's own render() every frame
+function drawUI(c){UI.hits=[];const now=performance.now();c.save();c.setTransform(DPR,0,0,DPR,0,0);c.textBaseline='middle';
+ if(now<UI.splashEnd){drawSplash(c,now);c.restore();ui.hit('splash',0,0,CW,CH,()=>{});return}
+ const top=SAFE.top;if(!$('pauseB').hidden)iconBtn(c,'pauseB',10,top,'II');if(!$('muteB').hidden)iconBtn(c,'muteB',$('pauseB').hidden?10:64,top,$('muteB').textContent);
+ drawTip(c,now);
+ if(!$('title').hidden)drawTitle(c,now);else if(!$('mapL').hidden)drawMap(c,now);else if(!$('shopL').hidden)drawShop(c,now);else if(!$('pauseL').hidden)drawPause(c);else if(!$('winL').hidden)drawWin(c,now);else if(!$('failL').hidden)drawFail(c);
+ if(!$('giftL').hidden){UI.hits=[];drawGift(c)}
+ c.restore()}
+// true when a panel is open: taps go to the panel, not to the courier
+function uiModal(){return LAYERS.some(l=>!$(l).hidden)||!$('giftL').hidden}
+function uiHit(x,y){for(let i=UI.hits.length-1;i>=0;i--){const h=UI.hits[i];if(x>=h.x&&x<=h.x+h.w&&y>=h.y&&y<=h.y+h.h)return h}return null}
+/* ================= SDK / ads ================= */
+/* 小游戏广告：激励视频（复活 / 跳关 / 商店 +60 金币）和插屏（关卡之间）。
+ * 广告位 ID 要等开通流量主以后在后台创建，填到 AD_UNITS 里；没填的时候：
+ * 复活和跳关直接免费给，商店的看广告按钮不显示，关卡之间不放插屏。 */
+const AD_UNITS={
+ wx:{rewarded:'',interstitial:''},   // 微信：流量主 → 广告管理 → 新建激励视频 / 插屏广告位
+ tt:{rewarded:'',interstitial:''},   // 抖音：小游戏后台 → 流量主 → 广告管理
+ sim:{rewarded:'sim',interstitial:'sim'}};
+const UNIT=AD_UNITS[PLAT]||{};
+let gpOn=false;
+function gp(on){gpOn=on}
+function audioOff(){adMute=true;chargeSnd(false);try{AC&&AC.suspend()}catch(e){}}
+function audioOn(){adMute=false;try{AC&&AC.resume()}catch(e){}}
+let RV=null,rvDone=null;
+function rv(){if(RV||!UNIT.rewarded||!P.createRewardedVideoAd)return RV;try{RV=P.createRewardedVideoAd({adUnitId:UNIT.rewarded});
+  RV.onClose(r=>{const f=rvDone;rvDone=null;f&&f(!r||r.isEnded!==false)});RV.onError(()=>{const f=rvDone;rvDone=null;f&&f(false)})}catch(e){RV=null}return RV}
+const Ads={busy:false,has(){return !!rv()},
+ rewarded(cb,btn,free){if(this.busy)return;this.busy=true;const done=ok=>{this.busy=false;audioOn();if(!ok&&free){cb(true);return}if(!ok&&btn){btn.disabled=true;showTip(T('adNo'),2.6)}cb(ok)};
+  const ad=rv();if(!ad){done(false);return}
+  audioOff();rvDone=done;ad.show().catch(()=>ad.load().then(()=>ad.show())).catch(()=>{if(rvDone){rvDone=null;done(false)}})}};
+// interstitials: only between levels, not in the first minute, at most one every 2 minutes
+let IA=null,iaLast=0;const iaBoot=Date.now();
+function ia(){if(IA||!UNIT.interstitial||!P.createInterstitialAd)return IA;try{IA=P.createInterstitialAd({adUnitId:UNIT.interstitial})}catch(e){IA=null}return IA}
+function adBreak(cb){const ad=plays>0&&Date.now()-iaBoot>60e3&&Date.now()-iaLast>120e3?ia():null;if(!ad){cb();return}
+ let fin=false;const go=()=>{if(fin)return;fin=true;try{ad.offClose&&ad.offClose(go)}catch(e){}audioOn();cb()};
+ iaLast=Date.now();audioOff();try{ad.onClose(go);ad.show().catch(go)}catch(e){go()}}
+try{P.onHide&&P.onHide(()=>{document.hidden=true;if(GS.mode==='play')pause();try{AC&&AC.suspend()}catch(e){}})}catch(e){}
+try{P.onShow&&P.onShow(()=>{document.hidden=false;last=performance.now();if(!adMute)try{AC&&AC.resume()}catch(e){}})}catch(e){}
+// share from the capsule menu
+try{P.showShareMenu&&P.showShareMenu({withShareTicket:false,menus:['shareAppMessage','shareTimeline']})}catch(e){}
+try{P.onShareAppMessage&&P.onShareAppMessage(()=>({title:'踩着跳跳杆送快递，一件都不能掉！来试试《蹦蹦快递》'}))}catch(e){}
+try{P.onShareTimeline&&P.onShareTimeline(()=>({title:'蹦蹦快递：一件都不能掉！'}))}catch(e){}
+
+/* ================= input ================= */
+function down(){if(GS.mode==='play'){GS.hold=true;ac()}}
+function up(){GS.hold=false}
+let touchN=0,gameTouch=false;
+function tpos(e){const t=(e.changedTouches&&e.changedTouches[0])||(e.touches&&e.touches[0])||e;return[t.clientX!=null?t.clientX:t.x,t.clientY!=null?t.clientY:t.y]}
+P.onTouchStart(e=>{touchN=(e.touches&&e.touches.length)||1;GS.inp='touch';ac();const[x,y]=tpos(e);const h=uiHit(x,y);
+ if(h){UI.press=h;return}
+ if(!uiModal()){gameTouch=true;down()}});
+P.onTouchEnd(e=>{touchN=(e.touches&&e.touches.length)||0;const[x,y]=tpos(e);const p=UI.press;
+ if(p){UI.press=null;const h=uiHit(x,y);if(h&&h.id===p.id&&h.fn){try{h.fn()}catch(err){console.error(err)}}}
+ if(touchN===0&&gameTouch){gameTouch=false;up()}});
+P.onTouchCancel&&P.onTouchCancel(()=>{touchN=0;UI.press=null;gameTouch=false;up()});
+/* ================= update ================= */
+function update(rdt){
+ GS.time+=rdt;
+ let dt=rdt;if(GS.slow>0){GS.slow-=rdt;dt=rdt*0.3}
+ const s=GS.s;
+ if(s&&(GS.mode==='play'||GS.mode==='win'||GS.mode==='crash')){
+  if(GS.L.endless){ensure(GS.L,s.x);const tp=GS.L.plats[Math.max(0,s.on>=0?s.on:s.lastP)][3],w=GS.thw;for(let k=0;k<3;k++)w[k]+=((k===tp?1:0)-w[k])*Math.min(1,rdt*1.6)}
+  if(!GS.freeze)GS.acc+=dt;let n=0;
+  while(GS.acc>=DT&&n<12){if(GS.autoFn&&GS.mode==='play')GS.hold=GS.autoFn(s);step(s,GS.L,GS.mode==='play'&&GS.hold);GS.acc-=DT;n++;handleEvents();seaCheck(s)}
+  // mid-air lean coaching: until the player has saved 3 landings by holding in the air, point it out the moment they start tipping back
+  if(GS.mode==='play'&&s.on<0&&GS.hold&&!s.needRel&&(s.th<-0.12||GS.coached))GS.airUsed=true;
+  if(GS.mode==='play'&&(AIRN<3||(!GS.L.endless&&GS.L.i<AIR_LV))&&s.on<0&&!GS.airUsed&&!GS.coached&&s.vy<0&&s.th<-0.22){GS.coached=true;GS.coachT=1.6;if(AIRN<1){GS.freeze=true;hideTip();chargeSnd(false)}}
+  if(GS.freeze&&(GS.hold||GS.mode!=='play'||s.on>=0))GS.freeze=false;
+  if(GS.coachT>0)GS.coachT-=rdt;
+  {const tq=TRAILS[COS.trail.sel];if(tq&&tq.k&&GS.mode==='play'&&s.on<0){GS.trT=(GS.trT||0)-rdt;if(GS.trT<=0){GS.trT=tq.k==='bub'?0.07:0.045;
+   GS.fx.push({kind:'tr',k:tq.k,x:s.x-6+Math.random()*12,y:s.y+4+Math.random()*10,vx:-30+Math.random()*60,vy:tq.k==='bub'?40:-20+Math.random()*40,t:0,life:0.75,rot:Math.random()*6,hue:(GS.time*240)%360,col:['#ff4f6d','#ffc23d','#3fbf88','#3d7bff','#8b5cf6'][Math.random()*5|0]})}}}
+  if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt}
+  if(GS.grounded){GS.groundT=(GS.groundT||0)+rdt;if(GS.groundT>0.7&&!GS.poofed){GS.poofed=true;GS.chalkAt=bodyBox(s);burst(s.x,GROUND_Y+30,['#ffffff','#e9e4f2','#cfc8de'],26,260);try{noise(0.18,0.2,2500)}catch(e){}}}
+  else if(s.dead&&s.on<0&&!GS.grounded&&!onRoof(GS.L,s)){GS.fallV=(GS.fallV||0)-G*1.2*dt;s.y+=GS.fallV*dt;s.x+=(s.vx||0)*0.25*dt;s.th+=Math.sign(s.th||1)*2.2*dt; // a mid-air crash keeps falling
+   if(seaHere(GS.L,s))seaCheck(s);else if(s.y<=GROUND_Y)hitGround(s)} // sink below the waterline (drawing is clipped there)
+  if(GS.mode==='play'&&s.charging)chargeSnd(true,s.charge);
+  if(GS.L.storm){const ph=GS.time%7.3;if(ph<(GS.lph||0)&&GS.mode==='play'){noise(1.4,0.3,260);tone(70,40,1.2,'sine',0.18)}GS.lph=ph}
+  // tutorial prompts (level 1)
+  if(GS.mode==='play'&&GS.tutStep){const st=GS.tutStep;
+   if(st===1){if(s.charging)GS.tutStep=2;else if($('tip').hidden||$('tip').textContent!==T('t1'))showTip(T('t1'))} // show once (re-showing every frame restarted its fade-in, so it never appeared)
+   if(st===2){if(!s.charging&&s.jumps>0){GS.tutStep=3;hideTip()}else if($('tip').textContent!==T('t2'))showTip(T('t2'))}
+   if(st===3&&s.on>=0&&s.jumps>=1){GS.tutStep=4;showTip(T('t3'),3)}
+   if(st===4&&s.jumps>=2&&s.on<0){GS.tutStep=5}
+   if(st===5&&s.jumps>=3&&s.on>=0&&!tipT){GS.tutStep=0;showTip(T('t5'),3)}}
+  if(tipT>0){tipT-=rdt;if(tipT<=0)hideTip()}
+  // dog bark when near
+  for(const d of GS.L.dogs){const dx=dogX(d,s.t);if(Math.abs(dx-s.x)<120&&GS.time-(GS.dogBark||0)>2.2){GS.dogBark=GS.time;if(GS.mode==='play')SFX.bark()}}
+ }
+ if(s&&GS.mode==='win'){const p=GS.L.plats[GS.L.goal],dx=p[0]+p[1]*0.62-34-s.x;if(Math.abs(dx)>4){s.x+=Math.sign(dx)*Math.min(Math.abs(dx),160*rdt);GS.hopT=(GS.hopT||0)+rdt}else GS.hopT=0}
+ // body squash spring
+ const A=GS.anim;A.sqv+=(-A.sq*280-A.sqv*12)*rdt;A.sq+=A.sqv*rdt*0.1;A.blink-=rdt;if(A.blink<0)A.blink=2+Math.random()*3;if(A.flap>0)A.flap-=rdt;
+ // camera
+ if(s&&GS.mode==='title'){ // the courier hops on the spot between the logo and the buttons
+  const port=CH>=CW,k=S*GS.cam.z,by=GS.L.plats[0][2],ph=(GS.time*1.35)%1;s.x=120;
+  GS.cam.x=s.x-((port?0.5:0.26)*CW-CW*0.5)/k;GS.cam.y=by+((port?0.55:0.86)*CH-CH*0.66)/k;
+  s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
+  s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
+ else if(s&&GS.grounded){const ty=GROUND_Y+0.18*CH/(S*GS.cam.z);GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*6)} // lying on the street: no more panning, just settle on the street
+ else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
+  const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
+ const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
+ GS.shake=Math.max(0,GS.shake-rdt*30);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
+ for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
+ GS.debris=GS.debris.filter(d=>d.kind==='hang'||d.y>-700);
+ for(const f of GS.fx){f.t+=dt;if(f.kind==='tr'){f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=2*dt}if(f.kind==='dot'||f.kind==='sq'){f.vy-=900*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt}if(f.kind==='paper'){f.vy=Math.max(-120,f.vy-700*dt);f.vx*=Math.exp(-1.5*dt);f.x+=(f.vx+Math.sin(f.t*5+f.rot)*60)*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt}}
+ GS.fx=GS.fx.filter(f=>f.t<f.life);
+ for(const p of GS.pops)p.a+=rdt;GS.pops=GS.pops.filter(p=>p.a<1.1);
+}
+
+/* ================= render ================= */
+const INK='#2b2340';
+let LW=3;
+function W(x){return CW*0.5+(x-GS.cam.x)*S*GS.cam.z}
+function H(y){return CH*0.66-(y-GS.cam.y)*S*GS.cam.z}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function shade(hex,k){const p=parseInt(hex.slice(1),16);let r=p>>16,g=(p>>8)&255,b=p&255;if(k<0){r*=1+k;g*=1+k;b*=1+k}else{r+=(255-r)*k;g+=(255-g)*k;b+=(255-b)*k}return`rgb(${r|0},${g|0},${b|0})`}
+function hash(n){n=Math.sin(n*127.1)*43758.5453;return n-Math.floor(n)}
+const BCOL=['#ff9f7a','#ffd36e','#8fd0c7','#b9a7ff','#f78fb3','#9fd17a','#7fc0ff'];
+const SKY=[['#7ccbff','#dff4ff'],['#88b8e8','#e9eef7'],['#2a2f5c','#5b5a8f'],['#ff9a76','#ffe6b3'],
+ ['#a9c6e8','#f2f6fb'],['#aab7c4','#e6eaee'],['#6fb3e8','#d6ecfa'],['#1f2340','#474b6e'],['#9fb4cc','#eef2f7'],['#b9c0d0','#eceef3'],['#7aa6d6','#dfe9f4'],['#5d6fa3','#c9d3ea'],
+ ['#1b1d3d','#4a3f78'],['#9cc3e0','#eef6fb'],['#6a4c93','#f2b5c8']];
+const PIER=[0,1,0,0,0,1,0,0,1,0,1,0,0,1,0],SEA_Y=30,GROUND_Y=-420;let AIRN=+store.get('air2',0)||0; // landings the player has saved by leaning in mid-air
+// pier levels (and pier stretches of Endless) have open sea between the crates: falling below the waterline is a splash, not a long drop
+function seaHere(L,s){return!!(L&&s&&(L.endless?(L.plats[Math.max(0,s.on>=0?s.on:s.lastP)]||[])[3]===1:PIER[L.i/PER|0]>0))}
+function splashFx(x){const y=SEA_Y;GS.fx.push({kind:'ring',x,y,t:0,life:0.6,col:'#e8f6ff'});GS.fx.push({kind:'ring',x,y,t:-0.15,life:0.75,col:'#ffffff'});
+ for(let i=0;i<34;i++){const a=(Math.random()-0.5)*1.6,v=260+Math.random()*560;GS.fx.push({kind:'dot',x:x+(Math.random()-0.5)*40,y,vx:Math.sin(a)*v*0.7,vy:Math.cos(a)*v,r:3+Math.random()*5,col:['#ffffff','#cdeeff','#8fcbef'][i%3],t:0,life:0.7+Math.random()*0.5,rot:0,vr:0})}
+ SFX.splash();GS.shake=Math.max(GS.shake,7);buzz(40)}
+function onRoof(L,s){return L.plats.some(p=>{const x=PX(p,s.t);return s.x>=x-6&&s.x<=x+p[1]+6&&Math.abs(s.y-p[2])<3})}
+function hitGround(s){s.y=GROUND_Y;GS.grounded=true;s.th=Math.sign(s.th||1)*1.45;GS.shake=Math.max(GS.shake,10);GS.anim.sqv=-9;
+ try{noise(0.35,0.4,500);tone(120,50,0.3,'sine',0.25)}catch(e){}buzz(40);burst(s.x,GROUND_Y+4,['#d9d3e6','#ffffff','#b8b3c9'],22,320)}
+function seaCheck(s){if(GS.splashed||!s||s.on>=0||s.won||s.y>=SEA_Y||!seaHere(GS.L,s))return;GS.splashed=true;splashFx(s.x);if(!s.dead&&GS.mode==='play'){die(s,'sea');handleEvents()}};
+function mixSky(j){let r=0,g=0,b=0;for(let k=0;k<3;k++){const p=parseInt(SKY[k][j].slice(1),16),w=GS.thw[k];r+=(p>>16)*w;g+=((p>>8)&255)*w;b+=(p&255)*w}return'#'+((1<<24)|(Math.min(255,r)<<16)|(Math.min(255,g)<<8)|Math.min(255,b)|0).toString(16).slice(1)}
+function render(){
+ const c=ctx;c.setTransform(DPR,0,0,DPR,0,0);const z=S*GS.cam.z;LW=Math.max(2,3*z);
+ const E=GS.L&&GS.L.endless,ch=GS.L&&!E?(GS.L.i/PER|0):0;const sky=E?[mixSky(0),mixSky(1)]:SKY[ch]||SKY[0],pk=E?GS.thw[1]:PIER[ch]||0;
+ const g=c.createLinearGradient(0,0,0,CH);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);c.fillStyle=g;c.fillRect(0,0,CW,CH);
+ const sh=GS.shake?(Math.random()-0.5)*GS.shake:0,sv=GS.shake?(Math.random()-0.5)*GS.shake:0;
+ c.save();c.translate(sh,sv);
+ // sun + clouds + far skyline
+ c.fillStyle='#fff6c9';c.beginPath();c.arc(CW*0.82,CH*0.17,46*S,0,7);c.fill();
+ for(let i=0;i<7;i++){const x=((i*397-GS.cam.x*0.08+GS.time*6)%(CW+400)+CW+400)%(CW+400)-200,y=CH*(0.12+hash(i)*0.25);cloud(c,x,y,(0.7+hash(i+9)*0.6)*S)}
+ c.fillStyle=shade(sky[1],-0.18);
+ if(pk>0.01){c.globalAlpha=pk;pierBack(c,sky);c.fillStyle=shade(sky[1],-0.18)}c.globalAlpha=1-pk;if(pk<0.99)for(let i=-2;i<14;i++){const wd=120*S,base=Math.floor(GS.cam.x*0.25/120);const k=base+i;const x=CW*0.5+(k*120-GS.cam.x*0.25)*S;const hh=(80+hash(k)*140)*S;c.fillRect(x,H(GS.cam.y*0.0)+0-hh+40*S-((GS.cam.y)*S*0.1),wd-8*S,hh+CH)}
+ c.globalAlpha=1;
+ // world
+ const L=GS.L;if(L){
+  for(let i=0;i<L.plats.length;i++)drawBuilding(c,L,i);
+  if(L.snow)for(const p of L.plats)snowCap(c,p);
+  if(pk<0.99){c.globalAlpha=1-pk;drawStreet(c);c.globalAlpha=1}
+  if(pk>0.01){c.globalAlpha=pk;drawSea(c);c.globalAlpha=1}
+  for(const f of L.fans)drawFan(c,f);
+  for(const t of L.tramps)drawTramp(c,t);
+  for(const r of L.ropes)drawRope(c,r);
+  {const w=GS.s?windAt(L,GS.s.x,GS.s.t):0;if(w)drawWind(c,w)}
+  drawGoal(c,L);drawTargets(c,L);
+  const s=GS.s;
+  for(const d of L.dogs)drawDog(c,d,s?s.t:GS.time);
+  for(const d of GS.debris)if(d.kind==='hang')drawHang(c,d,L);
+  if(s){
+   if(s.on>=0&&s.charging&&GS.mode==='play'&&(L.endless?s.on<AIM_EB:L.i<AIM_LV||GS.scope))drawPreview(c,s,L,!L.endless&&(L.i<3||GS.scope));
+   const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
+   if(GS.poofed)chalkTrace(c,s,Math.min(1,(GS.groundT-0.7)/0.3));else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
+   if(wet)c.restore();
+   if(GS.coached&&s.on<0&&!GS.airUsed&&GS.mode==='play')drawKeyHint(c,s);
+   if(s.on>=0&&s.charging)drawCharge(c,s);
+  }
+  {const wetP=pk>0.01&&seaHere(L,GS.s);if(wetP){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
+  for(const d of GS.debris)if(d.kind==='pk'){c.save();c.translate(W(d.x),H(d.y));c.rotate(d.rot);drawParcel(c,d.t,z,d.crack,d.life);c.restore()}
+  if(wetP)c.restore()}
+ }
+ for(const f of GS.fx){const k=f.t/f.life;c.globalAlpha=Math.max(0,1-k);
+  if(f.kind==='dot'){c.fillStyle=f.col;c.beginPath();c.arc(W(f.x),H(f.y),f.r*z,0,7);c.fill()}
+  else if(f.kind==='tr'){const X=W(f.x),Y=H(f.y),r=(5-3*k)*z;c.save();c.translate(X,Y);c.rotate(f.rot);c.lineWidth=1.5*z;c.strokeStyle=INK;
+   if(f.k==='star'){c.fillStyle='#ffc23d';c.beginPath();for(let j=0;j<10;j++){const a=j*Math.PI/5,q=j%2?r*0.45:r*1.2;c.lineTo(Math.cos(a)*q,Math.sin(a)*q)}c.closePath();c.fill()}
+   else if(f.k==='heart'){c.fillStyle='#ff5d8f';c.rotate(-f.rot);c.beginPath();c.moveTo(0,r*0.9);c.bezierCurveTo(-r*1.6,-r*0.2,-r*0.6,-r*1.3,0,-r*0.4);c.bezierCurveTo(r*0.6,-r*1.3,r*1.6,-r*0.2,0,r*0.9);c.fill()}
+   else if(f.k==='bub'){c.strokeStyle='#bfe6ff';c.lineWidth=2*z;c.beginPath();c.arc(0,0,r*1.2,0,7);c.stroke()}
+   else if(f.k==='conf'){c.fillStyle=f.col;c.fillRect(-r,-r*0.5,r*2,r)}
+   else if(f.k==='spark'){c.fillStyle='#fff6c9';c.beginPath();c.arc(0,0,r*0.7,0,7);c.fill();c.fillStyle='#ffc23d';c.fillRect(-r*1.4,-0.6*z,r*2.8,1.2*z);c.fillRect(-0.6*z,-r*1.4,1.2*z,r*2.8)}
+   else{c.fillStyle=`hsl(${f.hue},90%,62%)`;c.beginPath();c.arc(0,0,r,0,7);c.fill()}
+   c.restore()}
+  else if(f.kind==='sq'){c.save();c.translate(W(f.x),H(f.y));c.rotate(f.rot);c.fillStyle=f.col;c.fillRect(-f.r*z,-f.r*z*0.6,f.r*2*z,f.r*1.2*z);c.restore()}
+  else if(f.kind==='paper'){c.globalAlpha=Math.min(1,(1-k)*3);c.save();c.translate(W(f.x),H(f.y));c.rotate(f.rot);c.fillStyle=f.col;c.strokeStyle=INK;c.lineWidth=LW*0.5;c.fillRect(-9*z,-6*z,18*z,12*z);c.strokeRect(-9*z,-6*z,18*z,12*z);c.restore()}
+  else if(f.kind==='ring'){c.strokeStyle=f.col||'#fff';c.lineWidth=6*z*(1-k);c.beginPath();c.ellipse(W(f.x),H(f.y),(30+70*k)*z,(8+18*k)*z,0,0,7);c.stroke()}}
+ c.globalAlpha=1;
+ for(const p of GS.pops){const k=p.a/1.1,y=H(p.y)-k*50*z,sc=p.sz*(k<0.15?0.6+k/0.15*0.5:1.1-0.1*k);c.globalAlpha=k>0.7?(1-k)/0.3:1;c.font=`900 ${26*z*sc}px Nunito,Trebuchet MS,sans-serif`;c.textAlign='center';c.lineJoin='round';c.lineWidth=7*z;c.strokeStyle=INK;c.strokeText(p.t,W(p.x),y);c.fillStyle=p.col;c.fillText(p.t,W(p.x),y)}
+ c.globalAlpha=1;
+ if(L){if(L.rain)rain(c);if(L.snow)snowFx(c);if(L.fog&&GS.s)fogFx(c);if(L.storm)flashFx(c)}
+ c.restore();
+ if(GS.s&&GS.mode!=='title'&&(GS.mode==='play'||GS.mode==='paused'||GS.mode==='win'||GS.mode==='crash')){hud(c);drawCoinFly(c)}
+}
+function cloud(c,x,y,s){c.fillStyle='#ffffffcc';c.beginPath();c.arc(x,y,24*s,0,7);c.arc(x+28*s,y-10*s,30*s,0,7);c.arc(x+58*s,y,22*s,0,7);c.rect(x,y,58*s,22*s);c.fill()}
+function snowCap(c,p){const z=S*GS.cam.z,x=W(PX(p,GS.s?GS.s.t:0)),y=H(p[2]),w=p[1]*z;if(x>CW+20||x+w<-20)return;
+ c.lineWidth=LW*0.7;c.strokeStyle=INK;c.fillStyle='#fff';c.beginPath();c.moveTo(x-5*z,y-3*z);
+ for(let k=0;k<=8;k++){const xx=x-5*z+(w+10*z)*k/8;c.quadraticCurveTo(xx-(w+10*z)/16,y-(k%2?13:9)*z,xx,y-8*z)}
+ c.lineTo(x+w+5*z,y-3*z);for(let k=8;k>=0;k--){const xx=x-5*z+(w+10*z)*k/8;c.lineTo(xx,y+(k%3===1?6:2)*z)}c.closePath();c.fill();c.stroke()}
+function snowFx(c){const t=GS.time,w=GS.s?windAt(GS.L,GS.s.x,GS.s.t):0;c.fillStyle='#ffffffdd';
+ for(let i=0;i<80;i++){const r=(1.6+hash(i+5)*2.6)*S;const x=((hash(i)*CW+Math.sin(t*1.3+i)*24*S+t*(w*0.6+10)*S*(0.5+hash(i+2)))%CW+CW)%CW,y=(hash(i+3)*CH+t*(45+hash(i+7)*55)*S)%CH;c.beginPath();c.arc(x,y,r,0,7);c.fill()}}
+function fogFx(c){const z=S*GS.cam.z,px=W(GS.s.x);const g=c.createLinearGradient(px+170*z,0,px+620*z,0);g.addColorStop(0,'rgba(226,231,238,0)');g.addColorStop(1,'rgba(226,231,238,0.9)');c.fillStyle=g;c.fillRect(0,0,CW,CH);
+ c.fillStyle='rgba(240,243,247,0.35)';for(let i=0;i<5;i++){const x=((hash(i+11)*CW*1.5+GS.time*(12+i*5)*S)%(CW*1.5))-CW*0.25,y=CH*(0.25+hash(i+4)*0.6);c.beginPath();c.ellipse(x,y,CW*0.3,CH*0.05,0,0,7);c.fill()}}
+function flashFx(c){const ph=GS.time%7.3,a=ph<0.12?1-ph/0.12:ph>0.22&&ph<0.3?0.5:0;if(!a)return;const k=Math.floor(GS.time/7.3);
+ c.strokeStyle='#fff8d0';c.lineWidth=4*S;c.lineJoin='round';c.beginPath();let x=CW*(0.15+hash(k)*0.7),y=0;c.moveTo(x,y);while(y<CH*0.45){y+=CH*0.06;x+=(hash(k*7+y)-0.5)*60*S;c.lineTo(x,y)}c.globalAlpha=a;c.stroke();
+ c.fillStyle='#ffffff';c.globalAlpha=a*0.5;c.fillRect(0,0,CW,CH);c.globalAlpha=1}
+function rain(c){c.strokeStyle='#cfe2ff88';c.lineWidth=2;for(let i=0;i<90;i++){const x=(hash(i)*CW+GS.time*120)%CW,y=(hash(i+3)*CH+GS.time*900*(0.7+hash(i+7)*0.6))%CH;c.beginPath();c.moveTo(x,y);c.lineTo(x-4,y+14);c.stroke()}}
+function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s?GS.s.t:0)),y=H(p[2]),w=p[1]*z;if(x>CW+20||x+w<-20)return;
+ if(p[4]){drawMover(c,x,y,w,z);return}
+ const isCp=L.cp&&L.cp[i],col=i===L.goal||isCp?'#ffe7a3':BCOL[(i*3+L.i)%BCOL.length];const bottom=CH+20;
+ c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ c.fillStyle=col;c.fillRect(x,y,w,bottom-y);c.strokeRect(x,y,w,bottom-y+40);
+ // shade strip
+ c.fillStyle=shade(col,-0.12);c.fillRect(x+w-10*z,y,10*z,bottom-y);
+ if((L.endless?p[3]===1:PIER[L.i/PER|0])&&i!==L.goal&&!isCp){drawCrates(c,L,i,x,y,w,col,z);return}
+ // windows
+ const cols=Math.max(1,Math.floor((p[1]-30)/48));const gap=(w-cols*22*z)/(cols+1);
+ for(let r=0;r<8;r++){const wy=y+40*z+r*56*z;if(wy>CH)break;for(let k=0;k<cols;k++){const wx=x+gap+k*(22*z+gap);const lit=hash(i*31+r*7+k+L.i*5)>0.45;
+  c.fillStyle=lit?'#fff3c4':shade(col,-0.25);rr(c,wx,wy,22*z,28*z,5*z);c.fill();c.lineWidth=LW*0.7;c.stroke();c.beginPath();c.moveTo(wx,wy+14*z);c.lineTo(wx+22*z,wy+14*z);c.stroke()}}
+ // roof cap
+ c.lineWidth=LW;c.fillStyle=shade(col,-0.3);rr(c,x-6*z,y-4*z,w+12*z,14*z,5*z);c.fill();c.stroke();
+ if(p[1]>150&&i!==L.goal&&i!==0&&!isCp){const ax=hash(i+L.i)<0.5?x+10*z:x+w-46*z;c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke()}
+}
+/* hovering platform (endless run): slides left-right */
+function drawMover(c,x,y,w,z){c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ for(const k of [0.16,0.84]){const rx=x+w*k,bw=(4+Math.abs(Math.cos(GS.time*28+k*9))*16)*z;c.fillStyle='#8b93a8';c.fillRect(rx-2.5*z,y+20*z,5*z,12*z);c.strokeRect(rx-2.5*z,y+20*z,5*z,12*z);c.fillStyle='#dfe6f5';c.beginPath();c.ellipse(rx,y+34*z,bw,3.5*z,0,0,7);c.fill();c.stroke()}
+ c.fillStyle='#eef2fb';rr(c,x,y,w,24*z,9*z);c.fill();c.stroke();c.fillStyle='#ffc23d';rr(c,x,y,w,9*z,4*z);c.fill();c.stroke();
+ c.fillStyle=INK;for(let k=10*z;k<w-12*z;k+=22*z){c.beginPath();c.moveTo(x+k,y+1.5*z);c.lineTo(x+k+7*z,y+1.5*z);c.lineTo(x+k+2*z,y+7.5*z);c.lineTo(x+k-5*z,y+7.5*z);c.closePath();c.fill()}
+ const a=0.5+0.5*Math.sin(GS.time*6);c.fillStyle='#3d7bff';for(const d of [-1,1]){const ax=x+w/2+d*(w/2-16*z+a*3*z);c.beginPath();c.moveTo(ax+d*6*z,y+16.5*z);c.lineTo(ax-d*2*z,y+12*z);c.lineTo(ax-d*2*z,y+21*z);c.closePath();c.fill()}}
+/* ---- chapter 2: pier ---- */
+function pierBack(c,sky){const hy=CH*0.66-(-60-GS.cam.y)*S*0.15;
+ c.fillStyle=shade(sky[1],-0.2);
+ for(let i=-2;i<9;i++){const base=Math.floor(GS.cam.x*0.2/260);const k=base+i;const x=CW*0.5+(k*260-GS.cam.x*0.2)*S;if(hash(k*3)<0.45)continue;
+  const th=(150+hash(k)*90)*S;c.fillRect(x,hy-th,14*S,th);c.fillRect(x-60*S,hy-th,170*S,10*S);c.fillRect(x+90*S,hy-th+10*S,3*S,40*S+hash(k+1)*50*S);
+  c.beginPath();c.moveTo(x-6*S,hy-th);c.lineTo(x+7*S,hy-th-34*S);c.lineTo(x+20*S,hy-th);c.fill()}
+ for(let i=-2;i<12;i++){const base=Math.floor(GS.cam.x*0.2/150);const k=base+i;if(hash(k+40)<0.5)continue;const x=CW*0.5+(k*150-GS.cam.x*0.2)*S;const n=1+(hash(k+5)*3|0);
+  for(let j=0;j<n;j++)c.fillRect(x,hy-(j+1)*22*S,64*S,20*S)}
+ const g=c.createLinearGradient(0,hy,0,CH);g.addColorStop(0,'#6fb7e6');g.addColorStop(1,'#3d84c4');c.fillStyle=g;c.fillRect(0,hy,CW,CH-hy);
+ c.fillStyle='#ffffff55';for(let i=0;i<14;i++){const x=((hash(i)*CW*1.3-GS.cam.x*0.3*S+GS.time*12)%CW+CW)%CW;c.fillRect(x,hy+8*S+hash(i+2)*(CH-hy),26*S,3*S)}}
+function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
+ c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
+ c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
+ c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
+// crime-scene chalk line traced around the courier, right where they lay: silhouette -> grown a few px -> hollowed out
+function bodyBox(s){try{const cv=document.createElement('canvas');cv.width=Math.ceil(CW);cv.height=Math.ceil(CH);const o=cv.getContext('2d');drawCourier(o,s,true);
+ const d=o.getImageData(0,0,cv.width,cv.height).data;let x0=1e9,y0=1e9,x1=-1,y1=-1;
+ for(let y=0;y<cv.height;y+=2)for(let x=0;x<cv.width;x+=2)if(d[(y*cv.width+x)*4+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+ if(x1<0)return null;const z=S*GS.cam.z;return{x:GS.cam.x+((x0+x1)/2-CW*0.5)/z,y:GS.cam.y-((y0+y1)/2-CH*0.66)/z,w:(x1-x0)/z}}catch(e){return null}}
+function chalkTrace(c,s,a){const cv=GS.chalkA||(GS.chalkA=document.createElement('canvas')),cv2=GS.chalkB||(GS.chalkB=document.createElement('canvas'));
+ for(const k of [cv,cv2])if(k.width!==c.canvas.width||k.height!==c.canvas.height){k.width=c.canvas.width;k.height=c.canvas.height}
+ const o=cv.getContext('2d'),o2=cv2.getContext('2d'),tf=c.getTransform();
+ o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,cv.width,cv.height);o.setTransform(tf);
+ {const b=GS.chalkAt,z=S*GS.cam.z,d=s.th>0?1:-1,X=b?W(b.x):W(s.x),Y=b?H(b.y):H(GROUND_Y)-12*z,k=b?Math.max(0.7,Math.min(1.6,b.w/105)):1;o.save();o.translate(X,Y);o.scale(d*z*k,z*k);o.strokeStyle=o.fillStyle='#fff';o.lineCap=o.lineJoin='round'; // spread-eagle figure where the courier lay
+  o.translate(-5,0);o.beginPath();o.arc(44,-2,15,0,7);o.fill();o.lineWidth=20;o.beginPath();o.moveTo(28,-2);o.lineTo(-8,0);o.stroke();
+  o.lineWidth=9;o.beginPath();o.moveTo(20,-8);o.lineTo(30,-30);o.lineTo(42,-40);o.moveTo(20,6);o.lineTo(30,26);o.lineTo(44,34);
+  o.moveTo(-8,-6);o.lineTo(-30,-24);o.lineTo(-40,-34);o.moveTo(-8,6);o.lineTo(-32,20);o.lineTo(-38,34);o.stroke();o.restore()}
+ o.setTransform(1,0,0,1,0,0);o.globalCompositeOperation='source-in';o.fillStyle='#ffffff';o.fillRect(0,0,cv.width,cv.height);o.globalCompositeOperation='source-over';
+ const r=Math.max(2.2,2.6*S)*(tf.a||1),g=Math.max(2,2.4*S)*(tf.a||1);o2.setTransform(1,0,0,1,0,0);o2.clearRect(0,0,cv2.width,cv2.height);
+ for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*(g+r),Math.sin(an)*(g+r))}       // outer edge of the line
+ o2.globalCompositeOperation='destination-out';for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*g,Math.sin(an)*g)}o2.globalCompositeOperation='source-over'; // keep a gap around the body
+ c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=0.92*a;c.drawImage(cv2,0,0);c.restore()}
+function drawSea(c){const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ c.fillStyle='#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
+ c.strokeStyle='#ffffffaa';c.lineWidth=LW*0.7;for(let i=0;i<10;i++){const x=((hash(i+7)*CW*1.4-GS.cam.x*S+GS.time*20)%(CW+60)+CW+60)%(CW+60)-30;const y=y0+(18+hash(i)*60)*z;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+10*z,y-6*z,x+20*z,y);c.stroke()}}
+function drawCrates(c,L,i,x,y,w,col,z){const bottom=CH+20;
+ // pylons under the stack
+ c.fillStyle='#8a6a52';for(const k of [0.18,0.82]){const px=x+w*k-7*z;c.fillRect(px,y,14*z,bottom-y);c.strokeRect(px,y,14*z,bottom-y+40)}
+ const rowH=58*z;let r=0;
+ for(let yy=y;yy<bottom&&r<9;yy+=rowH,r++){const cc=r===0?col:BCOL[(i*5+r*3+L.i)%BCOL.length];const inset=r===0?0:(hash(i*7+r)*16-8)*z;
+  c.fillStyle=cc;c.fillRect(x+inset,yy,w,rowH);c.lineWidth=LW;c.strokeRect(x+inset,yy,w,rowH);
+  c.strokeStyle=shade(cc,-0.28);c.lineWidth=LW*0.6;c.beginPath();for(let k=14*z;k<w-6*z;k+=14*z){c.moveTo(x+inset+k,yy+7*z);c.lineTo(x+inset+k,yy+rowH-7*z)}c.stroke();c.strokeStyle=INK;
+  c.fillStyle=shade(cc,-0.3);c.fillRect(x+inset,yy,w,6*z);c.fillRect(x+inset,yy+rowH-6*z,w,6*z);c.lineWidth=LW*0.6;c.strokeRect(x+inset,yy,w,6*z)}
+ c.lineWidth=LW;
+ // bollard / rope coil on top
+ if(L.plats[i][1]>150&&i!==0){const ax=hash(i+L.i)<0.5?x+14*z:x+w-42*z;c.fillStyle='#5b5a8f';rr(c,ax,y-18*z,18*z,18*z,6*z);c.fill();c.stroke();c.fillStyle='#7a79b0';rr(c,ax-4*z,y-24*z,26*z,8*z,4*z);c.fill();c.stroke()}}
+function drawFan(c,f){const z=S*GS.cam.z,dir=Math.sign(f[4]);const fx=dir>0?f[0]+14:f[0]+f[2]-14;const fy=Math.min(f[1]+f[3]-60,Math.max(f[1]+150,topUnder(fx)+190));
+ const X=W(fx),Y=H(fy);if(X<-200||X>CW+200)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ // breeze streaks through the zone
+ c.save();c.strokeStyle='#ffffffb0';c.lineWidth=3*z;c.lineCap='round';const len=f[2];
+ for(let k=0;k<9;k++){const ph=((GS.time*Math.abs(f[4])*0.0012+hash(k*3+f[0]))%1);const sx=dir>0?f[0]+ph*len:f[0]+f[2]-ph*len;const sy=f[1]+60+hash(k+f[0])*(Math.min(f[3],360)-40);
+  c.globalAlpha=Math.sin(ph*Math.PI)*0.9;c.beginPath();c.moveTo(W(sx),H(sy));c.lineTo(W(sx-dir*40),H(sy));c.stroke()}
+ c.restore();
+ // pole
+ c.fillStyle='#9aa3b8';c.fillRect(X-5*z,Y,10*z,CH-Y+20);c.strokeRect(X-5*z,Y,10*z,CH-Y+40);
+ // housing
+ c.save();c.translate(X,Y);c.scale(dir,1);c.fillStyle='#5b5a8f';rr(c,-22*z,-34*z,22*z,68*z,8*z);c.fill();c.stroke();
+ c.fillStyle='#dfe6f5';c.beginPath();c.ellipse(4*z,0,12*z,38*z,0,0,7);c.fill();c.stroke();
+ const a=GS.time*18*Math.sign(f[4]);c.fillStyle='#ff6b4a';for(let k=0;k<3;k++){const yb=Math.sin(a+k*2.094)*30*z,wb=Math.abs(Math.cos(a+k*2.094))*8*z+2*z;c.beginPath();c.ellipse(5*z,yb*0.9,wb*0.6,9*z,0,0,7);c.fill();c.stroke()}
+ c.fillStyle=INK;c.beginPath();c.arc(5*z,0,4*z,0,7);c.fill();c.restore()}
+function drawWind(c,w){const dir=Math.sign(w),sp=180+Math.abs(w)*2.2;c.save();c.strokeStyle='#ffffff99';c.lineCap='round';c.lineWidth=Math.max(2,2.5*S);
+ for(let i=0;i<16;i++){const L=(50+hash(i)*70)*S;const x=((hash(i+1)*(CW+300)+dir*GS.time*sp*(0.7+hash(i+4)*0.6))%(CW+300)+CW+300)%(CW+300)-150;const y=CH*(0.08+hash(i+9)*0.7)+Math.sin(GS.time*3+i)*6*S;
+  c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-dir*L*0.5,y-6*S,x-dir*L,y);c.stroke()}
+ c.restore()}
+function drawTramp(c,t){const z=S*GS.cam.z,x=W(t[0]),y=H(t[2]),w=t[1]*z;if(x>CW+40||x+w<-40)return;const hit=GS.trampHit&&performance.now()-GS.trampHit<250?Math.sin((performance.now()-GS.trampHit)/25)*4*z:0;
+ c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#c9d3e6';for(const k of [0.15,0.85]){c.fillRect(x+w*k-4*z,y-16*z,8*z,16*z);c.strokeRect(x+w*k-4*z,y-16*z,8*z,16*z)}
+ c.fillStyle='#ff4f6d';rr(c,x-4*z,y-22*z+hit,w+8*z,10*z,5*z);c.fill();c.stroke();c.fillStyle='#fff';c.fillRect(x+w*0.3,y-20*z+hit,w*0.12,4*z);c.fillRect(x+w*0.6,y-20*z+hit,w*0.12,4*z)}
+function drawRope(c,r){const z=S*GS.cam.z;c.lineWidth=LW;c.strokeStyle=INK;
+ for(const px of [r[0],r[1]]){const base=topUnder(px);c.fillStyle='#a77a55';c.fillRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8));c.strokeRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8))}
+ c.beginPath();for(let k=0;k<=20;k++){const x=r[0]+(r[1]-r[0])*k/20;const y=ropeY(r,x);k?c.lineTo(W(x),H(y)):c.moveTo(W(x),H(y))}c.lineWidth=LW*0.8;c.strokeStyle='#5a4a6a';c.stroke();
+ const cols=['#ff6b9d','#7fc0ff','#ffd36e','#9fd17a'];for(let k=1;k<5;k++){const x=r[0]+(r[1]-r[0])*k/5,y=ropeY(r,x);const sw=Math.sin(GS.time*2+k)*0.12;c.save();c.translate(W(x),H(y));c.rotate(sw);c.fillStyle=cols[k%4];c.strokeStyle=INK;c.lineWidth=LW*0.6;
+  if(k%2){c.beginPath();c.moveTo(-12*z,0);c.lineTo(12*z,0);c.lineTo(14*z,8*z);c.lineTo(8*z,8*z);c.lineTo(8*z,22*z);c.lineTo(-8*z,22*z);c.lineTo(-8*z,8*z);c.lineTo(-14*z,8*z);c.closePath()}else{c.beginPath();c.moveTo(-4*z,0);c.lineTo(4*z,0);c.lineTo(4*z,14*z);c.lineTo(10*z,18*z);c.lineTo(8*z,22*z);c.lineTo(-4*z,20*z);c.closePath()}c.fill();c.stroke();c.restore()}}
+function topUnder(x){const L=GS.L;for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return -400}
+function drawHang(c,d,L){const r=L.ropes[d.r];if(!r)return;const y=ropeY(r,d.x);const z=S*GS.cam.z;c.save();c.translate(W(d.x),H(y));c.rotate(Math.sin(GS.time*2.2+d.sw*9)*0.15+d.sw);c.strokeStyle=INK;c.lineWidth=LW*0.6;c.beginPath();c.moveTo(0,0);c.lineTo(0,6*z);c.stroke();c.translate(0,6*z+PK[d.t].h*z/2);drawParcel(c,d.t,z,0,0);c.restore()}
+function drawDog(c,d,t){const z=S*GS.cam.z,x=dogX(d,t),dir=Math.sin(t*d[2])>=0?1:-1;const X=W(x),Y=H(d[3]);
+ // walk cycle follows the distance actually covered, so the paws never slide and the dog slows down to turn at each end
+ const v=Math.abs((d[1]-d[0])*0.5*d[2]*Math.sin(t*d[2])),amp=Math.min(1,v/45),ph=x*0.2,bob=-Math.abs(Math.sin(ph))*2*amp*z;
+ c.save();c.translate(X,Y);c.scale(dir,1);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ c.fillStyle='#b5774a';const legs=[[-14,0,'#9a6238'],[16,Math.PI,'#9a6238'],[-6,Math.PI,'#b5774a'],[8,0,'#b5774a']]; // far legs first (darker), diagonal pairs in step
+ for(const [k,o,col] of legs){c.save();c.translate(k*z,-13*z+bob*0.5);c.rotate(Math.sin(ph+o)*0.55*amp);c.fillStyle=col;rr(c,-3*z,0,6*z,13*z,2.5*z);c.fill();c.stroke();c.restore()}
+ c.fillStyle='#b5774a';c.translate(0,bob);
+ rr(c,-22*z,-30*z,44*z,20*z,10*z);c.fill();c.stroke();
+ c.save();c.translate(-22*z,-26*z);c.rotate(-0.6+Math.sin(t*16)*0.4);rr(c,-12*z,-3*z,14*z,6*z,3*z);c.fill();c.stroke();c.restore();
+ c.beginPath();c.arc(22*z,-34*z,13*z,0,7);c.fill();c.stroke();
+ c.fillStyle='#7d4a2a';c.beginPath();c.ellipse(14*z,-40*z,6*z,11*z,0.5,0,7);c.fill();c.stroke();
+ c.fillStyle='#fff';c.beginPath();c.ellipse(31*z,-31*z,7*z,5*z,0,0,7);c.fill();c.stroke();c.fillStyle=INK;c.beginPath();c.arc(37*z,-32*z,2.8*z,0,7);c.fill();c.beginPath();c.arc(25*z,-37*z,2.4*z,0,7);c.fill();
+ c.fillStyle='#ff4f6d';c.fillRect(8*z,-28*z,8*z,4*z);c.restore();
+ if(GS.s&&Math.abs(x-GS.s.x)<130&&GS.mode==='play'){c.font=`900 ${16*z}px Nunito,sans-serif`;c.textAlign='center';c.lineWidth=5*z;c.strokeStyle='#fff';c.strokeText(T('woof'),X+dir*30*z,Y-60*z);c.fillStyle=INK;c.fillText(T('woof'),X+dir*30*z,Y-60*z)}}
+function drawGoal(c,L){if(L.endless){const s=GS.s;for(let i=Math.max(8,((s?s.lastP:0)>>3)*8-8),k=0;k<5;k++,i+=8)if(L.cp[i]&&L.plats[i])drawDoor(c,L,i,0.75,!!(s&&s.cpd[i]));return}drawDoor(c,L,L.goal,0.62,GS.mode==='win')}
+function drawDoor(c,L,gi,fr,won){const p=L.plats[gi],z=S*GS.cam.z;const cx=p[0]+p[1]*fr;const X=W(cx),Y=H(p[2]);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
+ // door
+ c.fillStyle='#ff6b4a';rr(c,X-24*z,Y-74*z,48*z,74*z,8*z);c.fill();c.stroke();c.fillStyle='#ffc23d';c.beginPath();c.arc(X+14*z,Y-36*z,4*z,0,7);c.fill();c.stroke();
+ c.fillStyle='#fff';rr(c,X-30*z,Y-92*z,60*z,16*z,6*z);c.fill();c.stroke();c.fillStyle=INK;c.font=`900 ${11*z}px Nunito,sans-serif`;c.textAlign='center';c.fillText('#'+(L.endless?gi:(L.i+1)+'0'+(L.i%3+1)),X,Y-80*z);
+ // mat
+ c.fillStyle='#3fbf88';rr(c,X-34*z,Y-6*z,68*z,8*z,4*z);c.fill();c.stroke();
+ // recipient
+ const t=GS.time,ci=L.endless?gi>>3:L.i;const rx=X+48*z,hop=won?Math.abs(Math.sin(t*9))*16*z:0;c.save();c.translate(rx,Y-hop);
+ const sk=['#ffd2b0','#e9b48a','#c98c62','#ffe0c4'][ci%4],sh=['#8fd0c7','#b9a7ff','#f78fb3','#9fd17a'][ci%4];
+ c.fillStyle=sh;rr(c,-12*z,-40*z,24*z,34*z,9*z);c.fill();c.stroke();c.fillStyle=INK;c.fillRect(-9*z,-8*z,6*z,8*z);c.fillRect(3*z,-8*z,6*z,8*z);
+ c.fillStyle=sk;c.beginPath();c.arc(0,-52*z,13*z,0,7);c.fill();c.stroke();
+ const wave=won?Math.sin(t*14)*0.6:Math.sin(t*3)*0.25;c.save();c.translate(10*z,-34*z);c.rotate(-1.9+wave);c.fillStyle=sk;rr(c,-3*z,0,7*z,18*z,3*z);c.fill();c.stroke();c.restore();
+ c.fillStyle=INK;c.beginPath();c.arc(-4*z,-54*z,2.2*z,0,7);c.arc(5*z,-54*z,2.2*z,0,7);c.fill();c.lineWidth=LW*0.7;c.beginPath();if(won)c.arc(0,-49*z,5*z,0.1,Math.PI-0.1);else{c.moveTo(-3*z,-47*z);c.lineTo(4*z,-47*z)}c.stroke();
+ if(!won){c.font=`900 ${18*z}px Nunito,sans-serif`;c.fillStyle='#fff';c.lineWidth=5*z;c.strokeText('?',14*z,-66*z);c.fillStyle=INK;c.fillText('?',14*z,-66*z)}
+ c.restore();
+ // arrow above when far
+ if(GS.s&&GS.mode==='play'&&!L.endless){const dx=cx-GS.s.x;if(dx>500){const ax=CW-36,ay=CH*0.5;c.save();c.translate(ax,ay+Math.sin(t*4)*4);c.fillStyle='#fff';c.strokeStyle=INK;c.lineWidth=3;c.beginPath();c.moveTo(14,0);c.lineTo(-8,-14);c.lineTo(-8,14);c.closePath();c.fill();c.stroke();c.font='900 13px Nunito,sans-serif';c.textAlign='center';c.fillStyle=INK;c.fillText(Math.round(dx/50)+'m',-2,32);c.restore()}}}
+/* bullseye pads: red = live, green = hit, grey = left behind */
+function drawTargets(c,L){const z=S*GS.cam.z,s=GS.s;c.lineJoin='round';
+ for(let i=1;i<L.plats.length;i++){const bx=L.bull[i];if(bx==null)continue;const bp=L.plats[i],X=W(bx+PX(bp,s?s.t:0)-bp[0]);if(X<-60||X>CW+60)continue;
+  const Y=H(bp[2]),R=BULL_R*z,done=s&&s.claim&&s.claim[i],gone=!done&&s&&s.lastP>i,gold=L.gold&&L.gold[i]&&!done&&!gone,col=done?'#3fbf88':gone?'#bdb5cc':gold?'#ffb300':'#ff4f6d',t=Y-6*z,h=8*z,m=LW*0.4;
+  c.lineWidth=LW*0.8;c.strokeStyle=INK;c.fillStyle=col;rr(c,X-R,t,2*R,h,3*z);c.fill();c.stroke();
+  c.fillStyle=done?'#d9f7e8':gone?'#ece8f2':'#fff';c.fillRect(X-R*0.62,t+m,R*1.24,h-2*m);c.fillStyle=col;c.fillRect(X-R*0.24,t+m,R*0.48,h-2*m);
+  if(gold){const sy=t-16*z+Math.sin(GS.time*5)*3*z,r1=9*z,r2=4*z;c.fillStyle='#ffc23d';c.lineWidth=LW*0.7;c.beginPath();for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5+GS.time*0.8,r=k%2?r2:r1;k?c.lineTo(X+Math.cos(a)*r,sy+Math.sin(a)*r):c.moveTo(X+Math.cos(a)*r,sy+Math.sin(a)*r)}c.closePath();c.fill();c.stroke()}
+  if(!done&&!gone&&GS.mode==='play'&&s.on!==i){const a=0.25+0.25*Math.sin(GS.time*5);c.fillStyle=`rgba(255,255,255,${a})`;c.fillRect(X-R+m,t+m,2*R-2*m,h-2*m)}}}
+/* parcels drawn centred at (0,0) in canvas space */
+function drawParcel(c,t,z,crack,life){const d=PK[t],w=d.w*z,h=d.h*z;c.lineWidth=Math.max(2,3*z);c.strokeStyle=INK;c.lineJoin='round';
+ const bs=BOXES[COS.box.sel]||BOXES[0];if(t==='box'||t==='frag'){c.fillStyle=t==='box'?bs.f:'#f4f7ff';rr(c,-w/2,-h/2,w,h,4*z);c.fill();c.stroke();
+  if(t==='box'){c.fillStyle=bs.t;if(bs.pz){c.beginPath();c.arc(0,0,6*z,0,7);c.fill()}else c.fillRect(-4*z,-h/2+1.5*z,8*z,h-3*z);if(bs.rib){c.fillRect(-w/2+1.5*z,-2.5*z,w-3*z,5*z);c.beginPath();c.ellipse(-5*z,-h/2,5*z,3*z,-0.4,0,7);c.ellipse(5*z,-h/2,5*z,3*z,0.4,0,7);c.fill();c.stroke()}
+   c.fillStyle=bs.sh?'#fffbe0':'#fff8';c.fillRect(-w/2+5*z,-h/2+5*z,9*z,6*z);if(bs.sh){const g=(GS.time*0.8)%2-0.5;c.fillStyle='#fff9';c.fillRect((g*w)-3*z,-h/2+2*z,4*z,h-4*z)}}
+  else{c.fillStyle='#ff4f6d';c.beginPath();c.moveTo(-6*z,-8*z);c.lineTo(6*z,-8*z);c.lineTo(2*z,2*z);c.lineTo(2*z,7*z);c.lineTo(5*z,8*z);c.lineTo(-5*z,8*z);c.lineTo(-2*z,7*z);c.lineTo(-2*z,2*z);c.closePath();c.fill();
+   if(crack){c.strokeStyle=INK;c.lineWidth=2*z;c.beginPath();c.moveTo(-w/2+3*z,-h/2+4*z);c.lineTo(-6*z,-2*z);c.lineTo(-10*z,4*z);c.lineTo(-4*z,h/2-3*z);c.stroke()}}}
+ else if(t==='cake'){c.fillStyle='#ff9cc6';rr(c,-w/2,-h/2+4*z,w,h-4*z,6*z);c.fill();c.stroke();c.fillStyle='#fff';c.beginPath();c.moveTo(-w/2+2*z,-h/2+6*z);for(let k=0;k<=6;k++){const x=-w/2+2*z+(w-4*z)*k/6;c.quadraticCurveTo(x-3*z,-h/2+(k%2?12:9)*z,x,-h/2+6*z)}c.lineTo(w/2-2*z,-h/2+4*z);c.lineTo(-w/2+2*z,-h/2+4*z);c.fill();
+  c.fillStyle='#ffc23d';c.fillRect(-2*z,-h/2-8*z,4*z,12*z);c.strokeRect(-2*z,-h/2-8*z,4*z,12*z);c.fillStyle='#ff6b4a';c.beginPath();c.ellipse(0,-h/2-11*z+Math.sin(GS.time*20)*0.8*z,2.6*z,4*z,0,0,7);c.fill()}
+ else if(t==='chick'){const fl=GS.anim.flap>0?Math.sin(GS.time*50)*0.8:0;c.fillStyle='#fff';c.beginPath();c.ellipse(0,2*z,w/2,h/2-1*z,0,0,7);c.fill();c.stroke();
+  c.save();c.translate(-4*z,2*z);c.rotate(-0.3-fl);c.beginPath();c.ellipse(0,0,8*z,5*z,0,0,7);c.fill();c.stroke();c.restore();
+  c.fillStyle='#ff4f6d';c.beginPath();c.arc(8*z,-h/2+1*z,4*z,0,7);c.arc(12*z,-h/2+3*z,3*z,0,7);c.fill();c.fillStyle='#ffc23d';c.beginPath();c.moveTo(w/2-1*z,-1*z);c.lineTo(w/2+6*z,2*z);c.lineTo(w/2-1*z,4*z);c.closePath();c.fill();c.stroke();
+  c.fillStyle=INK;c.beginPath();c.arc(8*z,-1*z,2*z,0,7);c.fill()}
+ else if(t==='long'){c.fillStyle='#7fc0ff';rr(c,-w/2,-h/2,w,h,h/2);c.fill();c.stroke();c.fillStyle='#fff8';c.fillRect(-w/2+10*z,-h/2+4*z,w-20*z,4*z);c.fillStyle='#3d7bff';c.fillRect(-6*z,-h/2+1*z,12*z,h-2*z)}
+}
+/* courier: foot at (x,y), body axis rotated by th */
+function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s.y)-(GS.mode==='win'&&GS.hopT>0?Math.abs(Math.sin(GS.hopT*11))*16*z:0);
+ const ch=s.on>=0&&s.charging?s.charge:0;const sq=Math.max(-0.3,Math.min(0.3,A.sq));const spring=Math.max(0.35,1-ch*0.55+sq*0.6);
+ c.save();c.translate(X,Y);
+ // shadow on ground
+ if(s.on>=0){c.fillStyle='#0002';c.beginPath();c.ellipse(0,0,26*z,6*z,0,0,7);c.fill()}
+ c.rotate(s.th);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';c.lineCap='round';
+ const sp=18*spring;const peg=-6-sp; // spring from 0 → peg
+ // pogo spring
+ for(const [col,lw] of [[INK,6.4],['#c9d3e6',3.4]]){c.strokeStyle=col;c.lineWidth=lw*z;c.beginPath();for(let k=0;k<=10;k++){const yy=-4-(sp)*k/10;const xx=(k%2?7:-7);k?c.lineTo(xx*z,yy*z):c.moveTo(0,-4*z)}c.stroke()}
+ c.strokeStyle=INK;c.lineWidth=LW;c.fillStyle=pgCol();rr(c,-3*z,-6*z,6*z,8*z,2*z);c.fill();c.stroke();
+ // stick + footrest (all red, like the cover)
+ const bodyY=peg,SKIN='#ffd2b0',HAIR='#7a4526';
+ c.fillStyle=pgCol();rr(c,-4*z,(bodyY-44)*z,8*z,46*z,3*z);c.fill();c.stroke();
+ rr(c,-17*z,(bodyY-4)*z,34*z,6*z,3*z);c.fill();c.stroke();
+ // legs + sneakers
+ const knee=Math.min(1,ch*1.4+Math.max(0,-sq));
+ for(const d of [-1,1]){c.beginPath();c.moveTo(d*9*z,(bodyY-4)*z);c.lineTo(d*(10+knee*7)*z,(bodyY-14)*z);c.lineTo(d*7*z,(bodyY-25+knee*4)*z);c.lineWidth=9.5*z;c.strokeStyle=INK;c.stroke();c.lineWidth=6.2*z;c.strokeStyle=SK.lg;c.stroke()}
+ c.lineWidth=LW;c.strokeStyle=INK;for(const d of [-1,1]){c.fillStyle=SK.cap;rr(c,(d*10-8)*z,(bodyY-8)*z,16*z,8.5*z,3.5*z);c.fill();c.stroke();c.fillStyle='#fff';c.fillRect((d*10-6.5)*z,(bodyY-2.6)*z,13*z,2*z);c.fillRect((d*10+(d>0?2:-6))*z,(bodyY-6.6)*z,4*z,2.2*z)}
+ const tb=bodyY-24+knee*4;
+ // satchel on the hip
+ c.fillStyle='#b5774a';rr(c,-28*z,(tb-14)*z,16*z,15*z,4*z);c.fill();c.stroke();c.lineWidth=LW*0.7;c.beginPath();c.moveTo(-28*z,(tb-8)*z);c.quadraticCurveTo(-20*z,(tb-4)*z,-12*z,(tb-8)*z);c.stroke();c.fillStyle='#ffc23d';c.beginPath();c.arc(-20*z,(tb-5.5)*z,1.9*z,0,7);c.fill();c.lineWidth=LW;
+ // jacket: body, darker hem, strap, pocket
+ c.fillStyle=SK.jk;rr(c,-15*z,(tb-30)*z,30*z,32*z,10*z);c.fill();
+ c.save();c.clip();c.fillStyle='#0000001c';c.fillRect(-15*z,(tb-7)*z,30*z,10*z);c.fillRect(8*z,(tb-30)*z,8*z,32*z);c.restore();
+ rr(c,-15*z,(tb-30)*z,30*z,32*z,10*z);c.stroke();
+ c.strokeStyle=INK;c.lineWidth=5.4*z;c.beginPath();c.moveTo(-13*z,(tb-27)*z);c.lineTo(11*z,(tb-5)*z);c.stroke();c.strokeStyle=SK.st;c.lineWidth=3*z;c.stroke();c.strokeStyle=INK;c.lineWidth=LW;
+ c.fillStyle=SK.pk;rr(c,2.5*z,(tb-19)*z,10*z,9*z,2.5*z);c.fill();c.stroke();c.lineWidth=LW*0.6;c.beginPath();c.moveTo(2.5*z,(tb-15.5)*z);c.lineTo(12.5*z,(tb-15.5)*z);c.stroke();c.lineWidth=LW;
+ // handlebar, sleeves, yellow cuffs, hands
+ const hb=bodyY-44;c.fillStyle=pgCol();rr(c,-18*z,hb*z,36*z,6*z,3*z);c.fill();c.stroke();
+ for(const d of [-1,1]){c.beginPath();c.moveTo(d*13*z,(tb-24)*z);c.quadraticCurveTo(d*25*z,(tb-13)*z,d*14*z,(hb+5)*z);c.lineWidth=9.5*z;c.strokeStyle=INK;c.stroke();c.lineWidth=6.2*z;c.strokeStyle=SK.jk;c.stroke();
+  c.beginPath();c.moveTo(d*17.5*z,(hb+10)*z);c.lineTo(d*15*z,(hb+6.5)*z);c.lineWidth=9.5*z;c.strokeStyle=INK;c.stroke();c.lineWidth=6.2*z;c.strokeStyle='#ffd75e';c.stroke();
+  c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle=SKIN;c.beginPath();c.arc(d*13.5*z,(hb+3)*z,4.8*z,0,7);c.fill();c.stroke()}
+ // head: big and round, curly hair, ears
+ const R=19,hy=tb-41;
+ c.fillStyle=HAIR;for(const d of [-1,1])for(const q of [[18.5,-3,6.5],[20.5,5,6],[17,12.5,5.5]]){c.beginPath();c.arc(d*q[0]*z,(hy+q[1])*z,q[2]*z,0,7);c.fill();c.stroke()}
+ c.fillStyle=SKIN;c.beginPath();c.arc(0,hy*z,R*z,0,7);c.fill();c.stroke();
+ c.save();c.clip();c.fillStyle='#e9a98466';c.beginPath();c.arc(-3*z,(hy-3)*z,R*z,0,7);c.rect(-40*z,(hy-40)*z,80*z,80*z);c.fill('evenodd');c.restore();
+ c.fillStyle=HAIR;c.beginPath();c.moveTo(-R*z,(hy-8)*z);c.arc(0,(hy-8)*z,R*z,Math.PI,0);for(const k of [12.6,0,-12.6])c.arc(k*z,(hy-8)*z,6.4*z,0,Math.PI);c.closePath();c.fill();c.stroke();
+ // hat
+ c.fillStyle=SK.cap;const ht=SK.hat,dome=()=>{c.beginPath();c.arc(0,(hy-7)*z,(R+0.8)*z,Math.PI*1.03,Math.PI*1.97);c.closePath();c.fill();c.stroke()};
+ if(ht==='band'){rr(c,(-R-0.8)*z,(hy-13)*z,(2*R+1.6)*z,7.5*z,3.5*z);c.fill();c.stroke();for(const k of [0,1]){c.save();c.translate(-R*z,(hy-9)*z);c.rotate(-0.5+k*0.7+Math.sin(GS.time*6+k)*0.15);rr(c,-15*z,-2.5*z,15*z,5.5*z,2.5*z);c.fill();c.stroke();c.restore()}}
+ else if(ht==='crown'){c.beginPath();c.moveTo(-16*z,(hy-8)*z);c.lineTo(-16*z,(hy-24)*z);c.lineTo(-8*z,(hy-16)*z);c.lineTo(0,(hy-26)*z);c.lineTo(8*z,(hy-16)*z);c.lineTo(16*z,(hy-24)*z);c.lineTo(16*z,(hy-8)*z);c.closePath();c.fill();c.stroke();c.fillStyle='#ff4f6d';c.beginPath();c.arc(0,(hy-13.5)*z,3*z,0,7);c.fill();c.stroke()}
+ else if(ht==='beanie'){dome();c.fillStyle=SK.pk;rr(c,(-R-1.5)*z,(hy-11)*z,(2*R+3)*z,7.5*z,3.5*z);c.fill();c.stroke()}
+ else if(ht==='helmet'){dome();c.fillStyle='#ffffffcc';c.fillRect(-3*z,(hy-24)*z,6*z,17*z);c.fillStyle=SK.cap;rr(c,(-R-3)*z,(hy-9.5)*z,(2*R+6)*z,5.5*z,2.5*z);c.fill();c.stroke()}
+ else{dome();rr(c,4*z,(hy-12.5)*z,23*z,6.5*z,3*z);c.fill();c.stroke();c.fillStyle='#ffc23d';c.lineWidth=LW*0.7;rr(c,-6*z,(hy-23)*z,10*z,8*z,2.5*z);c.fill();c.stroke();c.lineWidth=LW}
+ // face: big eyes with a shine, brows, cheeks, grin / gritted teeth
+ const blink=A.blink<0.12,ey=hy+5;c.fillStyle=INK;c.strokeStyle=INK;c.lineWidth=2.6*z;
+ if(dead||A.face){for(const ex of [-7,8]){c.beginPath();c.moveTo((ex-3.5)*z,(ey-3.5)*z);c.lineTo((ex+3.5)*z,(ey+3.5)*z);c.moveTo((ex+3.5)*z,(ey-3.5)*z);c.lineTo((ex-3.5)*z,(ey+3.5)*z);c.stroke()}c.beginPath();c.ellipse(0.5*z,(hy+13)*z,3.6*z,4.2*z,0,0,7);c.stroke()}
+ else{const worried=Math.abs(s.psi)>0.38||(s.on<0&&Math.abs(s.th)>0.45),grit=worried||ch>0.55;
+  for(const ex of [-7,8]){if(blink){c.beginPath();c.moveTo((ex-3.2)*z,ey*z);c.lineTo((ex+3.2)*z,ey*z);c.stroke()}
+   else{c.fillStyle=INK;c.beginPath();c.ellipse(ex*z,ey*z,(worried?3.9:3.4)*z,(worried?4.9:4.4)*z,0,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc((ex+1.2)*z,(ey-1.7)*z,1.4*z,0,7);c.fill()}}
+  c.lineWidth=2.4*z;c.beginPath();if(grit){c.moveTo(-11.5*z,(ey-9.5)*z);c.lineTo(-4*z,(ey-6.5)*z);c.moveTo(12.5*z,(ey-9.5)*z);c.lineTo(5*z,(ey-6.5)*z)}else{c.moveTo(-10.5*z,(ey-7.5)*z);c.quadraticCurveTo(-7*z,(ey-9.5)*z,-4*z,(ey-8)*z);c.moveTo(5*z,(ey-8)*z);c.quadraticCurveTo(8*z,(ey-9.5)*z,11.5*z,(ey-7.5)*z)}c.stroke();
+  c.fillStyle='#ff7a8a80';c.beginPath();c.ellipse(-13.5*z,(hy+12)*z,4.2*z,2.8*z,0,0,7);c.ellipse(14.5*z,(hy+12)*z,4.2*z,2.8*z,0,0,7);c.fill();
+  if(grit){c.fillStyle='#fff';c.lineWidth=2*z;rr(c,-5.5*z,(hy+10)*z,12*z,6*z,2.5*z);c.fill();c.stroke();c.beginPath();c.moveTo(-1.5*z,(hy+10)*z);c.lineTo(-1.5*z,(hy+16)*z);c.moveTo(2.5*z,(hy+10)*z);c.lineTo(2.5*z,(hy+16)*z);c.stroke();
+   if(worried){c.fillStyle='#7fd8ff';c.lineWidth=1.6*z;c.beginPath();c.moveTo(-15*z,(hy-4)*z);c.quadraticCurveTo(-18.5*z,(hy+2)*z,-15*z,(hy+3)*z);c.quadraticCurveTo(-11.5*z,(hy+2)*z,-15*z,(hy-4)*z);c.fill();c.stroke()}}
+  else{c.lineWidth=2.4*z;c.fillStyle='#b03a4c';c.beginPath();c.arc(0.5*z,(hy+10.5)*z,4.8*z,0.1,Math.PI-0.1);c.closePath();c.fill();c.stroke()}}
+ c.lineWidth=LW;c.strokeStyle=INK;
+ // parcel stack on head (bends with psi)
+ if(!dead&&s.stack.length){c.translate(0,(hy-R)*z);const n=s.stack.length;
+  for(let i=0;i<n;i++){const p=s.stack[i],h=PK[p.t].h*z;c.rotate(s.psi*(i===0?0.55:0.25/Math.max(1,(n-1)/3)));c.save();c.translate(0,-h/2);drawParcel(c,p.t,z,p.crack,0);c.restore();c.translate(0,-h)}}
+ c.restore()}
+// the control to press, drawn as a key cap that keeps pressing itself down (space bar / mouse / screen, whichever the player is using)
+function drawKeyHint(c,s){const z=S*GS.cam.z,inp=GS.inp||(matchMedia('(pointer:coarse)').matches?'touch':'key');
+ const lab=inp==='key'?T('spaceKey'):inp==='mouse'?T('holdMouse'):T('holdScreen'),fz=GS.freeze,top=fz?T(inp==='key'?'balKey':inp==='mouse'?'balMouse':'balScreen'):T('holdAir');const fs=Math.max(16,(fz?28:22)*z);c.save();c.font=`900 ${fs}px Nunito,Trebuchet MS,sans-serif`;
+ const w=Math.max(c.measureText(lab).width+fs*1.6,inp==='key'?fs*7:0),h=fs*1.9,d=fs*0.35,X=fz?CW/2-w/2:Math.max(8,Math.min(CW-8-w,W(s.x)-w/2)),Y=fz?CH*0.3:H(s.y+HEAD+stackH(s)+40)-h-d;
+ const ph=(GS.time*1.6)%1,down=ph>0.18&&ph<0.85?1:0,off=down*d*0.8;
+ c.fillStyle=INK;rr(c,X,Y+d,w,h,h*0.28);c.fill();                        // key side
+ c.fillStyle=down?'#ffe08a':'#ffffff';c.strokeStyle=INK;c.lineWidth=3;rr(c,X,Y+off,w,h,h*0.28);c.fill();c.stroke();
+ c.fillStyle=INK;c.textAlign='center';c.textBaseline='middle';c.fillText(lab,X+w/2,Y+off+h/2+1);
+ c.font=`900 ${fs*0.8}px Nunito,Trebuchet MS,sans-serif`;c.lineWidth=5;c.strokeStyle=INK;c.fillStyle='#ffc23d';let tf=fs*(fz?0.95:0.8);c.font=`900 ${tf}px Nunito,Trebuchet MS,sans-serif`;const tw=c.measureText(top).width;if(tw>CW-24){tf*=(CW-24)/tw;c.font=`900 ${tf}px Nunito,Trebuchet MS,sans-serif`}
+ const tx=Math.max(12+Math.min(tw,CW-24)/2,Math.min(CW-12-Math.min(tw,CW-24)/2,X+w/2));c.strokeText(top,tx,Y-fs*0.8);c.fillText(top,tx,Y-fs*0.8);
+ c.restore()}
+function drawTiltGauge(c,s){const z=S*GS.cam.z,X=W(s.x),Y=H(s.y)+26*z;const a=s.th,q=Math.abs(a);const col=q<0.15?'#3fbf88':q<0.45?'#ffc23d':'#ff4f6d';
+ c.lineWidth=7*z;c.strokeStyle='#ffffffb0';c.beginPath();c.arc(X,Y,30*z,Math.PI*0.15,Math.PI*0.85);c.stroke();
+ c.lineWidth=7*z;c.strokeStyle='#3fbf8899';c.beginPath();c.arc(X,Y,30*z,Math.PI*0.5-0.15,Math.PI*0.5+0.15);c.stroke();
+ const ang=Math.PI*0.5-Math.max(-1.2,Math.min(1.2,a));c.fillStyle=col;c.strokeStyle=INK;c.lineWidth=2*z;c.beginPath();c.arc(X+Math.cos(ang)*30*z,Y+Math.sin(ang)*30*z,6*z,0,7);c.fill();c.stroke()}
+function drawCharge(c,s){const z=S*GS.cam.z,X=W(s.x)-44*z,Y=H(s.y)-20*z,h=70*z;c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#fff';
+ if(s.charge>=1){const a=0.5+0.5*Math.sin(GS.time*28);c.save();c.shadowColor='#fff';c.shadowBlur=14*z*a;c.strokeStyle=`rgba(255,79,109,${0.5+0.5*a})`;c.lineWidth=LW*2.2;rr(c,X-7*z,Y-h,14*z,h,7*z);c.stroke();c.restore()}
+ rr(c,X-7*z,Y-h,14*z,h,7*z);c.fill();c.stroke();
+ const k=s.charge;const g=c.createLinearGradient(0,Y,0,Y-h);g.addColorStop(0,'#3fbf88');g.addColorStop(0.6,'#ffc23d');g.addColorStop(1,'#ff4f6d');c.fillStyle=g;rr(c,X-5*z,Y-2*z-(h-4*z)*k,10*z,(h-4*z)*k,5*z);c.fill()}
+function drawPreview(c,s,L,full){ // aim guide: full arc in the first 3 levels; elsewhere a tapering arc that covers ~70% of the flight, so the landing spot stays a judgement call
+ const v=V0+V1*s.charge;let x=s.x,y=s.y,vx=v*Math.sin(LAUNCH),vy=v*Math.cos(LAUNCH);const z=S*GS.cam.z,lim=full?99:AIM_F*2*vy/G,GAP=22,SKIP=46;
+ let t=0,d=0,next=SKIP,pts=[];
+ for(let k=0;k<400&&t<lim;k++){vy-=G*0.01;const nx=x+vx*0.01,ny=y+vy*0.01;d+=Math.hypot(nx-x,ny-y);x=nx;y=ny;t+=0.01;
+  if(vy<0&&y<s.y-300)break;let hit=false;if(vy<0)for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1]&&y<=p[2]&&y>p[2]-30){hit=true;break}
+  if(d>=next){pts.push([x,y]);next+=GAP}if(hit)break}
+ c.fillStyle='#ffffff';c.strokeStyle='#2b2340';const n=pts.length;
+ for(let i=0;i<n;i++){const f=full?0:i/Math.max(1,n-1);c.globalAlpha=1-0.75*f;c.lineWidth=1.6*z;c.beginPath();c.arc(W(pts[i][0]),H(pts[i][1]),(6-3*f)*z,0,7);c.fill();c.stroke()}
+ c.globalAlpha=1}
+function coinIcon(c,x,y,r){c.save();c.fillStyle='#ffc23d';c.strokeStyle=INK;c.lineWidth=2.5;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.stroke();c.fillStyle='#ffe9a8';c.beginPath();c.arc(x-r*0.25,y-r*0.25,r*0.35,0,7);c.fill();c.restore()}
+function drawCoinFly(c){const now=GS.time,rdt=Math.min(0.1,now-(GS.cfT!=null?GS.cfT:now));GS.cfT=now;const [tx,ty]=GS.walletXY||[22,80];GS.coinFly=GS.coinFly.filter(f=>{f.t+=rdt;if(f.t<0)return true;const k=Math.min(1,f.t/0.55),e=k*k*(3-2*k);
+  const x=f.x0+(tx-f.x0)*e,y=f.y0+(ty-f.y0)*e-Math.sin(k*Math.PI)*60;coinIcon(c,x,y,9*Math.max(1,S));
+  if(k>=1){GS.bump=1;if(f.v)GS.wallet=COINS;try{tone(1320+Math.random()*200,0,0.07,'triangle',0.06)}catch(e){}return false}return true})}
+function hud(c){const s=GS.s,L=GS.L;const sz=Math.max(1,Math.min(1.25,S*1.1)); // >=1 keeps the small HUD text legible in an 800x450 iframe
+ c.textAlign='center';c.lineJoin='round';c.font=`900 ${22*sz}px Nunito,Trebuchet MS,sans-serif`;c.lineWidth=6;c.strokeStyle=INK;c.fillStyle='#fff';
+ if(L.endless){const b=GS.bump||0;c.font=`900 ${(32+8*b)*sz}px Nunito,Trebuchet MS,sans-serif`;c.lineWidth=7;const sc=''+(GS.mode==='crash'?GS.endScore:s.score);c.strokeText(sc,CW/2,38*sz+TOPPAD);c.fillStyle=b>0.05?'#ffc23d':'#fff';c.fillText(sc,CW/2,38*sz+TOPPAD);
+  c.font=`900 ${15*sz}px Nunito,sans-serif`;c.textAlign='right';c.lineWidth=5;const bt='🏆 '+Math.max(EB,s.score);c.strokeText(bt,CW-14,30*sz);c.fillStyle='#ffe08a';c.fillText(bt,CW-14,30*sz);
+  if(s.combo>1){c.textAlign='left';c.font=`900 ${(22+6*b)*sz}px Nunito,sans-serif`;c.lineWidth=6;c.strokeText('×'+s.combo,16,58+26*sz);c.fillStyle='#ff9f43';c.fillText('×'+s.combo,16,58+26*sz)}
+  c.textAlign='center'}
+ else{const title=(L.boss?'👑 ':'')+T('lvN',{n:L.i+1});c.strokeText(title,CW/2,34*sz+TOPPAD);c.fillText(title,CW/2,34*sz+TOPPAD);
+ // timer
+ const tv=GS.result&&GS.mode==='win'?GS.result.time:s.t;const tt=tv.toFixed(1);const ok=tv<=L.par;c.font=`900 ${18*sz}px Nunito,sans-serif`;c.textAlign='right';c.strokeText('⏱ '+tt,CW-14,30*sz);c.fillStyle=ok?'#fff':'#ffd0d0';c.fillText('⏱ '+tt,CW-14,30*sz);
+ c.font=`800 ${12*sz}px Nunito,sans-serif`;c.lineWidth=4;c.strokeText('★ '+L.par+'s',CW-14,48*sz);c.fillStyle=ok?'#ffc23d':'#ccc';c.fillText('★ '+L.par+'s',CW-14,48*sz)}
+ // 3-star goals, shown for ~3 s when a level is first opened
+ if(!L.endless&&GS.goalAt!=null&&GS.goalLv===L.i){const age=GS.time-GS.goalAt,D=3.2;if(age>=0&&age<D){c.save();c.globalAlpha=Math.max(0,Math.min(1,age/0.25,(D-age)/0.5));
+  const parts=[T('st1'),T('st2'),T('st3',{n:L.par})];c.textAlign='left';c.textBaseline='middle';
+  let fs=15*sz,sw,gap,ws,tw;const meas=()=>{c.font=`800 ${fs}px Nunito,Trebuchet MS,sans-serif`;sw=c.measureText('★ ').width;gap=fs*1.2;ws=parts.map(t=>c.measureText(t).width);tw=ws.reduce((x,y)=>x+y,0)+parts.length*sw+gap*(parts.length-1)};meas();
+  if(tw+2*fs>CW-16){fs*=(CW-16)/(tw+2*fs);meas()} // shrink to fit narrow phones
+  const ph=fs*2,pw=tw+2*fs,px=CW/2-pw/2,py=(CW<640?104:78)*sz+TOPPAD;/* phones: below the bullseye counter */c.lineWidth=3;c.strokeStyle=INK;c.fillStyle='rgba(255,255,255,0.92)';rr(c,px,py,pw,ph,ph/2);c.fill();c.stroke();
+  let x=px+fs;const y=py+ph/2+1;parts.forEach((t,k)=>{c.fillStyle='#ffb300';c.fillText('★ ',x,y);x+=sw;c.fillStyle=INK;c.fillText(t,x,y);x+=ws[k]+gap});c.restore()}}
+ const wnd=windAt(L,s.x,s.t);
+ // wind badge
+ if(wnd){const dir=Math.sign(wnd),n=Math.min(3,Math.ceil(Math.abs(wnd)/40)),bw=78*sz,bh=26*sz,bx=CW-14-bw,by=58*sz;c.save();c.lineWidth=3;c.strokeStyle=INK;c.fillStyle=dir>0?'#bff0d4':'#ffd6cc';rr(c,bx,by,bw,bh,bh/2);c.fill();c.stroke();
+  const fx=dir>0?bx+12*sz:bx+bw-12*sz,fl=Math.sin(GS.time*9)*2*sz;c.fillStyle=INK;c.fillRect(fx-1.2*sz,by+5*sz,2.5*sz,bh-10*sz);c.fillStyle='#ff6b4a';c.beginPath();c.moveTo(fx,by+5*sz);c.lineTo(fx+dir*16*sz,by+8*sz+fl);c.lineTo(fx,by+12*sz);c.closePath();c.fill();
+  c.strokeStyle=INK;c.lineWidth=3.5*sz;c.lineCap='round';c.lineJoin='round';const cx=bx+bw*(dir>0?0.62:0.38),ph=(GS.time*2)%1;
+  for(let k=0;k<n;k++){const ox=(k-(n-1)/2)*11*sz+dir*ph*3*sz;c.beginPath();c.moveTo(cx+ox-dir*4*sz,by+7*sz);c.lineTo(cx+ox+dir*4*sz,by+bh/2);c.lineTo(cx+ox-dir*4*sz,by+bh-7*sz);c.stroke()}
+  c.restore()}
+ // bullseye score (left, under the buttons)
+ if(L.nb&&!L.endless){const b=GS.bump||0,ix=22,iy=58+20*sz,r=9*sz;c.save();c.lineWidth=2.5;c.strokeStyle=INK;
+  coinIcon(c,ix,iy,r);GS.walletXY=[ix,iy];
+  c.textAlign='left';c.lineJoin='round';c.lineWidth=6;c.font=`900 ${(21+7*b)*sz}px Nunito,Trebuchet MS,sans-serif`;const st=''+(GS.wallet||0);let tx=ix+r+7*sz;c.strokeText(st,tx,iy+7*sz);c.fillStyle=b>0.05?'#ffc23d':'#fff';c.fillText(st,tx,iy+7*sz);tx+=c.measureText(st).width+8*sz;
+  c.font=`800 ${13*sz}px Nunito,sans-serif`;c.lineWidth=4;const ht='🎯 '+s.hits+'/'+L.nb;c.strokeText(ht,tx,iy+6*sz);c.fillStyle='#fff';c.fillText(ht,tx,iy+6*sz);tx+=c.measureText(ht).width+8*sz;
+  if(s.combo>1){c.font=`900 ${17*sz}px Nunito,sans-serif`;c.lineWidth=5;c.strokeText('×'+s.combo,tx,iy+7*sz);c.fillStyle='#ff9f43';c.fillText('×'+s.combo,tx,iy+7*sz)}
+  c.restore()}
+ // parcels
+ const tot=L.endless?s.stack.length:L.pk.length;let x=CW/2-(tot-1)*17*sz;const y=(L.endless?68:62)*sz+TOPPAD;
+ for(let i=0;i<tot;i++){const have=i<s.stack.length&&!s.dead;c.save();c.translate(x+i*34*sz,y);c.globalAlpha=have?1:0.3;drawParcel(c,have?s.stack[i].t:L.pk[i],0.62*sz,have&&s.stack[i].crack,0);c.restore()}
+ c.globalAlpha=1}
+
+/* ================= loop ================= */
+let last=performance.now();
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!GS.manual){if(GS.mode!=='paused')update(dt);render()}requestAnimationFrame(frame)}
+
+
+
+/* ================= boot ================= */
+TXT.zh.name='蹦蹦快递';LANG='zh';
+// keep the HUD clear of the status bar and the capsule menu: the web HUD assumes the buttons sit at y=10
+{const hud0=hud;hud=function(c){const off=SAFE.top-10;GS.walletXY=null;c.save();c.translate(0,off);hud0(c);c.restore();if(GS.walletXY)GS.walletXY=[GS.walletXY[0],GS.walletXY[1]+off]}}
+{const render0=render;render=function(){render0();drawUI(ctx)}}
+applyText();
+GS.L=LEVELS[0];GS.s=newState(GS.L,1);GS.cam.x=200;GS.cam.y=100;
+requestAnimationFrame(frame);
+// first visit drops straight into level 1 (the tutorial)
+setTimeout(()=>{if(!LP[0])startLevel(0);else goTitle()},Math.max(0,UI.splashEnd-performance.now()-300)); // after the 健康游戏忠告 screen
+// browser preview only: hooks for automated checks
+if(PLAT==='sim')globalThis.__mini={UI,GS,LP,store,startLevel,startEndless,openMap,openShop,goTitle,pause,showFail,onWin,die:why=>die(GS.s,why),showWinTest:()=>showWin(),tap(id){const h=UI.hits.find(h=>h.id===id);if(h)h.fn();return !!h}};
+})();
+})();
+})();

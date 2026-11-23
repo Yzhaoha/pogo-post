@@ -1,0 +1,10 @@
+{
+  "description": "蹦蹦快递",
+  "projectname": "bengbeng-kuaidi",
+  "appid": "",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "minified": true
+  }
+}

@@ -5,4 +5,5 @@
 - 测试链接（GitHub Pages）：https://yzhaoha.github.io/pogo-post/
 - `index.html`：测试版（带 `?lvl=N` 跳关、`window.__pp` 求解器、假广告）
 - `python3 tools/build.py` → `dist/poki/`、`dist/crazygames/` 和两个 zip（index.html 在 zip 根目录）
+- 微信 / 抖音小游戏版「蹦蹦快递」：`python3 tools/build_mini.py` → `dist/wechat/`、`dist/douyin/`，说明见 `docs/小游戏版.md`
 - **交接 / 当前状态：`docs/STATUS.md` 开头那一节**（`docs/弹簧快递-开发交接.md` 是早期设计记录）
