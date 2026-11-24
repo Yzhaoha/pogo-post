@@ -2,6 +2,15 @@
 
 > 新会话先读这一节就够开工；下面「历史记录」是逐日细节，要查某个功能怎么做的再翻。
 
+## ★ 11-24 CrazyGames 第二次更新已提交上线（本机会话，在用户 Chrome 里操作）
+- **11-24 11:40（北京时间）提交**，后台提示「Your update has been automatically approved and is now live」。提交的是 `eedad99` 的 `dist/pogo-post-crazygames.zip` 解压出的 `index.html`（和 `dist/crazygames/index.html` 逐字节一致）。Update Notes 用的是 `docs/交接-提交CG新版本.md` 里那段英文。
+- Game Versions：新 build `20028aaa-06b3-4e61-a2b1-5ddfd1f34ce4`（后台显示创建于 24/11/2026 03:08，应为 UTC）状态 **Active**；11-21 的 `8fa5fa54…` 变为 Accepted。
+- **试运行没有重启**：提交后后台仍是「Basic Launch started on 20.11.2026 / expires on 11.12.2026」，Metrics 页「Basic Launch Start Date: 20/11/2026」。按后台说明，11-23 前开始的游戏沿用旧规则（3 项、15 分，不考 CTR）。
+- 表单流程（这次实测）：Submit new version → 上传页（引擎、存档方式 LocalStorage、支持手机、横竖屏 BOTH、SDK 静音都已预填，没改）→ Save → Go to QA（打开 QA 预览）→ 预览里**必须先点 PLAY 进关卡**再点 Continue，否则「First gameplay start」自动检测是 No → QA 自查表 + Update Notes + I confirm → Continue 即提交。QA 结果页不能刷新，刷新会丢结果，要 Restart preview 重来。自查表和 I confirm 由用户本人勾选。
+- 公开页检查（用户 Chrome，带用户旧存档）：关卡表显示 12/450 星（150 关）；第 1 关起跳前**没有辅助线**、有「Hold to squish the spring…」提示；QA 预览里第 6 关小人左边有竖的大蓄力条。**没验证到**：按住时的百分比、上一跳小三角、过第 1 关的礼物提示——扩展里按住拖动会让游戏失焦自动暂停，没法真正玩一关，需要用户手动试。
+- 后台 Metrics 提交时仍是 11-20 至 11-22 的数据（404 次游玩），还没刷新。
+- 本机注意：用户的 Chrome 扩展连了 3 个浏览器（1 台 Mac、这台 Windows 上 2 个），中途会被切到另一个没登录 CG 的 Chrome；tabs_context 看不到原标签组时先 `list_connected_browsers` 看一下。
+
 ## ★ 11-24 抖音小游戏「蹦蹦快递」后台进度（本机会话，在用户 Chrome 里操作）
 - **账号和主体**：抖音开放平台已入驻，主体「北京扬民科技有限公司」认证通过（第一次因为营业期限填成「长期」被驳回，改成 2053-09-03 后通过）。已创建小游戏「蹦蹦快递」，**AppID `tt9466e2db0a142a1902`**，状态「待上传版本」。名称只保留 30 天，要在这之前上线。还没填进 `dist/douyin/project.config.json`。
 - **基础信息（已填好，还没保存草稿）**：
