@@ -1,4 +1,32 @@
-# 交接：给 CrazyGames 上的 Pogo Post 提交新版本（2026-11-21）
+# 交接：给 CrazyGames 上的 Pogo Post 提交新版本（2026-11-24 第二次更新）
+
+> 给用户电脑上的 Claude（Chrome 里的 Claude 面板 / 本机会话）。全程中文，用户不看代码，说话直白少术语。
+> 11-21 那次的说明在本文后半部分（「11-21 版」），步骤一样，以这一节为准。
+
+## 这次要做的事
+在 CrazyGames 开发者后台，给正在 Basic Launch 的 **Pogo Post（Game ID 178409）** 再上传一次新版本，**只换游戏文件，别的都不动**。用户 11-24 已决定上线这一版。
+
+## 文件
+- 下载（固定到这个版本，不会变）：https://github.com/Yzhaoha/pogo-post/raw/eedad99/dist/pogo-post-crazygames.zip
+- 约 76KB，里面只有一个 `index.html`（约 211KB）。**CG 后台不收 zip**：解压后上传里面的 `index.html`。
+
+## Update Notes（英文，可直接粘贴）
+> Faster, more skill-based start: no aim line, bigger charge meter that marks your last jump. Perfect-landing streaks now build up (bigger rewards, rising sound, on-fire effect). Free star trail after level 1, a peek at upcoming chapters, and a clearer first fall.
+
+## 步骤和注意事项（同 11-21）
+1. 用户点下载链接 → 解压 → 后台 Submit new version → 选 `index.html` → 填上面的 Update Notes。
+2. 其他选项全部保持现状。**不要点任何「重新开始 / Restart Basic Launch」之类的按钮**（重启会按 11-23 新规则多考点击率，我们点击率在后 20%）。如果表单里出现和「重新开始试运行」「新游戏」「删除」有关的选项，停下来问用户。
+3. AI 相关问题、「I agree / I confirm」勾选框让用户自己处理；引擎/工具一栏永远不选任何 AI 选项。
+4. 点最终提交前截图给用户确认。
+5. 提交后打开公开页 https://www.crazygames.com/game/pogo-post 确认是新版（可能要刷新或等几分钟）：
+   - 第 1 关起跳前**没有虚线辅助线**；小人左边有一根**大的蓄力条**，按住时上面显示百分比（如 75%）。
+   - 跳过一次后，蓄力条右边有个**小三角**（上一跳的位置）。
+   - 过第 1 关的面板里有「🎁 Gift: a star trail — already on!」（或对应语言），下面一行「Coming up: 🔒 …」。
+6. 告诉用户：提交时间、公开页是否已是新版、表单里问了什么。也请确认后台试运行的开始日期仍是 11-20（没有被重置）。
+
+---
+
+# 11-21 版：给 CrazyGames 上的 Pogo Post 提交新版本（2026-11-21）
 
 > 给用户电脑上的 Claude（Chrome 里的 Claude 面板 / 本机会话）。全程中文，用户不看代码，说话直白少术语。
 
