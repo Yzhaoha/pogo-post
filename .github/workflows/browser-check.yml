@@ -1,0 +1,31 @@
+name: Pogo Post release QA
+on:
+  push:
+    branches: [qa/a00b333-browser-check]
+permissions:
+  contents: read
+jobs:
+  playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/build.py
+      - run: npm install --no-save playwright && npx playwright install msedge
+      - name: Exercise the platform build
+        run: |
+          cat > check.cjs <<'JS'
+          const {chromium,devices}=require('playwright');
+          (async()=>{ const b=await chromium.launch({channel:'msedge',args:['--no-sandbox']});
+          for(const device of ['Desktop','Pixel 7','iPhone 13']){
+          const p=await b.newPage(device==='Desktop'?{viewport:{width:1280,height:800}}:{...devices[device],defaultBrowserType:undefined});
+          let err=[];p.on('pageerror',e=>err.push(String(e)));await p.route('https://sdk.crazygames.com/**',r=>r.fulfill({contentType:'text/javascript',body:'window.CrazyGames={SDK:{init:async()=>{},game:{settings:{},addSettingsChangeListener(){},loadingStart(){},loadingStop(){},gameplayStart(){},gameplayStop(){}},user:{systemInfo:{locale:"en-US"}}}}'}));
+          await p.goto('file://'+process.cwd()+'/dist/crazygames/index.html');await p.waitForSelector('#pauseB',{state:'visible'});
+          const sess=await p.context().newCDPSession(p);
+          let pt={x:Math.floor(p.viewportSize().width*.47),y:Math.floor(p.viewportSize().height*.62)};
+          const press=async(down)=>{if(device==='Desktop'){if(down){await p.mouse.move(pt.x,pt.y);await p.mouse.down()}else await p.mouse.up()}else await sess.send('Input.dispatchTouchEvent',{type:down?'touchStart':'touchEnd',touchPoints:down?[pt]:[]})};
+          await press(true);await p.waitForTimeout(380);await press(false);await p.waitForTimeout(450);await press(true);await p.waitForTimeout(160);await press(false);await p.waitForTimeout(1100);
+          await p.locator('#pauseB').click();await p.locator('#pGo').waitFor({state:'visible'});await p.locator('#pGo').click();await p.locator('#pauseB').waitFor({state:'visible'});console.log(device,'jump inputs, pause and resume',err);if(err.length)throw Error(err.join());await p.close()}
+          await b.close()})().catch(e=>{console.error(e);process.exit(1)})
+          JS
+          node check.cjs
