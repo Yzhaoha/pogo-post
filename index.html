@@ -850,7 +850,7 @@ function recordFailure(L){
  store.set('stageFailures',failures);
 }
 function startLevel(i,keepRevive,EL){
- GS.finale=null;GS.hopT=0;
+ GS.finale=null;GS.hopT=0;GS.windTravel=0;
  const L=EL||LEVELS[i];if(GS.L!==L){GS.retrySpot=null;failsHere=0}GS.anim.touchdown=null;GS.landingStamp=null;if(L.tut)GS.lastCh=null;GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
  GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;beginAttempt(L);if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&!L.tut&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.retryHint=false;GS.tutStep=L.tut?1:0;GS.anim.touchdown=-Infinity;GS.anim.face=0;GS.dogBark=0;
  GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;GS.backdropOrigin=GS.cam.x;
@@ -1118,6 +1118,11 @@ function update(rdt){
   const zt=GS.finale?1+.36*cutProgress(GS.finale.time,1.1,1.85)-.66*cutProgress(GS.finale.time,2.8,4.1):GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
  }
  GS.preview=charging&&GS.aimAssist?traceJump(s,GS.L):null;
+ if(s&&GS.mode==='play'){
+  const wind=windAt(GS.L,s.x,s.t);
+  // Accumulate distance from the current gust instead of recalculating position from its speed.
+  GS.windTravel+=rdt*120*Math.tanh(wind/70);
+ }
  GS.shake=charging?0:Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
  for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
  GS.debris=GS.debris.filter(d=>d.kind==='hang'||d.y>-700);
@@ -1237,7 +1242,7 @@ function render(){
   for(const f of L.fans)drawFan(c,f);
   for(const t of L.tramps)drawTramp(c,t);
   for(const r of L.ropes)drawRope(c,r);
-  {const w=GS.s?windAt(L,GS.s.x,GS.s.t):0;if(w)drawWind(c,w)}
+  if(GS.mode==='play'&&GS.s){const w=windAt(L,GS.s.x,GS.s.t);if(w)drawWind(c,w)}
   drawGoal(c,L);drawTargets(c,L);
   if(GS.mode==='play'&&L.tut&&GS.s.lastP===0)drawFirstRoof(c,GS.s,L);
   const s=GS.s;
@@ -1657,10 +1662,18 @@ function drawFan(c,f){const z=S*GS.cam.z,dir=Math.sign(f[4]);const fx=dir>0?f[0]
  c.fillStyle='#dfe6f5';c.beginPath();c.ellipse(4*z,0,12*z,38*z,0,0,7);c.fill();c.stroke();
  const a=GS.time*18*Math.sign(f[4]);c.fillStyle='#ff6b4a';for(let k=0;k<3;k++){const yb=Math.sin(a+k*2.094)*30*z,wb=Math.abs(Math.cos(a+k*2.094))*8*z+2*z;c.beginPath();c.ellipse(5*z,yb*0.9,wb*0.6,9*z,0,0,7);c.fill();c.stroke()}
  c.fillStyle=INK;c.beginPath();c.arc(5*z,0,4*z,0,7);c.fill();c.restore()}
-function drawWind(c,w){const dir=Math.sign(w),sp=180+Math.abs(w)*2.2;c.save();c.strokeStyle='#ffffff99';c.lineCap='round';c.lineWidth=Math.max(2,2.5*S);
- for(let i=0;i<16;i++){const L=(50+hash(i)*70)*S;const x=((hash(i+1)*(CW+300)+dir*GS.time*sp*(0.7+hash(i+4)*0.6))%(CW+300)+CW+300)%(CW+300)-150;const y=CH*(0.08+hash(i+9)*0.7)+Math.sin(GS.time*3+i)*6*S;
-  c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-dir*L*0.5,y-6*S,x-dir*L,y);c.stroke()}
- c.restore()}
+function drawWind(c,w){
+ const dir=Math.sign(w),travel=GS.windTravel*S,span=CW+220*S;
+ c.save();c.strokeStyle='#ffffff80';c.lineCap='round';c.lineWidth=Math.max(1.4,1.8*S);
+ c.globalAlpha=Math.min(1,Math.abs(w)/35);
+ for(let i=0;i<12;i++){
+  const length=(35+hash(i)*45)*S;
+  const x=((hash(i+1)*span+travel*(.72+hash(i+4)*.44))%span+span)%span-110*S;
+  const y=CH*(.08+hash(i+9)*.7)+Math.sin(GS.time*2+i)*4*S;
+  c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-dir*length*.5,y-4*S,x-dir*length,y);c.stroke();
+ }
+ c.restore();
+}
 function drawTramp(c,t){const z=S*GS.cam.z,x=W(t[0]),y=H(t[2]),w=t[1]*z;if(x>CW+40||x+w<-40)return;const hit=GS.trampHit&&performance.now()-GS.trampHit<250?Math.sin((performance.now()-GS.trampHit)/25)*4*z:0;
  if(paintFrame(c,hit?'pressed':'spring',x,y-22*z+hit,w,24*z-hit))return;
  c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#c9d3e6';for(const k of [0.15,0.85]){c.fillRect(x+w*k-4*z,y-16*z,8*z,16*z);c.strokeRect(x+w*k-4*z,y-16*z,8*z,16*z)}
