@@ -910,7 +910,7 @@ function onCrash(why){recordFailure(GS.L);const s=GS.s;if(why==='fall'&&!seaHere
   let h=0;for(const p of s.stack){flyPk(p.t,s.x+(Math.random()-0.5)*30,SEA_Y-10-h,(Math.random()-0.5)*260,380+Math.random()*260,(Math.random()-0.5)*8,{crack:p.crack});h+=8}}
  else{ const hp=headPos(s);let h=0;for(let i=0;i<s.stack.length;i++){const p=s.stack[i];const ph=PK[p.t].h;const a=-1.2+Math.random()*2.4;const v=420+Math.random()*380;
   flyPk(p.t,hp.x+Math.sin(s.th)*h,hp.y+h+ph/2,Math.sin(a)*v+s.vx*0.3,Math.cos(a)*v*0.9+260,(Math.random()-0.5)*20,{crack:p.crack});h+=ph}
- 
+
  for(let i=0;i<3;i++)GS.fx.push({kind:'paper',x:hp.x,y:hp.y+h/2,vx:(Math.random()-0.5)*520,vy:300+Math.random()*400,rot:Math.random()*6,vr:(Math.random()-0.5)*10,t:0,life:2.2,col:['#fff','#fff3c4','#ffd8cc'][i%3]});}
  GS.newBest=false;if(GS.L.endless){GS.endScore=s.score;if(s.score>EB){EB=s.score;store.set('eb',EB);GS.newBest=true}const cn=Math.floor(s.score/15)-(GS.paid||0);GS.endCoins=Math.max(0,cn);GS.paid=(GS.paid||0)+GS.endCoins;addCoins(GS.endCoins)}
  const spot=GS.L.i+'/'+s.lastP+'/'+why;
@@ -1226,6 +1226,7 @@ function drawLegacyBackdrop(c,E,ch,sky,pk){
  }
 }
 function render(){
+ if(CW<=0||CH<=0)return;
  const c=ctx;c.setTransform(DPR,0,0,DPR,0,0);const z=S*GS.cam.z;LW=Math.max(2,3*z);
  const E=GS.L&&GS.L.endless,ch=GS.L&&!E?(GS.L.i/PER|0):0;const sky=E?[mixSky(0),mixSky(1)]:SKY[ch]||SKY[0],pk=E?GS.thw[1]:PIER[ch]||0;
  const g=c.createLinearGradient(0,0,0,CH);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);c.fillStyle=g;c.fillRect(0,0,CW,CH);
@@ -2089,7 +2090,7 @@ function hud(c){const s=GS.s,L=GS.L;const sz=Math.max(1,Math.min(1.25,S*1.1)); /
  const tv=GS.result&&GS.mode==='win'?GS.result.time:s.t;const tt=tv.toFixed(1);const ok=tv<=L.par;c.font=`900 ${18*sz}px Nunito,sans-serif`;c.textAlign='right';c.strokeText('⏱ '+tt,CW-14,30*sz);c.fillStyle=ok?'#fff':'#ffd0d0';c.fillText('⏱ '+tt,CW-14,30*sz);
  c.font=`800 ${12*sz}px Nunito,sans-serif`;c.lineWidth=4;c.strokeText('★ '+L.par+'s',CW-14,48*sz);c.fillStyle=ok?'#ffc23d':'#ccc';c.fillText('★ '+L.par+'s',CW-14,48*sz)}
  // 3-star goals, shown for ~3 s when a level is first opened
- if(!L.endless&&GS.goalAt!=null&&GS.goalLv===L.i){const age=GS.time-GS.goalAt,D=3.2;if(age>=0&&age<D){c.save();c.globalAlpha=Math.max(0,Math.min(1,age/0.25,(D-age)/0.5));
+ if(CW>16&&!L.endless&&GS.goalAt!=null&&GS.goalLv===L.i){const age=GS.time-GS.goalAt,D=3.2;if(age>=0&&age<D){c.save();c.globalAlpha=Math.max(0,Math.min(1,age/0.25,(D-age)/0.5));
   const parts=[T('st1'),T('st2'),T('st3',{n:L.par})];c.textAlign='left';c.textBaseline='middle';
   let fs=15*sz,sw,gap,ws,tw;const meas=()=>{c.font=`800 ${fs}px Nunito,Trebuchet MS,sans-serif`;sw=c.measureText('★ ').width;gap=fs*1.2;ws=parts.map(t=>c.measureText(t).width);tw=ws.reduce((x,y)=>x+y,0)+parts.length*sw+gap*(parts.length-1)};meas();
   if(tw+2*fs>CW-16){fs*=(CW-16)/(tw+2*fs);meas()} // shrink to fit narrow phones
