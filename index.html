@@ -281,6 +281,7 @@ const LANGS=[['en','English'],['fr','Français'],['it','Italiano'],['de','Deutsc
 const MEM=new URLSearchParams(location.search).has('new')?{}:null; // ?new : play as a brand-new player without touching the saved progress
 const store={get(k,d){if(MEM)return k in MEM?JSON.parse(MEM[k]):d;try{const v=localStorage.getItem('pp_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){if(MEM){MEM[k]=JSON.stringify(v);return}try{localStorage.setItem('pp_'+k,JSON.stringify(v))}catch(e){}}};
 const QS=new URLSearchParams(location.search);
+const originalBackdrop=BUILD==='test'&&QS.get('art')==='original';
 function pickLang(){const c=[QS.get('lang'),store.get('lang',null)].concat(navigator.languages||[navigator.language||'en']);for(const x of c){if(!x)continue;const k=String(x).toLowerCase().slice(0,2);if(TXT[k])return k}return'en'}
 let LANG=pickLang();
 function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==null)s=k;if(o&&typeof s==='string')for(const a in o)s=s.replace('{'+a+'}',o[a]);return s}
@@ -1147,11 +1148,11 @@ const paintedArt=Object.fromEntries(Object.entries({
 }));
 const chapterBackdrop=['street','harbor','night','sunset','snow','harbor','street','night','ice','snow','harbor','night','night','ice','sunset'];
 function drawBackdropPlate(c,image,alpha){
- const scale=Math.max(CW/image.naturalWidth,CH/image.naturalHeight)*1.07;
+ const scale=Math.max(CW/image.naturalWidth,CH/image.naturalHeight)*(originalBackdrop?1:1.07);
  const width=image.naturalWidth*scale,height=image.naturalHeight*scale;
- const pan=.5+.32*Math.tanh((GS.cam.x-1000)/1800);
+ const pan=originalBackdrop?.5:.5+.32*Math.tanh((GS.cam.x-1000)/1800);
  c.globalAlpha=alpha;
- c.drawImage(image,(CW-width)*pan,(CH-height)*.52,width,height);
+ c.drawImage(image,(CW-width)*pan,(CH-height)*(originalBackdrop?.5:.52),width,height);
 }
 function drawPaintedBackdrop(c,endless,chapter,sky){
  const layers=endless?['street','harbor','night'].map((key,i)=>[paintedArt[key],GS.thw[i]]):
@@ -1163,7 +1164,7 @@ function drawPaintedBackdrop(c,endless,chapter,sky){
   sum+=weight;
   drawBackdropPlate(c,image,weight/sum);
  }
- if(!endless){
+ if(!endless&&!originalBackdrop){
   // Chapter lighting unifies the shared plates with rain, fog, snow and shoreline colors.
   c.globalAlpha=.13;c.fillStyle=sky[0];c.fillRect(-20,-20,CW+40,CH+40);
  }
@@ -1255,7 +1256,7 @@ function render(){
  c.globalAlpha=1;
  for(const p of GS.pops){const k=p.a/1.1,y=H(p.y)-k*50*z,sc=p.sz*(k<0.15?0.6+k/0.15*0.5:1.1-0.1*k);c.globalAlpha=k>0.7?(1-k)/0.3:1;c.font=`900 ${26*z*sc}px Nunito,Trebuchet MS,sans-serif`;c.textAlign='center';c.lineJoin='round';c.lineWidth=7*z;c.strokeStyle=INK;c.strokeText(p.t,W(p.x),y);c.fillStyle=p.col;c.fillText(p.t,W(p.x),y)}
  c.globalAlpha=1;
- if(L){if(L.rain)rain(c);if(L.snow)snowFx(c);if(L.fog&&GS.s){c.save();if(GS.finale)c.globalAlpha=1-cutProgress(GS.finale.time,.95,1.65);fogFx(c);c.restore()}if(L.storm)flashFx(c)}
+ if(L&&!originalBackdrop){if(L.rain)rain(c);if(L.snow)snowFx(c);if(L.fog&&GS.s){c.save();if(GS.finale)c.globalAlpha=1-cutProgress(GS.finale.time,.95,1.65);fogFx(c);c.restore()}if(L.storm)flashFx(c)}
  c.restore();
  if(GS.flash>0){c.fillStyle=`rgba(255,255,255,${GS.flash})`;c.fillRect(0,0,CW,CH)}
  if(GS.finale&&!GS.finale.settled)drawFinalStamp(c);
