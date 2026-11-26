@@ -408,10 +408,17 @@ const CHAPTERS=15,PER=10;
 /* ---- endless run: platforms are generated ahead of the player; every candidate is checked with the real physics ----
  plat[3] = look (0 street, 1 pier + wind, 2 night street); every 8th platform is a doorstep (delivery bonus + one more parcel) */
 const ZLEN=12;
-function mkEndless(seed){return{endless:1,i:100,pk:['box','box'],plats:[[0,260,120,0]],tramps:[],ropes:[],dogs:[],fans:[],winds:[],bull:[null],gold:[],cp:[],cpPk:[],goal:-1,start:40,nb:0,par:0,wind:0,g:{seed:seed|0,zone:0,w:null}}}
+const END_PRECISION={perch:38,lamp:30,flag:22};
+function endlessPrecision(n){
+ if(n<10||n%8!==2)return '';
+ if(n>=42&&(n-42)%48===0)return 'flag';
+ return n%16===2?'lamp':'perch';
+}
+function precisionAt(L,i){return L.endless?L.precision[i]:(i===L.perch?'perch':i===L.lamp?'lamp':i===L.flag?'flag':'')}
+function mkEndless(seed){return{endless:1,i:100,pk:['box','box'],plats:[[0,260,120,0]],tramps:[],ropes:[],dogs:[],fans:[],winds:[],bull:[null],gold:[],precision:[],cp:[],cpPk:[],goal:-1,start:40,nb:0,par:0,wind:0,g:{seed:seed|0,zone:0,w:null}}}
 // jump from platform idx (standing at fraction fx, starting at time t0) with 21 charge levels; count the ones that end somewhere accepted
-function tryFrom(L,idx,fx,t0,acc){const pv=L.plats[idx];let ok=0;
- for(let c=0;c<=1.001;c+=0.05){const s=newState(L,1);s.t=t0;s.x=PX(pv,t0)+pv[1]*fx;s.y=pv[2];s.on=idx;s.lastP=idx;s.stack=[{t:'box',crack:0}];
+function tryFrom(L,idx,fx,t0,acc,dc=0.05){const pv=L.plats[idx];let ok=0;
+ for(let c=0;c<=1.001;c+=dc){const s=newState(L,1);s.t=t0;s.x=PX(pv,t0)+pv[1]*fx;s.y=pv[2];s.on=idx;s.lastP=idx;s.stack=[{t:'box',crack:0}];
   const C=Math.max(1,Math.round(c*CHARGE_T/DT));for(let k=0;k<C;k++)step(s,L,true);step(s,L,false);for(let k=0;k<700&&s.on<0&&!s.dead;k++)step(s,L,false);if(!s.dead&&acc(s))ok++}
  return ok}
 function reachable(L,idx,acc){const pv=L.plats[idx],nx=L.plats[idx+1],mp=pv[4]?pv:nx&&nx[4]?nx:null,per=mp?6.2832/mp[5]:0;let best=0;
@@ -419,7 +426,23 @@ function reachable(L,idx,acc){const pv=L.plats[idx],nx=L.plats[idx+1],mp=pv[4]?p
 function genNext(L){const g=L.g,n=L.plats.length,pv=L.plats[n-1],R=()=>rnd(g),zone=n/ZLEN|0,type=zone%3,d=Math.min(1,n/80),end=pv[0]+pv[1]+(pv[4]||0);
  if(zone!==g.zone){g.zone=zone;const edge=end+10;if(g.w){g.w[1]=edge;g.w=null}if(type===1){g.w=[edge,1e9,(R()<0.5?-1:1)*Math.round(45+Math.min(55,zone*7))];L.winds.push(g.w)}}
  const cp=n%8===0,m8=n%8,r0=R(),dg=L.dogs;L.dogs=[];
- let kind=cp?'cp':pv[4]?'':n>10&&m8>0&&m8<7&&r0<0.1?'tramp':n>14&&r0<0.23?'move':n>18&&r0<0.36?'dog':'';
+ const special=endlessPrecision(n),setup=endlessPrecision(n+1),recover=L.precision[n-1];
+ if(special){
+  // Start with a comfortable gap and use the real physics to check the narrower target at 1% intervals.
+  for(let k=0;k<5;k++){
+   const w=END_PRECISION[special],gap=[112,98,132,80,64][k],rise=k<3?(special==='flag'?18:9):0;
+   const p=[Math.round(end+gap),w,pv[2]+rise,type];
+   L.plats.push(p);
+   const ok=[0.18,0.5,0.82].every(fx=>tryFrom(L,n-1,fx,0,s=>s.on===n,0.01)>=3);
+   if(ok){
+    L.precision[n]=special;L.bull.push(p[0]+w/2);L.nb++;
+    if(special==='flag')L.gold[n]=1;
+    L.dogs=dg;return;
+   }
+   L.plats.pop();
+  }
+ }
+ let kind=cp?'cp':setup||special||recover||pv[4]?'':n>10&&m8>0&&m8<7&&r0<0.1?'tramp':n>14&&r0<0.23?'move':n>18&&r0<0.36?'dog':'';
  if(kind==='tramp'){ // low roof with a bounce pad at its far end, then a high roof
   for(let k=0;k<6;k++){const gap=70+R()*(60+60*d)-k*8,p1=[Math.round(end+gap),190,Math.round(Math.max(60,pv[2]-60-R()*80)),type],tr=[p1[0]+120,60,p1[2]],p2=[tr[0]+145,250,Math.round(p1[2]+215+R()*40),type];
    L.plats.push(p1,p2);L.tramps.push(tr);
@@ -427,7 +450,9 @@ function genNext(L){const g=L.g,n=L.plats.length,pv=L.plats[n-1],R=()=>rnd(g),zo
    L.plats.length=n;L.tramps.pop()}
   kind=''}
  let p;for(let k=0;k<10;k++){const mv=kind==='move'&&k<6,amp=mv?Math.round(40+R()*25):0,gap=k===9?70:mv?60+R()*70:Math.max(60,70+R()*(70+110*d)-k*10),w=cp?260:kind==='dog'?390:mv?140:Math.round(Math.max(92,165-65*d+R()*55)),dh=k<9?(R()-0.5)*(110+110*d)*(1-k*0.08):0;
-  p=[Math.round(end+gap+amp),w,Math.round(Math.min(300,Math.max(90,pv[2]+dh))),type];if(mv)p.push(amp,+(1.1+R()*0.6).toFixed(2),+(R()*6.28).toFixed(2));
+  p=setup?[Math.round(end+95-k*3),200,pv[2],type]:
+    recover?[Math.round(end+105-k*4),250,Math.max(90,pv[2]-12),type]:
+    [Math.round(end+gap+amp),w,Math.round(Math.min(300,Math.max(90,pv[2]+dh))),type];if(mv)p.push(amp,+(1.1+R()*0.6).toFixed(2),+(R()*6.28).toFixed(2));
   L.plats.push(p);const ok=k===9||reachable(L,n-1,s=>s.on===n);L.plats.pop();if(ok)break}
  L.dogs=dg;L.plats.push(p);L.bull.push(p[0]+p[1]/2);L.nb++;
  if(!cp&&n>5&&R()<0.12)L.gold[n]=1;
@@ -460,7 +485,7 @@ function land(s,L,i,pvy){
  s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
  if(q<0.12){s.psv*=0.25;s.psi*=0.4} // perfect landing: the tower settles straight away
  for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
- s.vx=(i===L.lamp||i===L.flag||i===L.perch)?0:L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
+ s.vx=precisionAt(L,i)?0:L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
  // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
  const fresh=i>s.lastP;
  if(i>s.lastP){for(let k=Math.max(1,s.lastP);k<i;k++)if(L.bull[k]!=null&&!s.claim[k]){if(s.combo>1)ev(s,'cbreak');s.combo=0;break}
@@ -937,14 +962,20 @@ function render(){
  const sh=GS.shake?(Math.random()-0.5)*GS.shake:0,sv=GS.shake?(Math.random()-0.5)*GS.shake:0;
  c.save();c.translate(sh,sv);
  // sun + clouds + far skyline
- c.fillStyle='#fff6c9';c.beginPath();c.arc(CW*0.82,CH*0.17,46*S,0,7);c.fill();
+ const night=E?GS.thw[2]:0;
+ c.globalAlpha=1-night;c.fillStyle='#fff6c9';c.beginPath();c.arc(CW*0.82,CH*0.17,46*S,0,7);c.fill();
+ if(night>0.01){
+  c.globalAlpha=night;c.fillStyle='#fff0be';c.beginPath();c.arc(CW*0.82,CH*0.17,31*S,0,7);c.fill();
+  for(let i=0;i<22;i++){const x=hash(i+91)*CW,y=CH*(0.04+hash(i+162)*0.36);c.beginPath();c.arc(x,y,(1+hash(i+84)*1.3)*S,0,7);c.fill()}
+ }
+ c.globalAlpha=1-night*0.76;
  for(let i=0;i<7;i++){const x=((i*397-GS.cam.x*0.08+GS.time*6)%(CW+400)+CW+400)%(CW+400)-200,y=CH*(0.12+hash(i)*0.25);cloud(c,x,y,(0.7+hash(i+9)*0.6)*S)}
- c.fillStyle=shade(sky[1],-0.18);
+ c.globalAlpha=1;c.fillStyle=shade(sky[1],-0.18);
  if(pk>0.01){c.globalAlpha=pk;pierBack(c,sky);c.fillStyle=shade(sky[1],-0.18)}c.globalAlpha=1-pk;if(pk<0.99)for(let i=-2;i<14;i++){const wd=120*S,base=Math.floor(GS.cam.x*0.25/120);const k=base+i;const x=CW*0.5+(k*120-GS.cam.x*0.25)*S;const hh=(80+hash(k)*140)*S;c.fillRect(x,H(GS.cam.y*0.0)+0-hh+40*S-((GS.cam.y)*S*0.1),wd-8*S,hh+CH)}
  c.globalAlpha=1;
- if(!E&&ch===0&&oldStreet.naturalWidth){
+ if((E?GS.thw[0]>0.01:ch===0)&&oldStreet.naturalWidth){
   const stride=125*S,top=H(0)+88*S,offset=GS.cam.x*0.2*S;
-  c.save();c.globalAlpha=0.45;
+  c.save();c.globalAlpha=0.45*(E?GS.thw[0]:1);
   for(let n=Math.floor(offset/stride)-1;n<=Math.ceil((CW+offset)/stride);n++){
    const key='roof'+((n%3+3)%3),w=(92+hash(n)*22)*S;
    paintFrame(c,key,n*stride-offset,top+(hash(n+18)-0.5)*26*S,w,w*0.74);
@@ -1032,7 +1063,8 @@ function drawOldStreet(c,i,x,y,w,z){
   for(let k=0;k<bays;k++)c.drawImage(oldStreet,...floor,x+k*bay,fy,bay+0.4,floorH+0.4);
 }
 function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s?GS.s.t:0)),y=H(p[2]),w=p[1]*z;if(x>CW+20||x+w<-20)return;
- if(i===L.perch){
+ const precision=precisionAt(L,i);
+ if(precision==='perch'){
   c.save();c.translate(x,y);c.scale(z,z);
   const height=Math.max(0,(CH-y)/z+6),width=p[1];
   c.fillStyle='#ad5745';c.fillRect(3,4,width-6,height);
@@ -1044,7 +1076,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   }
   c.fillStyle='#e8ac80';rr(c,0,0,width,6,2);c.fill();c.stroke();c.restore();return;
  }
- if(i===L.lamp){
+ if(precision==='lamp'){
   c.save();c.translate(x+w/2,y);c.scale(z,z);
   // The brass lip spans the whole landing surface. All ornament hangs beneath it.
   c.lineWidth=1.4;c.lineJoin='round';c.strokeStyle='#343044';
@@ -1072,7 +1104,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   c.fillStyle='#fff0be';c.fillRect(-10,.45,17,1.1);
   c.restore();return;
  }
- if(i===L.flag){
+ if(precision==='flag'){
   const mid=x+w/2,flagY=y+14*z,wave=Math.sin(GS.time*4+i)*2*z;
   c.fillStyle='#374b68';c.fillRect(mid-3*z,y+4*z,6*z,CH-y);
   c.fillStyle='#bdccdb';c.fillRect(mid-1.6*z,y+4*z,1.8*z,CH-y);
@@ -1105,7 +1137,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
  // shade strip
  c.fillStyle=shade(col,-0.12);c.fillRect(x+w-10*z,y,10*z,bottom-y);
  if((L.endless?p[3]===1:PIER[L.i/PER|0])&&i!==L.goal&&!isCp){drawCrates(c,L,i,x,y,w,col,z);return}
- if(!L.endless&&L.i<10&&oldStreet.naturalWidth){
+ if((L.endless?p[3]===0:L.i<10)&&oldStreet.naturalWidth){
   if(i!==L.goal&&p[1]>140){
    c.save();c.globalAlpha=0.54;c.fillStyle=i%3===1?'#c38a7b':'#99abb9';c.strokeStyle='#657789';c.lineWidth=1.4*z;
    const bx=x+w*0.76,bh=(i%3===1?18:10)*z;
@@ -1113,6 +1145,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   }
   drawOldStreet(c,i===L.goal?2:i%3,x,y,w,z);return;
  }
+ if(L.endless&&p[3]===2){drawEndlessNight(c,i,x,y,w,z);return}
  // windows
  const cols=Math.max(1,Math.floor((p[1]-30)/48));const gap=(w-cols*22*z)/(cols+1);
  for(let r=0;r<8;r++){const wy=y+40*z+r*56*z;if(wy>CH)break;for(let k=0;k<cols;k++){const wx=x+gap+k*(22*z+gap);const lit=hash(i*31+r*7+k+L.i*5)>0.45;
@@ -1129,6 +1162,25 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
  // roof cap
  c.lineWidth=LW;c.fillStyle=shade(col,-0.3);rr(c,x-6*z,y-4*z,w+12*z,14*z,5*z);c.fill();c.stroke();
  if(p[1]>150&&i!==L.goal&&i!==0&&!isCp){const ax=hash(i+L.i)<0.5?x+10*z:x+w-46*z;c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke()}
+}
+/* Distinct night architecture: tiled navy caps and tall warm shop windows. */
+function drawEndlessNight(c,i,x,y,w,z){
+ const hue=['#35324f','#253b57','#433355'][i%3];
+ c.fillStyle=hue;c.fillRect(x,y,w,CH-y+20);
+ c.strokeStyle=INK;c.lineWidth=LW;c.strokeRect(x,y,w,CH-y+23);
+ c.fillStyle='#1c243f';c.fillRect(x+w-7*z,y,7*z,CH-y+20);
+ c.fillStyle='#7c719d';rr(c,x,y,w,12*z,3*z);c.fill();c.stroke();
+ c.fillStyle='#b9a8cc';c.fillRect(x+2*z,y+2*z,Math.max(0,w-4*z),2*z);
+ const cols=Math.max(1,Math.floor(w/(55*z))),bay=w/cols;
+ for(let oy=y+29*z,row=0;oy<CH;oy+=68*z,row++){
+  c.fillStyle='#292944';c.fillRect(x+2*z,oy+39*z,w-4*z,3*z);
+  for(let j=0;j<cols;j++){
+   const wx=x+(j+0.5)*bay-12*z,lit=hash(i*17+row*7+j)>0.27;
+   c.fillStyle=lit?'#ffd486':'#434461';rr(c,wx,oy,24*z,34*z,8*z);c.fill();c.stroke();
+   c.strokeStyle=lit?'#b7704a':INK;c.lineWidth=Math.max(1,z);
+   c.beginPath();c.moveTo(wx+12*z,oy+2*z);c.lineTo(wx+12*z,oy+32*z);c.moveTo(wx+z,oy+18*z);c.lineTo(wx+23*z,oy+18*z);c.stroke();c.strokeStyle=INK;
+  }
+ }
 }
 /* hovering platform (endless run): slides left-right */
 function drawMover(c,x,y,w,z){if(paintFrame(c,'mover',x,y,w,32*z))return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
@@ -1269,8 +1321,8 @@ function drawDoor(c,L,gi,fr,won){const p=L.plats[gi],z=S*GS.cam.z;const cx=p[0]+
 /* bullseye pads: red = live, green = hit, grey = left behind */
 function drawTargets(c,L){const z=S*GS.cam.z,s=GS.s;c.lineJoin='round';
  for(let i=1;i<L.plats.length;i++){const bx=L.bull[i];if(bx==null)continue;const bp=L.plats[i],X=W(bx+PX(bp,s?s.t:0)-bp[0]);if(X<-60||X>CW+60)continue;
-  if(i===L.flag||i===L.lamp){
-   c.fillStyle=s&&s.claim[i]?'#58d49c':'#fff1be';
+  if(i===L.flag||i===L.lamp||(L.endless&&precisionAt(L,i))){
+   c.fillStyle=s&&s.claim[i]?'#58d49c':L.gold&&L.gold[i]?'#ffb300':'#fff1be';
    c.fillRect(X-3*z,H(bp[2])+z,6*z,2*z);continue;
   }
   const Y=H(bp[2]),R=Math.min(BULL_R,bp[1]/2-1)*z,done=s&&s.claim&&s.claim[i],gone=!done&&s&&s.lastP>i,gold=L.gold&&L.gold[i]&&!done&&!gone,col=done?'#3fbf88':gone?'#bdb5cc':gold?'#ffb300':'#ff4f6d',t=Y-6*z,h=8*z,m=LW*0.4;
@@ -1529,7 +1581,18 @@ window.__pp.autoplay=function(plan){let j=0,ph='wait',k=0,f=0;
   if(ph==='settle'){if(k<50){k++;return false}j++;ph='wait';k=0;continue}}}};
 
 // ?auto=1 : replay the solver plan with real input timing
-if(QS.get('lvl')!=null){setTimeout(()=>startLevel(+QS.get('lvl')),50)}
+if(QS.get('lvl')!=null){setTimeout(()=>{
+ const v=QS.get('lvl');
+ if(v==='endless'||v==='endless-flag'||v==='endless-night'||v==='endless-pier'){
+  const L=mkEndless(20261126);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L);
+  const at=v==='endless-flag'?41:v==='endless-night'?25:v==='endless-pier'?17:0;
+  if(at){
+   while(L.plats.length<=at+6)genNext(L);
+   const p=L.plats[at],s=GS.s;s.x=p[0]+p[1]*0.5;s.y=p[2];s.on=s.lastP=at;snap(s,L);
+   GS.cam.x=s.x+145;GS.cam.y=s.y;GS.thw=[0,0,0];GS.thw[p[3]]=1;
+  }
+ }else startLevel(+v);
+},50)}
 /*ENDTEST*/
 
 /* ================= boot ================= */
