@@ -1221,10 +1221,14 @@ function drawRope(c,r){const z=S*GS.cam.z;c.lineWidth=LW;c.strokeStyle=INK;
 function topUnder(x){const L=GS.L;for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return -400}
 function drawHang(c,d,L){const r=L.ropes[d.r];if(!r)return;const y=ropeY(r,d.x);const z=S*GS.cam.z;c.save();c.translate(W(d.x),H(y));c.rotate(Math.sin(GS.time*2.2+d.sw*9)*0.15+d.sw);c.strokeStyle=INK;c.lineWidth=LW*0.6;c.beginPath();c.moveTo(0,0);c.lineTo(0,6*z);c.stroke();c.translate(0,6*z+PK[d.t].h*z/2);drawParcel(c,d.t,z,0,0);c.restore()}
 function drawDog(c,d,t){const z=S*GS.cam.z,x=dogX(d,t),dir=Math.sin(t*d[2])>=0?1:-1;const X=W(x),Y=H(d[3]);
- // walk cycle follows the distance actually covered, so the paws never slide and the dog slows down to turn at each end
- const v=Math.abs((d[1]-d[0])*0.5*d[2]*Math.sin(t*d[2])),amp=Math.min(1,v/45),ph=x*0.2,bob=-Math.abs(Math.sin(ph))*2*amp*z;
+ // Cycle by distance walked, not by screen position, so both directions play forward.
+ const span=d[1]-d[0],turn=t*d[2],walk=Math.floor(turn/(Math.PI*2))*2*span+(dir>0?x-d[0]:span+d[1]-x);
+ const v=Math.abs(span*0.5*d[2]*Math.sin(turn)),amp=Math.min(1,v/45),ph=walk*0.2,bob=-Math.abs(Math.sin(ph))*2*amp*z;
+ const pose=Math.floor(walk/7)%4,key='dog'+pose,f=frames[key],scale=0.45*z;
+ // Atlas frames have transparent padding and different paw baselines. Preserve their aspect ratio.
  c.save();c.translate(X,Y);c.scale(dir,1);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
- if(!paintFrame(c,'dog'+(Math.floor(x/7)%4),-33*z,-40*z+bob,66*z,40*z)){
+ c.fillStyle='rgba(43,35,64,0.18)';c.beginPath();c.ellipse(0,0,24*z,3*z,0,0,Math.PI*2);c.fill();
+ if(!paintFrame(c,key,-[69,78,78,80][pose]*scale,-[136,132,130,134][pose]*scale,f[2]*scale,f[3]*scale)){
  c.fillStyle='#b5774a';const legs=[[-14,0,'#9a6238'],[16,Math.PI,'#9a6238'],[-6,Math.PI,'#b5774a'],[8,0,'#b5774a']]; // far legs first (darker), diagonal pairs in step
  for(const [k,o,col] of legs){c.save();c.translate(k*z,-13*z+bob*0.5);c.rotate(Math.sin(ph+o)*0.55*amp);c.fillStyle=col;rr(c,-3*z,0,6*z,13*z,2.5*z);c.fill();c.stroke();c.restore()}
  c.fillStyle='#b5774a';c.translate(0,bob);
