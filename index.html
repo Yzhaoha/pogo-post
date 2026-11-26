@@ -59,6 +59,7 @@ h2{margin:0 0 8px;font-size:26px;font-weight:900}
 @keyframes pulse{50%{transform:scale(1.06)}}
 .icon-btn{position:fixed;z-index:4;border:3px solid var(--ink);border-radius:14px;width:46px;height:46px;background:#fff;font-size:20px;cursor:pointer;box-shadow:0 3px 0 var(--ink);padding:0;font-family:inherit;color:var(--ink);font-weight:900}
 #pauseB{top:10px;left:10px}
+#parallaxB{position:fixed;right:12px;bottom:12px;bottom:max(12px, env(safe-area-inset-bottom));z-index:4;min-height:44px;padding:8px 13px;border:2px solid #493345;border-radius:10px;background:#fff0cd;color:#362638;font:800 14px system-ui,sans-serif;cursor:pointer}
 #muteB{top:10px;left:64px}
 .lang{position:fixed;top:12px;right:12px;z-index:6;border:3px solid var(--ink);border-radius:12px;padding:5px 6px;font-weight:800;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
 #tip{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:8;max-width:min(380px,90vw);background:#fff;color:var(--ink);font-weight:900;font-size:17px;line-height:1.3;padding:8px 14px;border-radius:16px;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);text-align:center;pointer-events:none;animation:tipIn .3s ease-out}
@@ -176,6 +177,7 @@ html:lang(zh) #title .tb small:empty{display:none}
 <canvas id="cv"></canvas>
 <button id="pauseB" class="icon-btn" aria-label="pause" hidden>II</button>
 <button id="muteB" class="icon-btn" aria-label="sound">🔊</button>
+<button id="parallaxB" type="button" hidden></button>
 <select id="lang" class="lang" aria-label="language"></select>
 <div id="tip" hidden></div>
 
@@ -282,7 +284,7 @@ const MEM=new URLSearchParams(location.search).has('new')?{}:null; // ?new : pla
 const store={get(k,d){if(MEM)return k in MEM?JSON.parse(MEM[k]):d;try{const v=localStorage.getItem('pp_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){if(MEM){MEM[k]=JSON.stringify(v);return}try{localStorage.setItem('pp_'+k,JSON.stringify(v))}catch(e){}}};
 const QS=new URLSearchParams(location.search);
 const originalBackdrop=BUILD==='test'&&QS.get('art')==='original';
-const backdropComparison=BUILD==='test'&&['fixed','soft'].includes(QS.get('parallax'))?QS.get('parallax'):null;
+const backdropComparison=BUILD==='test'&&['fixed','soft','compare'].includes(QS.get('parallax'))?QS.get('parallax'):null;
 function pickLang(){const c=[QS.get('lang'),store.get('lang',null)].concat(navigator.languages||[navigator.language||'en']);for(const x of c){if(!x)continue;const k=String(x).toLowerCase().slice(0,2);if(TXT[k])return k}return'en'}
 let LANG=pickLang();
 function T(k,o){let s=(TXT[LANG]&&TXT[LANG][k]);if(s==null)s=TXT.en[k];if(s==null)s=k;if(o&&typeof s==='string')for(const a in o)s=s.replace('{'+a+'}',o[a]);return s}
@@ -1031,8 +1033,21 @@ function up(){GS.hold=false}
 cv.addEventListener('pointerdown',e=>{e.preventDefault();GS.inp=e.pointerType==='touch'||e.pointerType==='pen'?'touch':'mouse';down()});
 ['touchend','click'].forEach(n=>addEventListener(n,()=>{if(AC&&AC.state==='suspended'&&!adMute)try{AC.resume()}catch(e){}},{passive:true}));
 addEventListener('pointerup',up);addEventListener('pointercancel',up);addEventListener('blur',up);
+const parallaxButton=$('parallaxB');
+let parallaxEnabled=true;
+if(backdropComparison==='compare'&&!originalBackdrop){
+ const label=()=>{parallaxButton.textContent=LANG==='zh'?
+  (parallaxEnabled?'远景：视差开':'远景：视差关'):
+  (parallaxEnabled?'Parallax on':'Parallax off')};
+ label();parallaxButton.hidden=false;
+ parallaxButton.onclick=e=>{
+  parallaxEnabled=!parallaxEnabled;label();
+  if(e.detail>0)parallaxButton.blur();
+ };
+}
 const ACT=['Space','ArrowUp','KeyW','Enter','NumpadEnter'];
 addEventListener('keydown',e=>{const k=e.code;
+ if(e.target===parallaxButton&&['Space','Enter','NumpadEnter'].includes(k))return;
  if(ACT.includes(k)||k==='ArrowDown')e.preventDefault();
  const ch=(e.key||'').toLowerCase();
  if((k==='Escape'&&BUILD!=='cg')||k==='KeyP'||ch==='p'){if(GS.mode==='play')pause();else if(GS.mode==='paused'&&!$('pauseL').hidden)resume();return}
@@ -1150,12 +1165,12 @@ const paintedArt=Object.fromEntries(Object.entries({
 const chapterBackdrop=['street','harbor','night','sunset','snow','harbor','street','night','ice','snow','harbor','night','night','ice','sunset'];
 function drawBackdropPlate(c,image,alpha){
  const comparison=originalBackdrop?null:backdropComparison;
- const scale=Math.max(CW/image.naturalWidth,CH/image.naturalHeight)*(originalBackdrop?1:comparison?1.18:1.07);
+ const scale=Math.max(CW/image.naturalWidth,CH/image.naturalHeight)*(originalBackdrop?1:comparison==='compare'?1.30:comparison?1.18:1.07);
  const width=image.naturalWidth*scale,height=image.naturalHeight*scale;
  let x=(CW-width)*.5;
- if(comparison==='soft'){
+ if(comparison==='soft'||(comparison==='compare'&&parallaxEnabled)){
   const room=(width-CW)*.5;
-  const travel=(GS.cam.x-(GS.backdropOrigin??GS.cam.x))*S*.12;
+  const travel=(GS.cam.x-(GS.backdropOrigin??GS.cam.x))*S*(comparison==='compare'?.28:.12);
   // A single painted plate has finite crop space. Ease into its edges without wrapping.
   if(room>0)x-=room*Math.tanh(travel/room);
  }else if(!comparison&&!originalBackdrop){
