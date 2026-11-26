@@ -385,12 +385,13 @@ LEVELS.forEach((level,index)=>{
  const approach=level.plats[level.plats.length-1];
  const end=approach[0]+approach[1],top=approach[2];
  level.perch=level.plats.length;
- level.needle=level.perch+1;
- level.plats.push([end+135,30,top+8],[end+332,22,top+20],[end+530,280,top+8]);
+ level.precisionTop=level.perch+1;
+ level.hasFlag=(index-1)%5===0;
+ level.plats.push([end+135,30,top+8],[end+332,level.hasFlag?22:26,top+20],[end+530,280,top+8]);
 });
 LEVELS.forEach(prepLevel);
 const PAR=[13,18,18,16,19,19,17,18,18,23, 17,18,19,17,17,19,18,18,17,20, 14,16,14,18,18,17,15,17,16,22, 19,17,18,14,20,24,17,19,18,29];LEVELS.forEach((L,i)=>L.par=L.par||PAR[i]||20);
-LEVELS.forEach(L=>{if(L.needle)L.par+=8});
+LEVELS.forEach(L=>{if(L.precisionTop)L.par+=8});
 const CHAPTERS=15,PER=10;
 
 /* ================= simulation (deterministic, fixed step) ================= */
@@ -449,7 +450,7 @@ function land(s,L,i,pvy){
  s.psv+=th*5.5+s.vx*0.0016+(rnd(s)-0.5)*0.5*(impact/900);
  if(q<0.12){s.psv*=0.25;s.psi*=0.4} // perfect landing: the tower settles straight away
  for(let k=s.stack.length-1;k>=0;k--){const pk=s.stack[k];if(pk.t==='frag'&&hard){if(pk.crack){ev(s,'break',{i:k});loseAt(s,k,'break')}else{pk.crack=1;ev(s,'crack',{i:k})}}}
- s.vx=(i===L.needle||i===L.perch)?0:L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
+ s.vx=(i===L.precisionTop||i===L.perch)?0:L.snow?s.vx*SNOW_K:L.rain?s.vx*RAIN_K:0;s.om=-th*2;s.needRel=s.holdT>0.12; // held through the landing (leaning) -> release first; pressed <0.12s before -> buffered charge
  // bullseye: hit the centre mark before moving on; leaving one behind resets the streak (score only, no physics)
  const fresh=i>s.lastP;
  if(i>s.lastP){for(let k=Math.max(1,s.lastP);k<i;k++)if(L.bull[k]!=null&&!s.claim[k]){if(s.combo>1)ev(s,'cbreak');s.combo=0;break}
@@ -939,7 +940,7 @@ function render(){
  // world
  const L=GS.L;if(L){
   for(let i=0;i<L.plats.length;i++)drawBuilding(c,L,i);
-  if(L.snow)for(const p of L.plats)if(p!==L.plats[L.needle]&&p!==L.plats[L.perch])snowCap(c,p);
+  if(L.snow)for(const p of L.plats)if(p!==L.plats[L.precisionTop]&&p!==L.plats[L.perch])snowCap(c,p);
   if(pk<0.99){c.globalAlpha=1-pk;drawStreet(c);c.globalAlpha=1}
   if(pk>0.01){c.globalAlpha=pk;drawSea(c);c.globalAlpha=1}
   for(const f of L.fans)drawFan(c,f);
@@ -1017,23 +1018,27 @@ function drawOldStreet(c,i,x,y,w,z){
 function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s?GS.s.t:0)),y=H(p[2]),w=p[1]*z;if(x>CW+20||x+w<-20)return;
  if(i===L.perch){
   c.save();c.translate(x,y);c.scale(z,z);
-  const style=(L.i-1)%3,height=Math.max(0,(CH-y)/z+6),width=p[1];
-  c.fillStyle=['#ad5745','#76999c','#95788a'][style];c.fillRect(3,4,width-6,height);
-  c.fillStyle=['#743f3a','#395b69','#634e66'][style];c.fillRect(width-8,4,5,height);
+  const height=Math.max(0,(CH-y)/z+6),width=p[1];
+  c.fillStyle='#ad5745';c.fillRect(3,4,width-6,height);
+  c.fillStyle='#743f3a';c.fillRect(width-8,4,5,height);
   c.lineWidth=1.5;c.strokeStyle=INK;c.strokeRect(3,4,width-6,height);
-  for(let row=0,dy=17;dy<height;dy+=style===1?31:16,row++){
-   if(style===1){
-    c.fillStyle='#bdd6ce';c.fillRect(2,dy,width-4,3);
-    c.fillStyle='#456172';c.fillRect(4,dy+3,width-8,2);
-   }else{
-    c.fillStyle=style===0?'#e29b79':'#cdb0b8';c.fillRect(4,dy,width-8,1.5);
-    c.fillRect(row%2?10:19,dy+1,1.4,14);
-   }
+  c.fillStyle='#e29b79';
+  for(let row=0,dy=17;dy<height;dy+=16,row++){
+   c.fillRect(4,dy,width-8,1.5);c.fillRect(row%2?10:19,dy+1,1.4,14);
   }
-  c.fillStyle=['#e8ac80','#b6d5ce','#d6bdac'][style];
-  rr(c,0,0,width,6,2);c.fill();c.stroke();c.restore();return;
+  c.fillStyle='#e8ac80';rr(c,0,0,width,6,2);c.fill();c.stroke();c.restore();return;
  }
- if(i===L.needle){
+ if(i===L.precisionTop&&!L.hasFlag){
+  // A shallow enamel lamp head above a slender cast-iron post.
+  c.save();c.translate(x+w/2,y);c.scale(z,z);
+  c.fillStyle='#375957';c.fillRect(-3,16,6,Math.max(0,(CH-y)/z));
+  c.fillStyle='#79a69d';c.fillRect(-2,16,1.5,Math.max(0,(CH-y)/z));
+  c.lineWidth=1.5;c.strokeStyle=INK;c.fillStyle='#ffdc85';
+  c.beginPath();c.moveTo(-10,4);c.lineTo(10,4);c.lineTo(6,15);c.lineTo(-6,15);c.closePath();c.fill();c.stroke();
+  c.fillStyle='#355e59';c.fillRect(-1,4,2,11);c.fillRect(-7,15,14,3);
+  c.fillStyle='#7ab6a7';rr(c,-p[1]/2,0,p[1],4,1.5);c.fill();c.stroke();c.restore();return;
+ }
+ if(i===L.precisionTop){
   const mid=x+w/2,flagY=y+14*z,wave=Math.sin(GS.time*4+i)*2*z;
   c.fillStyle='#374b68';c.fillRect(mid-3*z,y+4*z,6*z,CH-y);
   c.fillStyle='#bdccdb';c.fillRect(mid-1.6*z,y+4*z,1.8*z,CH-y);
@@ -1226,7 +1231,7 @@ function drawDoor(c,L,gi,fr,won){const p=L.plats[gi],z=S*GS.cam.z;const cx=p[0]+
 /* bullseye pads: red = live, green = hit, grey = left behind */
 function drawTargets(c,L){const z=S*GS.cam.z,s=GS.s;c.lineJoin='round';
  for(let i=1;i<L.plats.length;i++){const bx=L.bull[i];if(bx==null)continue;const bp=L.plats[i],X=W(bx+PX(bp,s?s.t:0)-bp[0]);if(X<-60||X>CW+60)continue;
-  if(i===L.needle){
+  if(i===L.precisionTop){
    c.fillStyle=s&&s.claim[i]?'#58d49c':'#fff1be';
    c.fillRect(X-3*z,H(bp[2])+z,6*z,2*z);continue;
   }
