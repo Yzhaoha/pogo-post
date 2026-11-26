@@ -381,7 +381,7 @@ LEVELS.forEach((L,i)=>{const n=NARROW[i];if(!n)return;for(const [k,w] of n.p){co
 }
 // Keep the existing route as the approach, then add one precision jump before delivery.
 LEVELS.forEach((level,index)=>{
- if(index<2)return;
+ if(index<1)return;
  const approach=level.plats[level.plats.length-1];
  const end=approach[0]+approach[1],top=approach[2];
  level.needle=level.plats.length;
@@ -1015,12 +1015,16 @@ function drawOldStreet(c,i,x,y,w,z){
 }
 function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s?GS.s.t:0)),y=H(p[2]),w=p[1]*z;if(x>CW+20||x+w<-20)return;
  if(i===L.needle){
-  c.fillStyle='#665068';c.fillRect(x+2*z,y+5*z,w-4*z,CH-y);
-  c.fillStyle='#c57e65';c.fillRect(x+4*z,y+5*z,w*0.48,CH-y);
-  c.fillStyle='#ffdd96';
-  for(let fy=y+24*z;fy<CH;fy+=42*z)c.fillRect(x+w*0.36,fy,w*0.28,12*z);
-  c.fillStyle='#f8c35a';c.strokeStyle=INK;c.lineWidth=2*z;
-  c.fillRect(x,y,w,6*z);c.strokeRect(x,y,w,6*z);return;
+  const mid=x+w/2,flagY=y+14*z,wave=Math.sin(GS.time*4+i)*2*z;
+  c.fillStyle='#374b68';c.fillRect(mid-3*z,y+4*z,6*z,CH-y);
+  c.fillStyle='#bdccdb';c.fillRect(mid-1.6*z,y+4*z,1.8*z,CH-y);
+  c.fillStyle='#e65446';c.strokeStyle=INK;c.lineWidth=1.5*z;
+  c.beginPath();c.moveTo(mid+3*z,flagY);c.quadraticCurveTo(mid+18*z,flagY-3*z+wave,mid+36*z,flagY+5*z+wave);
+  c.lineTo(mid+27*z,flagY+12*z+wave);c.lineTo(mid+34*z,flagY+19*z+wave);
+  c.quadraticCurveTo(mid+20*z,flagY+14*z+wave,mid+3*z,flagY+18*z);c.closePath();c.fill();c.stroke();
+  c.fillStyle='#ffe0ac';c.fillRect(mid+7*z,flagY+4*z,5*z,8*z);
+  c.fillStyle='#f7c763';c.strokeStyle=INK;c.lineWidth=1.5*z;
+  rr(c,x,y,w,5*z,2*z);c.fill();c.stroke();return;
  }
  if(p[4]){drawMover(c,x,y,w,z);return}
  const isCp=L.cp&&L.cp[i],col=i===L.goal||isCp?'#ffe7a3':BCOL[(i*3+L.i)%BCOL.length];const bottom=CH+20;
@@ -1189,6 +1193,10 @@ function drawDoor(c,L,gi,fr,won){const p=L.plats[gi],z=S*GS.cam.z;const cx=p[0]+
 /* bullseye pads: red = live, green = hit, grey = left behind */
 function drawTargets(c,L){const z=S*GS.cam.z,s=GS.s;c.lineJoin='round';
  for(let i=1;i<L.plats.length;i++){const bx=L.bull[i];if(bx==null)continue;const bp=L.plats[i],X=W(bx+PX(bp,s?s.t:0)-bp[0]);if(X<-60||X>CW+60)continue;
+  if(i===L.needle){
+   c.fillStyle=s&&s.claim[i]?'#58d49c':'#fff1be';
+   c.fillRect(X-3*z,H(bp[2])+z,6*z,2*z);continue;
+  }
   const Y=H(bp[2]),R=Math.min(BULL_R,bp[1]/2-1)*z,done=s&&s.claim&&s.claim[i],gone=!done&&s&&s.lastP>i,gold=L.gold&&L.gold[i]&&!done&&!gone,col=done?'#3fbf88':gone?'#bdb5cc':gold?'#ffb300':'#ff4f6d',t=Y-6*z,h=8*z,m=LW*0.4;
   c.lineWidth=LW*0.8;c.strokeStyle=INK;c.fillStyle=col;rr(c,X-R,t,2*R,h,3*z);c.fill();c.stroke();
   c.fillStyle=done?'#d9f7e8':gone?'#ece8f2':'#fff';c.fillRect(X-R*0.62,t+m,R*1.24,h-2*m);c.fillStyle=col;c.fillRect(X-R*0.24,t+m,R*0.48,h-2*m);
