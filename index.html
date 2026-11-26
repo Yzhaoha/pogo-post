@@ -780,13 +780,16 @@ function showWin(){hideTip();const r=GS.result,L=GS.L;$('wT').textContent=T('win
  }
  const last=L.i>=LEVELS.length-1;$('wNext').textContent=last?T('allDone'):T('next');$('wNext').disabled=false;showLayer('winL');autoNext(last)}
 function showFail(){hideTip();$('fRevive').disabled=$('fSkip').disabled=false;$('fQuip').textContent=GS.quip;const fs=$('fScore');fs.hidden=!GS.L.endless;$('fMap').textContent=GS.L.endless?T('back'):T('levels');if(GS.L.endless)fs.innerHTML='<b>'+T('pts',{n:GS.endScore})+'</b> · '+(GS.newBest?'🏆 '+T('newBest'):T('best',{n:EB}))+(GS.endCoins?' · <i class="cn"></i>+'+GS.endCoins:'');const fr=$('fRevive');fr.textContent=T('revive');fr.hidden=GS.revived||!GS.s.safe||GS.s.safe.on===0&&GS.s.jumps<2;
- const sk=$('fSkip');sk.textContent=T('skip');sk.hidden=failsHere<3||GS.L.i>=LEVELS.length-1;showLayer('failL')}
+ const sk=$('fSkip');sk.textContent=T('skip');sk.hidden=GS.L.endless||failsHere<3||GS.L.i>=LEVELS.length-1;showLayer('failL')}
 $('wNext').onclick=()=>{clearInterval(GS.anT);const i=GS.L.i;if(i>=LEVELS.length-1){openMap();return}adBreak(()=>startLevel(i+1))};
 function autoNext(last){clearInterval(GS.anT);if(last)return;let n=4;const b=$('wNext'),lab=T('next');b.textContent=lab+' ('+n+')';GS.anT=setInterval(()=>{if($('winL').hidden){clearInterval(GS.anT);return}n--;if(n<=0){clearInterval(GS.anT);b.click()}else b.textContent=lab+' ('+n+')'},1000)}
 $('wRetry').onclick=()=>{clearInterval(GS.anT);adBreak(()=>startLevel(GS.L.i))};$('wMap').onclick=()=>{clearInterval(GS.anT);openMap()};
 $('fRetry').onclick=()=>adBreak(restart);$('fMap').onclick=()=>{if(GS.L.endless)goTitle();else openMap()};
 $('fRevive').onclick=()=>Ads.rewarded(ok=>{if(ok)revive()},$('fRevive'),true);
-$('fSkip').onclick=()=>Ads.rewarded(ok=>{if(!ok)return;const i=GS.L.i;if(!LP[i]){LP[i]=0.5;store.set('lvp',LP)}failsHere=0;startLevel(i+1)},$('fSkip'),true);
+$('fSkip').onclick=()=>{
+ const L=GS.L;if(!L||L.endless||$('fSkip').hidden)return;
+ Ads.rewarded(ok=>{if(!ok||GS.L!==L||GS.mode!=='crash')return;const i=L.i;if(!LP[i]){LP[i]=0.5;store.set('lvp',LP)}failsHere=0;startLevel(i+1)},$('fSkip'),true);
+};
 let mapCh=0;
 function openMap(ch){gp(false);if(ch!=null)mapCh=ch;else mapCh=Math.min(CHAPTERS-1,curLevel()/PER|0);const tabs=$('mapTabs');tabs.innerHTML='';
  {const mk=(txt,cls,fn)=>{const b=document.createElement('button');b.className='tab '+cls;b.innerHTML=txt;if(fn)b.onclick=fn;tabs.appendChild(b);return b};const open=lvOpen(mapCh*PER);
