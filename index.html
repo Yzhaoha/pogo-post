@@ -1018,11 +1018,25 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   const mid=x+w/2,flagY=y+14*z,wave=Math.sin(GS.time*4+i)*2*z;
   c.fillStyle='#374b68';c.fillRect(mid-3*z,y+4*z,6*z,CH-y);
   c.fillStyle='#bdccdb';c.fillRect(mid-1.6*z,y+4*z,1.8*z,CH-y);
-  c.fillStyle='#e65446';c.strokeStyle=INK;c.lineWidth=1.5*z;
-  c.beginPath();c.moveTo(mid+3*z,flagY);c.quadraticCurveTo(mid+18*z,flagY-3*z+wave,mid+36*z,flagY+5*z+wave);
-  c.lineTo(mid+27*z,flagY+12*z+wave);c.lineTo(mid+34*z,flagY+19*z+wave);
-  c.quadraticCurveTo(mid+20*z,flagY+14*z+wave,mid+3*z,flagY+18*z);c.closePath();c.fill();c.stroke();
-  c.fillStyle='#ffe0ac';c.fillRect(mid+7*z,flagY+4*z,5*z,8*z);
+  c.save();c.translate(mid+3*z,flagY);c.scale(z,z);
+  const cloth=new Path2D();
+  cloth.moveTo(0,0);cloth.quadraticCurveTo(23,-4+wave/z,50,3+wave/z);
+  cloth.lineTo(41,13+wave/z);cloth.lineTo(50,25+wave/z);
+  cloth.quadraticCurveTo(23,18+wave/z,0,22);cloth.closePath();
+  c.fillStyle='#c9444d';c.fill(cloth);c.clip(cloth);
+  c.strokeStyle='#fff0d4';c.lineWidth=4.4;c.lineCap='butt';
+  for(const band of [6.6,15.4]){
+   c.beginPath();c.moveTo(0,band);c.quadraticCurveTo(23,band-4+wave/z,51,band+3+wave/z);c.stroke();
+  }
+  c.fillStyle='#243c71';c.fillRect(0,-4,18,17);
+  c.fillStyle='#ffd06a';c.beginPath();
+  for(let k=0;k<10;k++){
+   const angle=-Math.PI/2+k*Math.PI/5,radius=k%2?2.3:5.5;
+   const sx=9+Math.cos(angle)*radius,sy=6+Math.sin(angle)*radius;
+   if(k)c.lineTo(sx,sy);else c.moveTo(sx,sy);
+  }
+  c.closePath();c.fill();c.strokeStyle=INK;c.lineWidth=2.5;c.stroke(cloth);
+  c.restore();
   c.fillStyle='#f7c763';c.strokeStyle=INK;c.lineWidth=1.5*z;
   rr(c,x,y,w,5*z,2*z);c.fill();c.stroke();return;
  }
