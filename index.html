@@ -155,6 +155,11 @@ html:lang(zh) #title .tb small:empty{display:none}
  #title .tb,html:lang(zh) #title .tb{width:min(350px,42vw);align-self:center}
 }
 @media(max-height:520px){.panel .btn{min-height:39px;padding:7px 13px 10px}#title .tb,html:lang(zh) #title .tb{width:min(300px,43vw)}}
+/* Keep the shop frame stationary when tab content changes height. */
+#shopL .panel{display:flex;flex-direction:column;height:min(650px,100%);overflow:hidden;filter:none}
+#shopL .panel>*{flex-shrink:0}
+#shopL #skGrid{flex:1 1 auto;min-height:0;align-content:start;align-items:stretch;overflow-y:auto;overscroll-behavior:contain;padding:5px;touch-action:pan-y}
+#shopL .skb{min-width:0}
 </style>
 </head>
 <body>
@@ -911,12 +916,12 @@ function icoSvg(tab,q){const o='stroke="#2b2340" stroke-width="2"';
  if(tab==='item')return q.id==='tape'?`<svg viewBox="0 0 40 50" width="40" height="50"><circle cx="20" cy="25" r="14" fill="#d9c9a3" ${o}/><circle cx="20" cy="25" r="6" fill="#fff" ${o}/><path d="M32 30l6 4" ${o}/></svg>`:`<svg viewBox="0 0 40 50" width="40" height="50"><circle cx="20" cy="25" r="13" fill="#fff" ${o}/><path d="M20 8v34M3 25h34" ${o}/><circle cx="20" cy="25" r="4" fill="#ff4f6d" ${o}/></svg>`}
 function buyFx(b){tone(180,120,0.15,'square',0.06);b.classList.remove('no');void b.offsetWidth;b.classList.add('no')}
 function openShop(){gp(false);if(!Ads.busy)$('sAd').disabled=false;$('sCoins').textContent=COINS;const g=$('skGrid');g.innerHTML='';
- const tabs=$('shopTabs');tabs.innerHTML='';[['skin','tabSkin'],['pogo','tabPogo'],['trail','tabTrail'],['box','tabBox'],['item','tabItem']].forEach(([id,key])=>{const t=document.createElement('button');t.className='tab'+(shopTab===id?' on':'');t.textContent=T(key);t.onclick=()=>{SFX.click();shopTab=id;openShop()};tabs.appendChild(t)});
+ const tabs=$('shopTabs');tabs.innerHTML='';[['skin','tabSkin'],['pogo','tabPogo'],['trail','tabTrail'],['box','tabBox'],['item','tabItem']].forEach(([id,key])=>{const t=document.createElement('button');t.className='tab'+(shopTab===id?' on':'');t.textContent=T(key);t.onclick=()=>{SFX.click();shopTab=id;openShop();g.scrollTop=0};tabs.appendChild(t)});
  if(shopTab==='skin')SKINS.map((q,k)=>k).sort((a,b)=>SKINS[a].c-SKINS[b].c).forEach(k=>{const q=SKINS[k],b=document.createElement('button'),own=!!OWN[k];b.className='skb'+(own?' own':'')+(k===SKI?' on':'');b.innerHTML=skSvg(k)+(q.sprite?'<small class="riderName">'+riderName(q)+'</small>':'')+(k===SKI?'✓':own?'&nbsp;':'<i class="cn"></i>'+q.c);
   b.onclick=()=>{if(!OWN[k]){if(COINS<q.c){buyFx(b);return}COINS-=q.c;store.set('coins',COINS);OWN[k]=1;store.set('own',OWN);SFX.star(2)}else SFX.click();
    SKI=k;SK=SKINS[k];store.set('skin',k);openShop()};g.appendChild(b)});
- else if(shopTab==='item')ITEMS.forEach(q=>{const b=document.createElement('button');b.className='skb item';const on=USE[q.id];
-   b.innerHTML=icoSvg('item',q)+`<b>${T(q.id==='tape'?'itTape':'itScope')}</b><small>${T(q.id==='tape'?'itTapeD':'itScopeD')}</small><small>${T('have',{n:INV[q.id]||0})}</small><span class="buy"><i class="cn"></i>${q.c}</span><span class="use${on?' on':''}">${T(on?'useOn':'useOff')}</span>`;
+ else if(shopTab==='item')ITEMS.forEach(q=>{const b=document.createElement('button');b.className='skb item';const count=INV[q.id]||0,on=count>0&&USE[q.id];
+   b.innerHTML=icoSvg('item',q)+`<b>${T(q.id==='tape'?'itTape':'itScope')}</b><small>${T(q.id==='tape'?'itTapeD':'itScopeD')}</small><small>${T('have',{n:INV[q.id]||0})}</small><span class="buy"><i class="cn"></i>${q.c}</span>${count?`<span class="use${on?' on':''}">${T(on?'useOn':'useOff')}</span>`:''}`;
    b.onclick=e=>{if(e.target.classList.contains('use')){USE[q.id]=USE[q.id]?0:1;store.set('use',USE);SFX.click();openShop();return}if(COINS<q.c){buyFx(b);return}COINS-=q.c;store.set('coins',COINS);INV[q.id]=(INV[q.id]||0)+1;store.set('inv',INV);SFX.star(1);openShop()};g.appendChild(b)});
  else{const C=COS[shopTab];C.list.map((q,k)=>k).forEach(k=>{const q=C.list[k],b=document.createElement('button'),own=!!C.own[k];b.className='skb'+(own?' own':'')+(k===C.sel?' on':'');
    b.innerHTML=(shopTab==='pogo'&&k===0?icoSvg('pogo',{col:SK.pg}):icoSvg(shopTab,q))+(k===C.sel?'✓':own?'&nbsp;':'<i class="cn"></i>'+q.c);
@@ -1697,6 +1702,7 @@ window.__pp.autoplay=function(plan){let j=0,ph='wait',k=0,f=0;
 if(QS.get('lvl')!=null){setTimeout(()=>{
  const v=QS.get('lvl');
  if(v==='menu'){goTitle();return}
+ if(v==='shop'){goTitle();$('giftL').hidden=true;openShop();return}
  if(v==='receipt'&&MEM){
   startLevel(1);GS.mode='win';COINS=141;
   GS.result={st:3,lost:0,time:23.7,coins:96,hits:11,nb:11};
