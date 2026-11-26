@@ -2,6 +2,11 @@
 
 > 新会话先读这一节就够开工；下面「历史记录」是逐日细节，要查某个功能怎么做的再翻。
 
+## ★ 11-26 首分钟体验对照｜独立测试分支
+- `playtest/first-minute-cg` 可玩提交 `e1030d3`，基于 `preview/needle-rooftops` 的 `4890d40`。只改首跳：第一接收屋顶向起点扩 30 单位，右边缘不动。蓄力达到安全释放窗口时给 ✓ 文案和绿色落点标记，不画辅助线，不改操作物理；保留首次空中后仰暂停提示。
+- 首跳阶段摔倒约 0.8 秒自动回到起点；第二关的高难路线和后续关卡不动。浏览器实测键盘、390×844 与 320×568 触控仿真通过，并检查了旧存档继续进第 3 关。候选源码本地生成 CrazyGames 包，替身 SDK 的桌面和手机尺寸启动成功，未提交平台。分支中的历史发布包未替换；提审前从已验收源码重新打包。未取得真实玩家数据。
+- [新版试玩](https://raw.githack.com/Yzhaoha/pogo-post/e1030d39725a91b18528fd8c83c3f0742210547f/index.html?new&lang=zh) / [改前对照](https://raw.githack.com/Yzhaoha/pogo-post/4890d40998b0a7933c1ef8652a41d34d2eab549b/index.html?new&lang=zh)。用户确认前不合 main、不更新线上。
+
 ## ★ 11-24 CrazyGames 第二次更新已提交上线（本机会话，在用户 Chrome 里操作）
 - **11-24 11:40（北京时间）提交**，后台提示「Your update has been automatically approved and is now live」。提交的是 `eedad99` 的 `dist/pogo-post-crazygames.zip` 解压出的 `index.html`（和 `dist/crazygames/index.html` 逐字节一致）。Update Notes 用的是 `docs/交接-提交CG新版本.md` 里那段英文。
 - Game Versions：新 build `20028aaa-06b3-4e61-a2b1-5ddfd1f34ce4`（后台显示创建于 24/11/2026 03:08，应为 UTC）状态 **Active**；11-21 的 `8fa5fa54…` 变为 Accepted。
