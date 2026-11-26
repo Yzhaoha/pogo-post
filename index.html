@@ -1083,9 +1083,10 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   c.fillStyle='#e8ac80';rr(c,0,0,width,6,2);c.fill();c.stroke();c.restore();return;
  }
  if(precision==='lamp'){
-  const sx=1.24,sy=1.25;
-  c.save();c.translate(x+w/2,y);c.scale(z*sx,z*sy);
-  // The brass lip spans the whole landing surface. All ornament hangs beneath it.
+  c.save();c.translate(x+w/2,y);c.scale(z,z);
+  // Enlarge the ornament below the cap, not the visible landing surface.
+  const sx=1.52,sy=1.52;
+  c.save();c.translate(0,3.75);c.scale(sx,sy);c.translate(0,-3);
   c.lineWidth=1.4;c.lineJoin='round';c.strokeStyle='#343044';
   const pole=c.createLinearGradient(-3,0,3,0);
   pole.addColorStop(0,'#314451');pole.addColorStop(.35,'#71afa0');pole.addColorStop(.6,'#386a68');pole.addColorStop(1,'#273945');
@@ -1107,9 +1108,13 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   c.fillStyle='#8dd6be';c.fillRect(-8,5,10,1.4);
   c.fillStyle='#ce9757';rr(c,-7,27,14,3.5,1.5);c.fill();c.stroke();
   rr(c,-4.5,38,9,3,1);c.fill();c.stroke();
-  const landingWidth=p[1]/sx;
+  c.restore();
+  // Same brass top and highlight dimensions as the previous lamp.
+  c.save();c.scale(1.24,1.25);c.lineWidth=1.2;c.lineJoin='round';c.strokeStyle='#343044';
+  const landingWidth=p[1]/1.24;
   c.fillStyle='#edbd79';rr(c,-landingWidth/2,0,landingWidth,3.5,1.5);c.fill();c.stroke();
   c.fillStyle='#fff0be';c.fillRect(-10,.45,17,1.1);
+  c.restore();
   c.restore();return;
  }
  if(precision==='flag'){
