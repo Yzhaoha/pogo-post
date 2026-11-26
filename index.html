@@ -848,7 +848,7 @@ function recordFailure(L){
 function startLevel(i,keepRevive,EL){
  GS.finale=null;GS.hopT=0;
  const L=EL||LEVELS[i];if(GS.L!==L){GS.retrySpot=null;failsHere=0}GS.anim.touchdown=null;GS.landingStamp=null;if(L.tut)GS.lastCh=null;GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
- GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.groundT=0;GS.poofed=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;beginAttempt(L);if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&!L.tut&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.retryHint=false;GS.tutStep=L.tut?1:0;GS.anim.touchdown=-Infinity;GS.anim.face=0;GS.dogBark=0;
+ GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;beginAttempt(L);if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&!L.tut&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.retryHint=false;GS.tutStep=L.tut?1:0;GS.anim.touchdown=-Infinity;GS.anim.face=0;GS.dogBark=0;
  GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;
  hideTip();if(L.endless){if(!store.get('te',0)){store.set('te',1);showTip(T('t_endless'),5)}}
  else if(!L.tut&&L.nb&&!store.get('tb',0)){store.set('tb',1);showTip(T('t_bull'),5)}
@@ -856,7 +856,7 @@ function startLevel(i,keepRevive,EL){
  showLayer(null);$('pauseB').hidden=false;plays++;gp(true);
 }
 function revive(){const s=GS.s;if(!s.safe)return;const sf=s.safe;Object.assign(s,{x:PX(GS.L.plats[sf.on],s.t)+sf.dx,y:sf.y,on:sf.on,vx:0,vy:0,th:0,om:0,psi:0,psv:0,charging:false,charge:0,needRel:true,dead:null,
- stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.groundT=0;GS.poofed=false;GS.revived=true;GS.anim.touchdown=null;beginAttempt(GS.L);GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
+ stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.revived=true;GS.anim.touchdown=null;beginAttempt(GS.L);GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
 
 /* ================= events → fx ================= */
 function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
@@ -1064,8 +1064,7 @@ function update(rdt){
    GS.fx.push({kind:'tr',k:tq.k,x:s.x-6+Math.random()*12,y:s.y+4+Math.random()*10,vx:-30+Math.random()*60,vy:tq.k==='bub'?40:-20+Math.random()*40,t:0,life:0.75,rot:Math.random()*6,hue:(GS.time*240)%360,col:['#ff4f6d','#ffc23d','#3fbf88','#3d7bff','#8b5cf6'][Math.random()*5|0]})}}}
   if(GS.mode==='play'&&!s.dead&&(GS.pfN||0)>=3){GS.fireT=(GS.fireT||0)-rdt;if(GS.fireT<=0){GS.fireT=0.05;burst(s.x-10+Math.random()*20,s.y+20+Math.random()*50,['#ff6b4a','#ffc23d','#ff4f6d'],2,70+15*Math.min(5,GS.pfN))}} // perfect streak of 3+: the courier is on fire
   if(s.dead&&GS.splashed){s.y-=170*dt;s.th+=0.6*dt}
-  if(GS.grounded){GS.groundT=(GS.groundT||0)+rdt;if(GS.groundT>0.7&&!GS.poofed){GS.poofed=true;GS.chalkAt=bodyBox(s);try{noise(0.18,0.2,2500)}catch(e){}}}
-  else if(s.dead&&s.on<0&&!GS.grounded&&!onRoof(GS.L,s)){GS.fallV=(GS.fallV||0)-G*1.2*dt;s.y+=GS.fallV*dt;s.x+=(s.vx||0)*0.25*dt;s.th+=Math.sign(s.th||1)*2.2*dt; // a mid-air crash keeps falling
+  if(s.dead&&s.on<0&&!GS.grounded&&!onRoof(GS.L,s)){GS.fallV=(GS.fallV||0)-G*1.2*dt;s.y+=GS.fallV*dt;s.x+=(s.vx||0)*0.25*dt;s.th+=Math.sign(s.th||1)*2.2*dt; // a mid-air crash keeps falling
    if(seaHere(GS.L,s))seaCheck(s);else if(s.y<=GROUND_Y)hitGround(s)} // sink below the waterline (drawing is clipped there)
   if(GS.mode==='play'&&s.charging)chargeSnd(true,s.charge);
   if(GS.L.storm){const ph=GS.time%7.3;if(ph<(GS.lph||0)&&GS.mode==='play'){noise(1.4,0.3,260);tone(70,40,1.2,'sine',0.18)}GS.lph=ph}
@@ -1220,7 +1219,7 @@ function render(){
   if(s){
    if(GS.mode==='play'&&GS.preview)drawPreview(c,GS.preview,GS.scope);
    const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
-   if(GS.poofed)chalkTrace(c,s,Math.min(1,(GS.groundT-0.7)/0.3));else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
+   drawCourier(c,s,!!s.dead&&GS.mode!=='play');
    if(wet)c.restore();
    if(GS.finale)drawFinalDelivery(c,s,z);
    if(GS.coached&&s.on<0&&!GS.airUsed&&GS.mode==='play')drawKeyHint(c,s);
@@ -1517,6 +1516,19 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   drawStreetTrim(c,theme,x,y,w,z,i);
   return;
  }
+ if(L.endless&&oldStreet.naturalWidth&&(p[3]===2||(p[3]===0&&GS.thw[2]>.005))){
+  const night=streetThemes[2],facade=i%3;
+  if(p[3]===2){
+   drawOldStreet(c,facade,x,y,w,z,streetVariant(2),night[0]);
+   drawStreetTrim(c,night,x,y,w,z,i);
+  }else{
+   // A daylight facade across the gap still takes the current zone's lighting.
+   drawOldStreet(c,facade,x,y,w,z);
+   c.save();c.globalAlpha=GS.thw[2];
+   drawOldStreet(c,facade,x,y,w,z,streetVariant(2));c.restore();
+  }
+  return;
+ }
  const isCp=L.cp&&L.cp[i],col=i===L.goal||isCp?'#ffe7a3':BCOL[(i*3+L.i)%BCOL.length];const bottom=CH+20;
  c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle=col;c.fillRect(x,y,w,bottom-y);c.strokeRect(x,y,w,bottom-y+40);
@@ -1531,7 +1543,6 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   }
   drawOldStreet(c,i===L.goal?2:i%3,x,y,w,z);return;
  }
- if(L.endless&&p[3]===2){drawEndlessNight(c,i,x,y,w,z);return}
  // windows
  const cols=Math.max(1,Math.floor((p[1]-30)/48));const gap=(w-cols*22*z)/(cols+1);
  for(let r=0;r<8;r++){const wy=y+40*z+r*56*z;if(wy>CH)break;for(let k=0;k<cols;k++){const wx=x+gap+k*(22*z+gap);const lit=hash(i*31+r*7+k+L.i*5)>0.45;
@@ -1548,25 +1559,6 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
  // roof cap
  c.lineWidth=LW;c.fillStyle=shade(col,-0.3);rr(c,x-6*z,y-4*z,w+12*z,14*z,5*z);c.fill();c.stroke();
  if(p[1]>150&&i!==L.goal&&i!==0&&!isCp){const ax=hash(i+L.i)<0.5?x+10*z:x+w-46*z;c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke()}
-}
-/* Distinct night architecture: tiled navy caps and tall warm shop windows. */
-function drawEndlessNight(c,i,x,y,w,z){
- const hue=['#35324f','#253b57','#433355'][i%3];
- c.fillStyle=hue;c.fillRect(x,y,w,CH-y+20);
- c.strokeStyle=INK;c.lineWidth=LW;c.strokeRect(x,y,w,CH-y+23);
- c.fillStyle='#1c243f';c.fillRect(x+w-7*z,y,7*z,CH-y+20);
- c.fillStyle='#7c719d';rr(c,x,y,w,12*z,3*z);c.fill();c.stroke();
- c.fillStyle='#b9a8cc';c.fillRect(x+2*z,y+2*z,Math.max(0,w-4*z),2*z);
- const cols=Math.max(1,Math.floor(w/(55*z))),bay=w/cols;
- for(let oy=y+29*z,row=0;oy<CH;oy+=68*z,row++){
-  c.fillStyle='#292944';c.fillRect(x+2*z,oy+39*z,w-4*z,3*z);
-  for(let j=0;j<cols;j++){
-   const wx=x+(j+0.5)*bay-12*z,lit=hash(i*17+row*7+j)>0.27;
-   c.fillStyle=lit?'#ffd486':'#434461';rr(c,wx,oy,24*z,34*z,8*z);c.fill();c.stroke();
-   c.strokeStyle=lit?'#b7704a':INK;c.lineWidth=Math.max(1,z);
-   c.beginPath();c.moveTo(wx+12*z,oy+2*z);c.lineTo(wx+12*z,oy+32*z);c.moveTo(wx+z,oy+18*z);c.lineTo(wx+23*z,oy+18*z);c.stroke();c.strokeStyle=INK;
-  }
- }
 }
 /* hovering platform (endless run): slides left-right */
 function drawMover(c,x,y,w,z){if(paintFrame(c,'mover',x,y,w,32*z))return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
@@ -1600,24 +1592,6 @@ function drawStreet(c){const z=S*GS.cam.z,y0=H(GROUND_Y);if(y0>CH)return;
  c.fillStyle='#c9c3d8';c.fillRect(0,y0-10*z,CW,14*z);c.fillStyle='#5d5a70';c.fillRect(0,y0+4*z,CW,CH-y0);
  c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(0,y0-10*z);c.lineTo(CW,y0-10*z);c.moveTo(0,y0+4*z);c.lineTo(CW,y0+4*z);c.stroke();
  c.fillStyle='#f4e9b0';const off=(((GS.cam.x*z-CW*0.5)%(120*z))+120*z)%(120*z);for(let x=-off;x<CW;x+=120*z)c.fillRect(x,y0+34*z,60*z,6*z)}
-// crime-scene chalk line traced around the courier, right where they lay: silhouette -> grown a few px -> hollowed out
-function bodyBox(s){try{const cv=document.createElement('canvas');cv.width=Math.ceil(CW);cv.height=Math.ceil(CH);const o=cv.getContext('2d');drawCourier(o,s,true);
- const d=o.getImageData(0,0,cv.width,cv.height).data;let x0=1e9,y0=1e9,x1=-1,y1=-1;
- for(let y=0;y<cv.height;y+=2)for(let x=0;x<cv.width;x+=2)if(d[(y*cv.width+x)*4+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
- if(x1<0)return null;const z=S*GS.cam.z;return{x:GS.cam.x+((x0+x1)/2-CW*0.5)/z,y:GS.cam.y-((y0+y1)/2-CH*0.66)/z,w:(x1-x0)/z}}catch(e){return null}}
-function chalkTrace(c,s,a){const cv=GS.chalkA||(GS.chalkA=document.createElement('canvas')),cv2=GS.chalkB||(GS.chalkB=document.createElement('canvas'));
- for(const k of [cv,cv2])if(k.width!==c.canvas.width||k.height!==c.canvas.height){k.width=c.canvas.width;k.height=c.canvas.height}
- const o=cv.getContext('2d'),o2=cv2.getContext('2d'),tf=c.getTransform();
- o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,cv.width,cv.height);o.setTransform(tf);
- {const b=GS.chalkAt,z=S*GS.cam.z,d=s.th>0?1:-1,X=b?W(b.x):W(s.x),Y=b?H(b.y):H(GROUND_Y)-12*z,k=b?Math.max(0.7,Math.min(1.6,b.w/105)):1;o.save();o.translate(X,Y);o.scale(d*z*k,z*k);o.strokeStyle=o.fillStyle='#fff';o.lineCap=o.lineJoin='round'; // spread-eagle figure where the courier lay
-  o.translate(-5,0);o.beginPath();o.arc(44,-2,15,0,7);o.fill();o.lineWidth=20;o.beginPath();o.moveTo(28,-2);o.lineTo(-8,0);o.stroke();
-  o.lineWidth=9;o.beginPath();o.moveTo(20,-8);o.lineTo(30,-30);o.lineTo(42,-40);o.moveTo(20,6);o.lineTo(30,26);o.lineTo(44,34);
-  o.moveTo(-8,-6);o.lineTo(-30,-24);o.lineTo(-40,-34);o.moveTo(-8,6);o.lineTo(-32,20);o.lineTo(-38,34);o.stroke();o.restore()}
- o.setTransform(1,0,0,1,0,0);o.globalCompositeOperation='source-in';o.fillStyle='#ffffff';o.fillRect(0,0,cv.width,cv.height);o.globalCompositeOperation='source-over';
- const r=Math.max(2.2,2.6*S)*(tf.a||1),g=Math.max(2,2.4*S)*(tf.a||1);o2.setTransform(1,0,0,1,0,0);o2.clearRect(0,0,cv2.width,cv2.height);
- for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*(g+r),Math.sin(an)*(g+r))}       // outer edge of the line
- o2.globalCompositeOperation='destination-out';for(let k=0;k<16;k++){const an=k*Math.PI/8;o2.drawImage(cv,Math.cos(an)*g,Math.sin(an)*g)}o2.globalCompositeOperation='source-over'; // keep a gap around the body
- c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=0.92*a;c.drawImage(cv2,0,0);c.restore()}
 function drawSea(c,chapter){const frozen=isIcyDock(chapter);const z=S*GS.cam.z,y0=H(30);if(y0>CH)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  c.fillStyle=harborThemes[chapter]?.[3]||'#4f9be0';c.beginPath();c.moveTo(-20,CH+20);for(let x=-20;x<=CW+40;x+=20){c.lineTo(x,y0+Math.sin(x*0.03/z+GS.time*2.2+GS.cam.x*0.03)*5*z)}c.lineTo(CW+40,CH+20);c.closePath();c.fill();c.stroke();
  if(frozen){
@@ -2175,9 +2149,9 @@ if(QS.get('lvl')!=null){setTimeout(()=>{
   GS.result={st:3,lost:0,time:23.7,coins:96,hits:11,nb:11};
   showWin();clearInterval(GS.anT);$('wNext').textContent=T('next');return
  }
- if(v==='endless'||v==='endless-flag'||v==='endless-post-flag'||v==='endless-night'||v==='endless-pier'){
+ if(v==='endless'||v==='endless-flag'||v==='endless-post-flag'||v==='endless-night'||v==='endless-night-edge'||v==='endless-pier'){
   const L=mkEndless(20261126);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L);
-  const at=v==='endless-flag'?89:v==='endless-post-flag'?41:v==='endless-night'?25:v==='endless-pier'?16:0;
+  const at=v==='endless-flag'?89:v==='endless-post-flag'?41:v==='endless-night-edge'?35:v==='endless-night'?25:v==='endless-pier'?16:0;
   if(at){
    while(L.plats.length<=at+6)genNext(L);
    const p=L.plats[at],s=GS.s;s.x=p[0]+p[1]*0.5;s.y=p[2];s.on=s.lastP=at;snap(s,L);
