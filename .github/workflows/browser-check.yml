@@ -20,12 +20,13 @@ jobs:
           for(const device of ['Desktop','Pixel 7','iPhone 13']){
           const p=await b.newPage(device==='Desktop'?{viewport:{width:1280,height:800}}:{...devices[device],defaultBrowserType:undefined});
           let err=[];p.on('pageerror',e=>err.push(String(e)));await p.route('https://sdk.crazygames.com/**',r=>r.fulfill({contentType:'text/javascript',body:'window.CrazyGames={SDK:{init:async()=>{},game:{settings:{},addSettingsChangeListener(){},loadingStart(){},loadingStop(){},gameplayStart(){},gameplayStop(){}},user:{systemInfo:{locale:"en-US"}}}}'}));
+          await p.route('**/dist/crazygames/index.html',r=>{const fs=require('fs');const html=fs.readFileSync('dist/crazygames/index.html','utf8').replace('function startLevel(i,','window.qaState=()=>({mode:GS.mode,on:GS.s?.on,jumps:GS.s?.jumps,charge:GS.s?.charge,touch:GS.inp,land:GS.anim.touchdown,freeze:GS.freeze});function startLevel(i,');return r.fulfill({contentType:'text/html',body:html})});
           await p.goto('file://'+process.cwd()+'/dist/crazygames/index.html');await p.waitForSelector('#pauseB',{state:'visible'});
           const sess=await p.context().newCDPSession(p);
           let pt={x:Math.floor(p.viewportSize().width*.47),y:Math.floor(p.viewportSize().height*.62)};
           const press=async(down)=>{if(device==='Desktop'){if(down){await p.mouse.move(pt.x,pt.y);await p.mouse.down()}else await p.mouse.up()}else await sess.send('Input.dispatchTouchEvent',{type:down?'touchStart':'touchEnd',touchPoints:down?[pt]:[]})};
-          await press(true);await p.waitForTimeout(380);await press(false);await p.waitForTimeout(450);await press(true);await p.waitForTimeout(160);await press(false);await p.waitForTimeout(1100);
-          await p.locator('#pauseB').click();await p.locator('#pGo').waitFor({state:'visible'});await p.locator('#pGo').click();await p.locator('#pauseB').waitFor({state:'visible'});console.log(device,'jump inputs, pause and resume',err);if(err.length)throw Error(err.join());await p.close()}
+          await p.waitForFunction(()=>window.qaState?.().mode==='play');
+          await p.locator('#pauseB').click();await p.locator('#pGo').waitFor({state:'visible'});await p.locator('#pGo').click();await p.locator('#pauseB').waitFor({state:'visible'});await press(true);await p.waitForFunction(()=>qaState().charge>0.05);await press(false);await p.waitForFunction(()=>qaState().on<0&&qaState().jumps>0);console.log(device,'jump observed',await p.evaluate(()=>qaState()),'pause and resume',err);if(err.length)throw Error(err.join());await p.close()}
           await b.close()})().catch(e=>{console.error(e);process.exit(1)})
           JS
           node check.cjs
