@@ -1081,18 +1081,21 @@ function update(rdt){
  if(s&&GS.mode==='win'){const p=GS.L.plats[GS.L.goal],dx=p[0]+p[1]*0.62-34-s.x;if(Math.abs(dx)>4){s.x+=Math.sign(dx)*Math.min(Math.abs(dx),160*rdt);GS.hopT=(GS.hopT||0)+rdt}else GS.hopT=0}
  // body squash spring
  const A=GS.anim;A.sqv+=(-A.sq*280-A.sqv*12)*rdt;A.sq+=A.sqv*rdt*0.1;A.blink-=rdt;if(A.blink<0)A.blink=2+Math.random()*3;if(A.flap>0)A.flap-=rdt;
- // camera
- if(s&&GS.mode==='title'){ // the courier hops on the spot between the logo and the buttons
-  const port=CH>=CW,k=S*GS.cam.z,by=GS.L.plats[0][2],ph=(GS.time*1.35)%1;s.x=120;
-  GS.cam.x=s.x-((port?0.5:0.26)*CW-CW*0.5)/k;GS.cam.y=by+((port?0.55:0.86)*CH-CH*0.66)/k;
-  s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
-  s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
- else if(s&&GS.grounded){const ty=GROUND_Y+0.18*CH/(S*GS.cam.z);GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*6)} // lying on the street: no more panning, just settle on the street
- else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
-  const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
- const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
- GS.preview=s&&GS.mode==='play'&&s.on>=0&&s.charging&&GS.aimAssist?traceJump(s,GS.L):null;
- GS.shake=Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
+ // Hold the framing from the previous frame until the player releases the spring.
+ const charging=s&&GS.mode==='play'&&s.on>=0&&s.charging;
+ if(!charging){
+  if(s&&GS.mode==='title'){ // the courier hops on the spot between the logo and the buttons
+   const port=CH>=CW,k=S*GS.cam.z,by=GS.L.plats[0][2],ph=(GS.time*1.35)%1;s.x=120;
+   GS.cam.x=s.x-((port?0.5:0.26)*CW-CW*0.5)/k;GS.cam.y=by+((port?0.55:0.86)*CH-CH*0.66)/k;
+   s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
+   s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
+  else if(s&&GS.grounded){const ty=GROUND_Y+0.18*CH/(S*GS.cam.z);GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*6)} // lying on the street: no more panning, just settle on the street
+  else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
+   const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
+  const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
+ }
+ GS.preview=charging&&GS.aimAssist?traceJump(s,GS.L):null;
+ GS.shake=charging?0:Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
  for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
  GS.debris=GS.debris.filter(d=>d.kind==='hang'||d.y>-700);
  for(const f of GS.fx){f.t+=dt;if(f.kind==='tr'){f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=2*dt}if(f.kind==='dot'||f.kind==='sq'){f.vy-=900*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt}if(f.kind==='paper'){f.vy=Math.max(-120,f.vy-700*dt);f.vx*=Math.exp(-1.5*dt);f.x+=(f.vx+Math.sin(f.t*5+f.rot)*60)*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt}}
