@@ -1089,11 +1089,7 @@ function update(rdt){
  else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
   const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
  const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
- GS.preview=null;
- if(s&&GS.mode==='play'&&s.on>=0&&s.charging&&GS.aimAssist){
-  GS.preview=traceJump(s,GS.L);
-  fitPreview(s,GS.preview.points);
- }
+ GS.preview=s&&GS.mode==='play'&&s.on>=0&&s.charging&&GS.aimAssist?traceJump(s,GS.L):null;
  GS.shake=Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
  for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
  GS.debris=GS.debris.filter(d=>d.kind==='hang'||d.y>-700);
@@ -1718,17 +1714,6 @@ function traceJump(s,L){
   if(end){landing=landed;break}
  }
  return {points,landing};
-}
-function fitPreview(s,points){
- let minX=s.x,maxX=s.x,minY=s.y,maxY=s.y;
- for(const [x,y] of points){
-  minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
- }
- const side=CW*.1,top=CH*.19,bottom=CH*.06,cam=GS.cam;
- const scale=Math.min(S*cam.z,(CW-2*side)/Math.max(1,maxX-minX),(CH-top-bottom)/Math.max(1,maxY-minY));
- cam.z=scale/S;
- cam.x=Math.max(maxX-(CW*.5-side)/scale,Math.min(cam.x,minX+(CW*.5-side)/scale));
- cam.y=Math.max(maxY-(CH*.66-top)/scale,Math.min(cam.y,minY+(CH*.34-bottom)/scale));
 }
 function drawPreview(c,{points,landing},markLanding){
  const z=S*GS.cam.z;
