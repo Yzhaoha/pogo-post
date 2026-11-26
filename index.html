@@ -8,8 +8,8 @@
 <style>
 :root{--ink:#2b2340;--o:#ff6b4a;--y:#ffc23d;--b:#3d7bff;--g:#3fbf88;--card:#fffdf8}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#9fd8ff;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+html,body{margin:0;height:100%;overflow:hidden;background:#9fd8ff;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 [hidden]{display:none!important}
 .layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
 .dim{background:#2b234055}
@@ -154,7 +154,17 @@ html:lang(zh) #title .tb small:empty{display:none}
  #title .tl{flex:1;align-self:flex-start;padding:0}
  #title .tb,html:lang(zh) #title .tb{width:min(350px,42vw);align-self:center}
 }
-@media(max-height:520px){.panel .btn{min-height:39px;padding:7px 13px 10px}#title .tb,html:lang(zh) #title .tb{width:min(300px,43vw)}}
+@media(max-height:520px){.panel .btn{min-height:39px;padding:7px 13px 10px}}
+@media(max-height:520px) and (min-aspect-ratio:6/5){
+ #title .tb,html:lang(zh) #title .tb{width:min(300px,43vw)}
+}
+@media(max-height:520px) and (max-aspect-ratio:6/5){
+ #title .tw{flex-direction:column}
+ #title .tl{flex:none;align-self:center;padding-top:0}
+ #title .tb,html:lang(zh) #title .tb{width:min(290px,100%)}
+ #title .tb .btn{aspect-ratio:auto;min-height:44px}
+ #title .tw{overflow-y:auto}
+}
 /* Keep the shop frame stationary when tab content changes height. */
 #shopL .panel{display:flex;flex-direction:column;height:min(650px,100%);overflow:hidden;filter:none}
 #shopL .panel>*{flex-shrink:0}
@@ -834,7 +844,7 @@ function recordFailure(L){
  store.set('stageFailures',failures);
 }
 function startLevel(i,keepRevive,EL){
- const L=EL||LEVELS[i];if(GS.L!==L)GS.retrySpot=null;GS.landingStamp=null;if(L.tut)GS.lastCh=null;GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
+ const L=EL||LEVELS[i];if(GS.L!==L){GS.retrySpot=null;failsHere=0}GS.anim.touchdown=null;GS.landingStamp=null;if(L.tut)GS.lastCh=null;GS.L=L;GS.result=null;GS.autoFn=null;GS.s=newState(L,1234+i*77);snap(GS.s,L);GS.mode='play';GS.acc=0;GS.hold=false;GS.debris=[];GS.fx=[];GS.pops=[];GS.shake=0;GS.slow=0;GS.endT=0;
  GS.splashed=false;GS.freeze=false;GS.coinFly=[];GS.pfN=0;GS.fallV=0;GS.grounded=false;GS.groundT=0;GS.poofed=false;GS.wallet=COINS;GS.s.tape=INV.tape>0&&USE.tape?1:0;beginAttempt(L);if(!keepRevive){GS.runCoins=0;GS.revived=false;GS.paid=0}if(!keepRevive&&!L.endless&&!L.tut&&GS.goalLv!==L.i){GS.goalLv=L.i;GS.goalAt=GS.time}GS.retryHint=false;GS.tutStep=L.tut?1:0;GS.anim.touchdown=-Infinity;GS.anim.face=0;GS.dogBark=0;
  GS.cam.x=GS.s.x+150;GS.cam.y=GS.s.y;GS.cam.z=1;
  hideTip();if(L.endless){if(!store.get('te',0)){store.set('te',1);showTip(T('t_endless'),5)}}
@@ -843,7 +853,7 @@ function startLevel(i,keepRevive,EL){
  showLayer(null);$('pauseB').hidden=false;plays++;gp(true);
 }
 function revive(){const s=GS.s;if(!s.safe)return;const sf=s.safe;Object.assign(s,{x:PX(GS.L.plats[sf.on],s.t)+sf.dx,y:sf.y,on:sf.on,vx:0,vy:0,th:0,om:0,psi:0,psv:0,charging:false,charge:0,needRel:true,dead:null,
- stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.groundT=0;GS.poofed=false;GS.revived=true;GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
+ stack:sf.stack.map(p=>({t:p.t,crack:p.crack})),lost:sf.lost,score:sf.score,combo:sf.combo,hits:sf.hits,lastP:sf.lastP,claim:sf.claim.slice(),cpd:sf.cpd.slice()});GS.splashed=false;GS.grounded=false;GS.fallV=0;GS.groundT=0;GS.poofed=false;GS.revived=true;GS.anim.touchdown=null;beginAttempt(GS.L);GS.debris=GS.debris.filter(d=>d.kind!=='pk');GS.mode='play';GS.slow=0;GS.endT=0;GS.cam.z=1;showLayer(null);$('pauseB').hidden=false;gp(true)}
 
 /* ================= events → fx ================= */
 function wobbleText(x,y,t,col,sz){GS.pops.push({x,y,t,col,sz:sz||1,a:0})}
@@ -904,7 +914,7 @@ function onCrash(why){recordFailure(GS.L);const s=GS.s;if(why==='fall'&&!seaHere
   if(intro&&drop){showTip(T('firstHold'),2);GS.retryHint=true}
   else if(repeat){showTip(T(hint),2);GS.retryHint=true}
  }},first&&!intro?3300:800); // early levels: straight back in, no panel
- else setTimeout(showFail,why==='wall'?1900:1500)}
+ else setTimeout(()=>{if(GS.mode==='crash'&&GS.s===s)showFail()},why==='wall'?1900:1500)}
 
 /* ================= UI ================= */
 const LAYERS=['title','mapL','shopL','pauseL','winL','failL'];
@@ -1079,6 +1089,11 @@ function update(rdt){
  else if(s){const lead=GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
   const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
  const zt=GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
+ GS.preview=null;
+ if(s&&GS.mode==='play'&&s.on>=0&&s.charging&&GS.aimAssist){
+  GS.preview=traceJump(s,GS.L);
+  fitPreview(s,GS.preview.points);
+ }
  GS.shake=Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
  for(const d of GS.debris){d.life+=dt;if(d.kind==='pk'){d.vy-=1700*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.rot+=d.vr*dt}}
  GS.debris=GS.debris.filter(d=>d.kind==='hang'||d.y>-700);
@@ -1154,7 +1169,7 @@ function render(){
   for(const d of L.dogs)drawDog(c,d,s?s.t:GS.time);
   for(const d of GS.debris)if(d.kind==='hang')drawHang(c,d,L);
   if(s){
-   if(s.on>=0&&s.charging&&GS.mode==='play'&&GS.aimAssist)drawPreview(c,s,L,!L.endless&&GS.scope);
+   if(GS.mode==='play'&&GS.preview)drawPreview(c,GS.preview,GS.scope);
    const wet=pk>0.01&&seaHere(L,s);if(wet){c.save();c.beginPath();c.rect(-1e4,-1e4,CW+2e4,H(SEA_Y)+1e4);c.clip()}
    if(GS.poofed)chalkTrace(c,s,Math.min(1,(GS.groundT-0.7)/0.3));else if(!s.dead||GS.mode==='play')drawCourier(c,s);else drawCourier(c,s,true);
    if(wet)c.restore();
@@ -1229,11 +1244,12 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   const piling=precision==='flag',art=piling?mooringPost:pierDeck;
   if(art.naturalWidth){
    const depth=Math.max(40*z,H(SEA_Y)-y+13*z),bays=piling?1:Math.max(1,Math.round(w/(180*z)));
-   const bay=w/bays,top=piling?.27:.52,sourceTop=Math.round(art.height*top);
-   const cap=Math.min(depth*.75,bay*sourceTop/art.width);
+   const bay=w/bays,sourceTop=Math.round(art.height*(piling?.27:.52));
+   const surface=1; // first opaque row along the center of the landing cap
+   const cap=Math.min(depth*.75,bay*(sourceTop-surface)/art.width);
    for(let n=0;n<bays;n++){
     const left=x+n*bay;
-    c.drawImage(art,0,0,art.width,sourceTop,left,y,bay,cap);
+    c.drawImage(art,0,surface,art.width,sourceTop-surface,left,y,bay,cap);
     c.drawImage(art,0,sourceTop,art.width,art.height-sourceTop,left,y+cap,bay,depth-cap);
    }
    return
@@ -1543,7 +1559,7 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
  // shadow on ground
  if(s.on>=0){c.fillStyle='#0002';c.beginPath();c.ellipse(0,0,26*z,6*z,0,0,7);c.fill()}
  const sinceLand=s.t-A.touchdown;
- const contact=s.on>=0&&sinceLand>=0&&sinceLand<0.24;
+ const contact=s.on>=0&&A.touchdown!=null&&sinceLand>=0&&sinceLand<0.24;
  if(contact&&!dead){
   const phase=sinceLand/0.24;
   c.save();c.globalAlpha=(1-phase)*0.8;c.strokeStyle='#ffdf8b';c.lineWidth=2*z;
@@ -1551,7 +1567,7 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
  }
  c.rotate(s.th);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';c.lineCap='round';
  const sp=18*spring;const peg=-6-sp; // spring from 0 → peg
- const pose=dead||Math.abs(s.th)>0.45||Math.abs(s.psi)>0.38?2:s.on<0?1:contact&&sinceLand<0.12?3:0;
+ const pose=dead||Math.abs(s.th)>0.45||Math.abs(s.psi)>0.38?2:s.on<0?1:s.charging||(contact&&sinceLand<0.12)?3:0;
  const key=SK.sprite+pose,frame=frames[key];
  const usePose=frame&&(outfitPoses[key]||chapterArt).naturalWidth;
  let parcelX=0,parcelY;
@@ -1674,15 +1690,15 @@ function drawCharge(c,s){ // big charge meter left of the courier (no aim line: 
  if(GS.lastCh!=null){const y=Y-3*z-(h-6*z)*GS.lastCh,x0=X+bw/2+2*z;c.globalAlpha=1;c.fillStyle='#fff';c.strokeStyle=INK;c.lineWidth=LW;c.beginPath();c.moveTo(x0,y);c.lineTo(x0+11*z,y-7*z);c.lineTo(x0+11*z,y+7*z);c.closePath();c.fill();c.stroke()}
  if(s.charging){c.globalAlpha=1;c.font=`900 ${15*z}px Nunito,sans-serif`;c.textAlign='center';c.textBaseline='bottom';c.lineWidth=4*z;c.strokeStyle=INK;const t=Math.round(k*100)+'%';c.strokeText(t,X,Y-h-4*z);c.fillStyle=firstJumpReady(s,GS.L)?'#42e4a2':k>=1?'#ff4f6d':'#fff';c.fillText(t,X,Y-h-4*z)}
  c.restore()}
-function drawPreview(c,s,L,markLanding){
- const speed=V0+V1*s.charge,z=S*GS.cam.z;
+function traceJump(s,L){
+ const speed=V0+V1*s.charge;
  const long=s.stack.some(p=>p.t==='long'),mul=long?2.5:1;
  let x=s.x,y=s.y,vx=speed*Math.sin(LAUNCH),vy=speed*Math.cos(LAUNCH);
- let distance=0,next=28;
- const floor=seaHere(L,s)?SEA_Y:GROUND_Y;
- c.save();c.fillStyle='#fff';c.strokeStyle='#2b2340';c.lineWidth=1.5*z;
+ let distance=0,next=9;
+ const floor=seaHere(L,s)?SEA_Y:GROUND_Y,points=[];
+ let landing=false;
  for(let n=1;n<=480;n++){
-  const t=s.t+n*DT,lastY=y;
+  const t=s.t+(n+1)*DT,lastY=y;
   vy-=G*DT;vx+=windAt(L,x,t)*mul*DT;
   if(long)vx-=vx*.22*DT;
   for(const f of L.fans)if(x>f[0]&&x<f[0]+f[2]&&y+60>f[1]&&y<f[1]+f[3])vx+=f[4]*mul*DT;
@@ -1690,18 +1706,39 @@ function drawPreview(c,s,L,markLanding){
   let landed=false,blocked=false;
   for(const p of L.plats){
    const left=PX(p,t);
-   if(vy<0&&lastY>=p[2]-.01&&y<=p[2]&&x>=left-6&&x<=left+p[1]+6){y=p[2];landed=true;break}
+   if(vy<=0&&lastY>=p[2]-.01&&y<=p[2]&&x>=left-6&&x<=left+p[1]+6){y=p[2];landed=true;break}
    if(x>left&&x<left+p[1]&&y<p[2]-2)blocked=true;
   }
   const end=landed||blocked||y<=floor;
+  if(!landed&&y<=floor){x-=(y-floor)*vx/vy;y=floor}
   distance+=Math.hypot(vx,vy)*DT;
   if(distance>=next||end){
-   c.beginPath();c.arc(W(x),H(Math.max(y,floor)),(end?4.7:3.6)*z,0,Math.PI*2);c.fill();c.stroke();next=distance+17;
-   if(landed&&markLanding){c.beginPath();c.ellipse(W(x),H(y),10*z,3*z,0,0,Math.PI*2);c.stroke()}
+   points.push([x,y]);next=distance+17;
   }
-  if(end)break
+  if(end){landing=landed;break}
  }
- c.restore()
+ return {points,landing};
+}
+function fitPreview(s,points){
+ let minX=s.x,maxX=s.x,minY=s.y,maxY=s.y;
+ for(const [x,y] of points){
+  minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+ }
+ const side=CW*.1,top=CH*.19,bottom=CH*.06,cam=GS.cam;
+ const scale=Math.min(S*cam.z,(CW-2*side)/Math.max(1,maxX-minX),(CH-top-bottom)/Math.max(1,maxY-minY));
+ cam.z=scale/S;
+ cam.x=Math.max(maxX-(CW*.5-side)/scale,Math.min(cam.x,minX+(CW*.5-side)/scale));
+ cam.y=Math.max(maxY-(CH*.66-top)/scale,Math.min(cam.y,minY+(CH*.34-bottom)/scale));
+}
+function drawPreview(c,{points,landing},markLanding){
+ const z=S*GS.cam.z;
+ c.save();c.fillStyle='#fff';c.strokeStyle='#2b2340';c.lineWidth=1.5*z;
+ for(let i=0;i<points.length;i++){
+  const [x,y]=points[i],last=i===points.length-1;
+  c.beginPath();c.arc(W(x),H(y),(last?4.7:3.6)*z,0,Math.PI*2);c.fill();c.stroke();
+  if(last&&landing&&markLanding){c.beginPath();c.ellipse(W(x),H(y),10*z,3*z,0,0,Math.PI*2);c.stroke()}
+ }
+ c.restore();
 }
 function coinIcon(c,x,y,r){c.save();c.fillStyle='#ffc23d';c.strokeStyle=INK;c.lineWidth=2.5;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.stroke();c.fillStyle='#ffe9a8';c.beginPath();c.arc(x-r*0.25,y-r*0.25,r*0.35,0,7);c.fill();c.restore()}
 function drawCoinFly(c){const now=GS.time,rdt=Math.min(0.1,now-(GS.cfT??now));GS.cfT=now;const [tx,ty]=GS.walletXY||[22,80];GS.coinFly=GS.coinFly.filter(f=>{f.t+=rdt;if(f.t<0)return true;const k=Math.min(1,f.t/0.55),e=k*k*(3-2*k);
@@ -1811,7 +1848,7 @@ if(QS.get('lvl')!=null){setTimeout(()=>{
  }
  if(v==='endless'||v==='endless-flag'||v==='endless-night'||v==='endless-pier'){
   const L=mkEndless(20261126);ensure(L,0);GS.thw=[1,0,0];startLevel(100,false,L);
-  const at=v==='endless-flag'?41:v==='endless-night'?25:v==='endless-pier'?17:0;
+  const at=v==='endless-flag'?89:v==='endless-night'?25:v==='endless-pier'?16:0;
   if(at){
    while(L.plats.length<=at+6)genNext(L);
    const p=L.plats[at],s=GS.s;s.x=p[0]+p[1]*0.5;s.y=p[2];s.on=s.lastP=at;snap(s,L);
