@@ -1097,9 +1097,9 @@ function update(rdt){
    s.y=by+4*52*ph*(1-ph);s.on=ph<0.05||ph>0.95?0:-1;if(ph<(GS.tph||0))GS.anim.sqv=-7;GS.tph=ph;
    s.th=Math.sin(GS.time*1.35*6.283)*0.07;s.psi=Math.sin(GS.time*1.35*6.283-0.9)*0.13}
   else if(s&&GS.grounded){const ty=GROUND_Y+0.18*CH/(S*GS.cam.z);GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*6)} // lying on the street: no more panning, just settle on the street
-  else if(s){const lead=GS.finale?75-115*cutProgress(GS.finale.time,1.9,3.8):GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
+  else if(s){const lead=GS.finale?55-95*cutProgress(GS.finale.time,2.8,4.1):GS.mode==='play'?Math.min(240,140+Math.max(0,s.vx)*0.2):120;const tx=s.x+lead;GS.cam.x+=(tx-GS.cam.x)*Math.min(1,rdt*3);
    const gy=s.on>=0?s.y:Math.max(s.y-80,Math.min(GS.cam.y,s.y));const falling=s.dead&&s.on<0&&!GS.splashed,ty=s.dead&&GS.splashed?GS.cam.y:falling?Math.max(s.y+60,GROUND_Y+0.18*CH/(S*GS.cam.z)):gy;GS.cam.y+=(ty-GS.cam.y)*Math.min(1,rdt*(falling?6:2.5))}
-  const zt=GS.finale?1-.30*cutProgress(GS.finale.time,1.9,3.8):GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
+  const zt=GS.finale?1+.36*cutProgress(GS.finale.time,1.1,1.85)-.66*cutProgress(GS.finale.time,2.8,4.1):GS.mode==='crash'&&GS.slow>0?1.12:GS.mode==='title'?(CH>=CW?1.35:1.15):1;GS.cam.z+=(zt-GS.cam.z)*Math.min(1,rdt*6);
  }
  GS.preview=charging&&GS.aimAssist?traceJump(s,GS.L):null;
  GS.shake=charging?0:Math.max(0,GS.shake-rdt*30);if(GS.flash>0)GS.flash=Math.max(0,GS.flash-rdt*1.6);GS.bump=Math.max(0,(GS.bump||0)-rdt*3);
@@ -1216,7 +1216,7 @@ function render(){
  c.globalAlpha=1;
  for(const p of GS.pops){const k=p.a/1.1,y=H(p.y)-k*50*z,sc=p.sz*(k<0.15?0.6+k/0.15*0.5:1.1-0.1*k);c.globalAlpha=k>0.7?(1-k)/0.3:1;c.font=`900 ${26*z*sc}px Nunito,Trebuchet MS,sans-serif`;c.textAlign='center';c.lineJoin='round';c.lineWidth=7*z;c.strokeStyle=INK;c.strokeText(p.t,W(p.x),y);c.fillStyle=p.col;c.fillText(p.t,W(p.x),y)}
  c.globalAlpha=1;
- if(L){if(L.rain)rain(c);if(L.snow)snowFx(c);if(L.fog&&GS.s){c.save();if(GS.finale)c.globalAlpha=1-cutProgress(GS.finale.time,1.9,3.5);fogFx(c);c.restore()}if(L.storm)flashFx(c)}
+ if(L){if(L.rain)rain(c);if(L.snow)snowFx(c);if(L.fog&&GS.s){c.save();if(GS.finale)c.globalAlpha=1-cutProgress(GS.finale.time,.95,1.65);fogFx(c);c.restore()}if(L.storm)flashFx(c)}
  c.restore();
  if(GS.flash>0){c.fillStyle=`rgba(255,255,255,${GS.flash})`;c.fillRect(0,0,CW,CH)}
  if(GS.finale&&!GS.finale.settled)drawFinalStamp(c);
@@ -1654,15 +1654,7 @@ function drawFinalDelivery(c,s,z){
   c.save();c.translate(W(x),H(y));c.rotate(Math.sin(Math.PI*k)*.23);
   drawParcel(c,parcel.t,z,parcel.crack,0);c.restore();
  }
- if(t>=1.75&&t<3.65){
-  const x=W(s.x)+12*z,y=H(s.y+64),lift=cutProgress(t,1.75,2.12);
-  c.save();c.translate(x,y);c.rotate((-.45+Math.sin(t*13)*.33)*lift);
-  c.strokeStyle=INK;c.lineWidth=9*z;c.lineCap='round';
-  c.beginPath();c.moveTo(0,5*z);c.quadraticCurveTo(14*z,1*z,19*z,-15*z*lift);c.stroke();
-  c.strokeStyle=SK.jk;c.lineWidth=5*z;c.stroke();
-  c.fillStyle='#ffd3a8';c.strokeStyle=INK;c.lineWidth=1.6*z;
-  c.beginPath();c.ellipse(19*z,-15*z*lift,5*z,6*z,0,0,Math.PI*2);c.fill();c.stroke();c.restore();
- }
+
 }
 function drawFinalStamp(c){
  const t=GS.finale.time;
@@ -1738,6 +1730,83 @@ function drawParcel(c,t,z,crack,life){const d=PK[t],w=d.w*z,h=d.h*z;c.lineWidth=
   c.fillStyle=INK;c.beginPath();c.arc(8*z,-1*z,2*z,0,7);c.fill()}
  else if(t==='long'){c.fillStyle='#7fc0ff';rr(c,-w/2,-h/2,w,h,h/2);c.fill();c.stroke();c.fillStyle='#fff8';c.fillRect(-w/2+10*z,-h/2+4*z,w-20*z,4*z);c.fillStyle='#3d7bff';c.fillRect(-6*z,-h/2+1*z,12*z,h-2*z)}
 }
+// Idle-frame cuts are measured at the collar, just above the painted hands,
+// and just below the hands. The finale retains the outfit's head, boots and pogo.
+const farewellCuts={
+ courier:[126,158],outfit1:[79,108],outfit2:[81,115],outfit3:[81,110],
+ outfit4:[83,115],outfit5:[78,109],outfit6:[87,119],outfit7:[84,121],
+ outfit8:[82,116],outfit9:[81,118],outfit10:[83,118],outfit11:[79,116],
+ 'red-panda':[126,162],'moon-rabbit':[128,164],'post-bot':[139,185]
+};
+const farewellColors={
+ 'red-panda':['#276e68','#f3d7af','#d1965e'],
+ 'moon-rabbit':['#723f88','#ad68b8','#e2a6df'],
+ 'post-bot':['#333e65','#e79769','#76bcb3']
+};
+function drawFarewellPose(c,key,frame,tipX,tipY,unit,time){
+ const [head,legs]=farewellCuts[SK.sprite],w=frame[2],h=frame[3];
+ const left=-tipX*unit,top=-tipY*unit;
+ const drawSlice=(y,height)=>{
+  c.save();c.beginPath();c.rect(left,top+y*unit,w*unit,height*unit);c.clip();
+  drawEquippedPose(c,key,frame,left,top,w*unit,h*unit,0);c.restore();
+ };
+ drawSlice(legs,h-legs);
+ c.save();c.translate(0,top+head*unit);c.scale(unit,unit);
+ const broad=h>200,body=broad?55:32,torso=legs-head;
+ const [jacket,sleeve,cuff]=farewellColors[SK.sprite]||[SK.jk,SK.jk,SK.pk];
+ const ink='#302038',skin=SK.sprite==='post-bot'?'#aee2cd':SK.sprite==='moon-rabbit'?'#f6d7ed':SK.sprite==='red-panda'?'#b96b52':SK.sprite==='outfit4'||SK.sprite==='outfit11'?'#69748d':'#ffd4a3';
+ c.strokeStyle=ink;c.lineWidth=broad?5:3.2;c.lineCap='round';c.lineJoin='round';
+ c.fillStyle=jacket;rr(c,-body*.61,-7,body*1.24,torso+10,body*.24);c.fill();c.stroke();
+ c.strokeStyle=SK.st;c.lineWidth=body*.10;
+ c.beginPath();c.moveTo(-body*.24,0);c.lineTo(body*.18,torso);c.stroke();
+
+ // The far hand stays on the bar. The near sleeve is drawn once, all the way from shoulder to cuff.
+ const drawSleeve=(sx,sy,ex,ey,wx,wy)=>{
+  c.beginPath();c.moveTo(sx,sy);c.quadraticCurveTo(ex,ey,wx,wy);
+  c.strokeStyle=ink;c.lineWidth=body*.30;c.stroke();
+  c.strokeStyle=sleeve;c.lineWidth=body*.21;c.stroke();
+  c.strokeStyle=cuff;c.lineWidth=body*.15;
+  c.beginPath();c.moveTo(ex+(wx-ex)*.78,ey+(wy-ey)*.78);c.lineTo(wx,wy);c.stroke();
+ };
+ const gripY=torso-2,grip=body*.24;
+ drawSleeve(-body*.39,body*.02,-body*.67,torso*.75,-grip,gripY);
+ c.strokeStyle=ink;c.lineWidth=body*.19;
+ c.beginPath();c.moveTo(-grip-2,gripY);c.lineTo(grip+2,gripY);c.stroke();
+ c.strokeStyle=pgCol();c.lineWidth=body*.095;c.stroke();
+ c.fillStyle=skin;c.strokeStyle=ink;c.lineWidth=body*.045;
+ rr(c,-grip-body*.11,gripY-body*.1,body*.23,body*.19,body*.08);c.fill();c.stroke();
+
+ c.restore();
+ drawSlice(0,head);
+ c.save();c.translate(0,top+head*unit);c.scale(unit,unit);
+ c.lineCap='round';c.lineJoin='round';
+
+ const raise=cutProgress(time,1.62,1.99)*(1-cutProgress(time,3.03,3.44));
+ const swing=Math.sin((time-1.99)*Math.PI*5)*raise;
+ const elbowX=body*(.63+.22*raise),elbowY=torso*(.62-.44*raise);
+ const wristX=grip+(body*(1.02+.09*swing)-grip)*raise;
+ const wristY=gripY+(-body*(.54+.08*swing)-gripY)*raise;
+ drawSleeve(body*.39,body*.02,elbowX,elbowY,wristX,wristY);
+ c.save();c.translate(wristX,wristY);c.rotate((.20+.32*swing)*raise);
+ c.fillStyle=skin;c.strokeStyle=ink;c.lineWidth=body*.044;
+ const spread=cutProgress(raise,.15,.93);
+ if(spread>0){
+  const m=body*.025;c.scale(m,m*(.30+.70*spread));c.lineWidth=1.75;
+  // Thumb faces the courier. Four rounded fingers share one continuous palm outline.
+  c.beginPath();c.moveTo(-3,1);c.quadraticCurveTo(-6,0,-6,-4);
+  c.lineTo(-9,-9);c.quadraticCurveTo(-10,-12,-7,-12);c.lineTo(-4,-9);
+  c.lineTo(-5,-17);c.quadraticCurveTo(-5,-21,-2,-20);c.lineTo(-1,-13);
+  c.lineTo(-1,-21);c.quadraticCurveTo(1,-24,3,-21);c.lineTo(3,-13);
+  c.lineTo(4,-19);c.quadraticCurveTo(6,-22,8,-19);c.lineTo(7,-12);
+  c.lineTo(9,-16);c.quadraticCurveTo(12,-17,12,-14);c.lineTo(10,-6);
+  c.quadraticCurveTo(9,0,4,2);c.closePath();c.fill();c.stroke();
+  c.strokeStyle='#492e3a88';c.lineWidth=1.15;
+  c.beginPath();c.moveTo(-4,-9);c.quadraticCurveTo(0,-9,1,-5);c.stroke();
+ }else{
+  rr(c,-body*.10,-body*.10,body*.23,body*.19,body*.08);c.fill();c.stroke();
+ }
+ c.restore();c.restore();
+}
 /* courier: foot at (x,y), body axis rotated by th */
 function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s.y)-(GS.mode==='win'&&GS.hopT>0?Math.abs(Math.sin(GS.hopT*11))*16*z:0);
  const ch=s.on>=0&&s.charging?s.charge:0;const sq=Math.max(-0.3,Math.min(0.3,A.sq));const spring=Math.max(0.35,1-ch*0.55+sq*0.6);
@@ -1745,7 +1814,7 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
  // shadow on ground
  if(s.on>=0){c.fillStyle='#0002';c.beginPath();c.ellipse(0,0,26*z,6*z,0,0,7);c.fill()}
  const sinceLand=s.t-A.touchdown;
- const contact=s.on>=0&&A.touchdown!=null&&sinceLand>=0&&sinceLand<0.24;
+ const contact=!(GS.finale&&s.won)&&s.on>=0&&A.touchdown!=null&&sinceLand>=0&&sinceLand<0.24;
  if(contact&&!dead){
   const phase=sinceLand/0.24;
   c.save();c.globalAlpha=(1-phase)*0.8;c.strokeStyle='#ffdf8b';c.lineWidth=2*z;
@@ -1753,7 +1822,8 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
  }
  c.rotate(s.th);c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';c.lineCap='round';
  const sp=18*spring;const peg=-6-sp; // spring from 0 → peg
- const pose=dead||Math.abs(s.th)>0.45||Math.abs(s.psi)>0.38?2:s.on<0?1:s.charging||(contact&&sinceLand<0.12)?3:0;
+ const farewell=GS.finale?.time>=1.62;
+ const pose=farewell?0:dead||Math.abs(s.th)>0.45||Math.abs(s.psi)>0.38?2:s.on<0?1:s.charging||(contact&&sinceLand<0.12)?3:0;
  const key=SK.sprite+pose,frame=frames[key];
  const usePose=frame&&(outfitPoses[key]||chapterArt).naturalWidth;
  let parcelX=0,parcelY;
@@ -1762,7 +1832,9 @@ function drawCourier(c,s,dead){const z=S*GS.cam.z,A=GS.anim;const X=W(s.x),Y=H(s
   const width=height*frame[2]/frame[3];
   const [tipX,tipY]=tipAnchor[SK.sprite][pose];
   const scale=height/frame[3];
-  drawEquippedPose(c,key,frame,-tipX*scale*z,-tipY*scale*z,width*z,height*z,pose);
+  if(farewell){
+   drawFarewellPose(c,key,frame,tipX,tipY,scale*z,GS.finale.time);
+  }else drawEquippedPose(c,key,frame,-tipX*scale*z,-tipY*scale*z,width*z,height*z,pose);
   const [headX,headY]=parcelSeat[key];
   parcelX=(headX-tipX)*scale;parcelY=(headY-tipY)*scale;
  }else{
@@ -2017,6 +2089,8 @@ if(QS.get('lvl')!=null){setTimeout(()=>{
   failures[1]=QS.get('attempt')==='7'?7:0;startLevel(1);return
  }
  if(v==='ending'&&MEM){
+  const outfit=Number(QS.get('outfit'));
+  if(QS.has('outfit')&&Number.isInteger(outfit)&&SKINS[outfit]){SKI=outfit;SK=SKINS[SKI]}
   const i=LEVELS.length-1;startLevel(i);
   const L=GS.L,p=L.plats[L.goal],s=GS.s;
   s.x=p[0]+p[1]*.34;s.y=p[2]+4;s.on=-1;s.vy=-190;s.t=L.par-1;
