@@ -9,14 +9,31 @@
 body{margin:0;text-align:center;padding:12px}
 h1{margin:0 0 8px;font-size:1.15rem}
 video{display:block;margin:0 auto 8px;width:auto;max-width:100%;height:min(78dvh,720px);aspect-ratio:2/3;background:#28223a;border-radius:10px}
-a{color:#ffda91}
+p{margin:0 0 8px}a{color:#ffda91}
 </style>
 </head>
 <body>
 <h1>弹簧快递 · 竖版预览</h1>
-<video controls playsinline preload="metadata" poster="https://raw.githubusercontent.com/Yzhaoha/pogo-post/1888a6faef01ab524a6706c71cef5f4c6da5d9d9/art/review/crazygames/pogo-post-rooftop-jump-800x1200.png">
- <source src="https://raw.githubusercontent.com/Yzhaoha/pogo-post/1888a6faef01ab524a6706c71cef5f4c6da5d9d9/art/review/crazygames/preview-1080x1620.mp4" type="video/mp4">
-</video>
-<a href="https://raw.githubusercontent.com/Yzhaoha/pogo-post/1888a6faef01ab524a6706c71cef5f4c6da5d9d9/art/review/crazygames/preview-1080x1620.mp4" download>下载 MP4</a>
+<video id="preview" playsinline poster="https://raw.githubusercontent.com/Yzhaoha/pogo-post/1888a6faef01ab524a6706c71cef5f4c6da5d9d9/art/review/crazygames/pogo-post-rooftop-jump-800x1200.png"></video>
+<p id="status" role="status">正在加载完整视频…</p>
+<a id="download" href="https://raw.githubusercontent.com/Yzhaoha/pogo-post/refs/heads/playtest/retry-and-cover/art/review/crazygames/preview-1080x1620.mp4">下载 MP4</a>
+<script>
+(async()=>{
+ const video=document.getElementById('preview');
+ const status=document.getElementById('status');
+ try{
+  const response=await fetch(document.getElementById('download').href);
+  if(!response.ok)throw Error(response.statusText);
+  const bytes=await response.arrayBuffer();
+  const expected=Number(response.headers.get('Content-Length'));
+  if(expected&&bytes.byteLength!==expected)throw Error('Incomplete video');
+  video.src=URL.createObjectURL(new Blob([bytes],{type:'video/mp4'}));
+  video.controls=true;
+  status.textContent='已加载完整视频，可点播放。';
+ }catch{
+  status.textContent='视频加载失败。请刷新重试，或下载 MP4。';
+ }
+})();
+</script>
 </body>
 </html>
