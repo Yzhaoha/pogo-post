@@ -1384,6 +1384,7 @@ function drawStreetTrim(c,theme,x,y,w,z,i){
  }else if(detail==='vents'||detail==='stone'){
   c.strokeStyle=trim;c.lineWidth=Math.max(1,z);
   for(let j=13*z;j<w-7*z;j+=19*z){
+   if(detail==='vents'&&roofSprite(c,'vent',x+j,y+4*z,10*z,9*z))continue;
    c.beginPath();c.moveTo(x+j,y+8*z);c.lineTo(x+j+7*z,y+8*z);c.stroke();
   }
  }else if(detail==='neon'||detail==='postal'){
@@ -1512,6 +1513,9 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   for(let row=0,dy=17;dy<height;dy+=16,row++){
    c.fillRect(4,dy,width-8,1.5);c.fillRect(row%2?10:19,dy+1,1.4,14);
   }
+  if(rooftopSprites.brick.naturalWidth){
+   for(let by=5;by<height;by+=32)roofSprite(c,'brick',3,by,width-6,32);
+  }
   c.fillStyle='#e8ac80';rr(c,0,0,width,6,2);c.fill();c.stroke();c.restore();return;
  }
  if(precision==='lamp'){
@@ -1541,6 +1545,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   c.fillStyle='#ce9757';rr(c,-7,27,14,3.5,1.5);c.fill();c.stroke();
   rr(c,-4.5,38,9,3,1);c.fill();c.stroke();
   c.restore();
+  roofSprite(c,'lamp',-20,4,40,59);
   // Same brass top and highlight dimensions as the previous lamp.
   c.save();c.scale(1.24,1.25);c.lineWidth=1.2;c.lineJoin='round';c.strokeStyle='#343044';
   const landingWidth=p[1]/1.24;
@@ -1580,7 +1585,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
   if(i!==L.goal&&p[1]>140){
    c.save();c.globalAlpha=0.54;c.fillStyle=i%3===1?'#c38a7b':'#99abb9';c.strokeStyle='#657789';c.lineWidth=1.4*z;
    const bx=x+w*0.76,bh=(i%3===1?18:10)*z;
-   rr(c,bx,y-bh,17*z,bh,2*z);c.fill();c.stroke();c.fillRect(bx-2*z,y-bh,21*z,3*z);c.restore();
+   rr(c,bx,y-bh,17*z,bh,2*z);c.fill();c.stroke();c.fillRect(bx-2*z,y-bh,21*z,3*z);roofSprite(c,'vent',bx-2*z,y-bh,21*z,bh);c.restore();
   }
   drawOldStreet(c,i===L.goal?2:i%3,x,y,w,z);return;
  }
@@ -1599,7 +1604,7 @@ function drawBuilding(c,L,i){const p=L.plats[i],z=S*GS.cam.z;const x=W(PX(p,GS.s
  }
  // roof cap
  c.lineWidth=LW;c.fillStyle=shade(col,-0.3);rr(c,x-6*z,y-4*z,w+12*z,14*z,5*z);c.fill();c.stroke();
- if(p[1]>150&&i!==L.goal&&i!==0&&!isCp){const ax=hash(i+L.i)<0.5?x+10*z:x+w-46*z;c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke()}
+ if(p[1]>150&&i!==L.goal&&i!==0&&!isCp){const ax=hash(i+L.i)<0.5?x+10*z:x+w-46*z;c.fillStyle='#e9e1f5';rr(c,ax,y-30*z,26*z,26*z,4*z);c.fill();c.stroke();c.beginPath();c.moveTo(ax+4*z,y-20*z);c.lineTo(ax+22*z,y-20*z);c.moveTo(ax+4*z,y-12*z);c.lineTo(ax+22*z,y-12*z);c.stroke();roofSprite(c,'vent',ax,y-30*z,26*z,26*z)}
 }
 /* hovering platform (endless run): slides left-right */
 function drawMover(c,x,y,w,z){if(paintFrame(c,'mover',x,y,w,32*z))return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
@@ -1704,6 +1709,28 @@ function drawCrates(c,L,i,x,y,w,col,z){const bottom=CH+20;
  c.lineWidth=LW;
  // bollard / rope coil on top
  if(L.plats[i][1]>150&&i!==0){const ax=hash(i+L.i)<0.5?x+14*z:x+w-42*z;c.fillStyle='#5b5a8f';rr(c,ax,y-18*z,18*z,18*z,6*z);c.fill();c.stroke();c.fillStyle='#7a79b0';rr(c,ax-4*z,y-24*z,26*z,8*z,4*z);c.fill();c.stroke()}}
+// Inline vector artwork keeps the single-file game playable offline.
+const rooftopSprites={};
+for(const [name,svg] of Object.entries({
+ "brick": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"32\" viewBox=\"0 0 36 32\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path fill=\"#9c554a\" d=\"M0 0h36v32H0z\"/><path fill=\"#bc7157\" d=\"M2 1h17v13H2zm1 16h7v13H3zm10 0h18v13H13z\"/><path fill=\"#764841\" d=\"M29 0h7v32h-7z\"/><path stroke=\"#e1a483\" d=\"M1 15h34M1 31h34M20 1v13M11 17v13\"/><path stroke=\"#cc8b69\" d=\"m4 4 6-1m5 16h8\"/><path fill=\"#874d43\" d=\"m4 10 4-1-2 3zm19 16 4-1-2 2z\"/></g></svg>",
+ "lamp": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"57\" viewBox=\"0 0 40 57\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M6 11 20 1l14 10 4 4-4 3-4 23-7 6v7l-3 2-3-2v-7l-7-6-4-23-4-3z\" fill=\"#306a68\" stroke=\"#36343e\" stroke-width=\"2\"/><path fill=\"#9bd1ad\" d=\"m6 12 14-8-3 6z\"/><path d=\"m8 18 24 0-4 21-8 5-8-5z\" fill=\"#f2bc72\" stroke=\"#56483d\" stroke-width=\"1.5\"/><path d=\"m11 19 9 2-1 19-5-3z\" fill=\"#ffe7a4\"/><path d=\"m21 22 8-3-3 17-5 4z\" fill=\"#eaa25b\"/><path d=\"m20 21 0 21M6 15q14 5 28 0\" fill=\"none\" stroke=\"#735e42\" stroke-width=\"2\"/><path d=\"M12 41q8 5 16 0M17 51h6\" fill=\"none\" stroke=\"#e1b177\" stroke-width=\"2.5\"/></g></svg>",
+ "fan": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"38\" height=\"76\" viewBox=\"0 0 38 76\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M3 8Q10 3 23 5l4 62-6 5-18-4z\" fill=\"#3e666a\" stroke=\"#363440\" stroke-width=\"2\"/><path d=\"m5 11 13-3-1 8-12 2z\" fill=\"#8fb2a1\"/><path d=\"m6 25 9-2m-9 9 9-2m-9 10 9-2\" stroke=\"#223e48\" stroke-width=\"3\"/><path d=\"m5 54 10 1v9L5 62z\" fill=\"#c2925c\"/><ellipse cx=\"25\" cy=\"38\" rx=\"12\" ry=\"36\" fill=\"#d9b880\" stroke=\"#393744\" stroke-width=\"2\"/><ellipse cx=\"25\" cy=\"38\" rx=\"9\" ry=\"31\" fill=\"#41525a\" stroke=\"#9a7756\" stroke-width=\"2\"/><path d=\"M24 7q-8 6-9 21\" fill=\"none\" stroke=\"#fff1c8\" stroke-width=\"2\"/></g></svg>",
+ "blade": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"19\" viewBox=\"0 0 12 19\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M4 18Q-1 13 2 5 6-1 10 2q4 4-1 10l-2 5z\" fill=\"#ea865c\" stroke=\"#563f43\" stroke-width=\"1.4\"/><path d=\"M3 9q2-6 6-6\" fill=\"none\" stroke=\"#ffcd87\" stroke-width=\"1.5\"/></g></svg>",
+ "vent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 28 28\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"m1 6 5-5h19l2 4v21H1z\" fill=\"#739496\" stroke=\"#36454d\" stroke-width=\"1.5\"/><path d=\"m2 6 5-4h17l-4 4z\" fill=\"#c7d1b5\"/><path d=\"M21 7h5v17h-5z\" fill=\"#4f7376\"/><rect x=\"4\" y=\"9\" width=\"15\" height=\"13\" rx=\"2\" fill=\"#34474e\"/><path d=\"M6 12h11M6 16h11M6 20h11\" stroke=\"#a7b8a4\" stroke-width=\"1.6\"/><path d=\"M2 25h23\" stroke=\"#dbb780\" stroke-width=\"2\"/></g></svg>",
+ "post": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"40\" viewBox=\"0 0 8 40\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M1 0h6v40H1z\" fill=\"#b28259\" stroke=\"#614b45\"/><path d=\"M3 2v35\" stroke=\"#e1b680\"/><path d=\"m5 10-1 7 1 5\" fill=\"none\" stroke=\"#80593f\"/><path d=\"M1 2h6v3H1z\" fill=\"#507775\"/><path d=\"M1 6h6\" stroke=\"#e5c08b\"/></g></svg>",
+ "shirtBlue": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"24\" viewBox=\"0 0 28 24\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"m2 4 7-3q5 4 10 0l7 3 1 5-5 3-2-3v13H8V9l-2 3-5-3z\" fill=\"#83bbca\" stroke=\"#473d4c\" stroke-width=\"1.4\"/><path d=\"m10 2 4 5 4-5m-9 16h10\" fill=\"none\" stroke=\"#5089a0\" stroke-width=\"2\"/><path d=\"M15 8h4v4l-2 1-2-1z\" fill=\"#f6d6a1\"/><path d=\"M8 1v4m12-4v4\" stroke=\"#aa714b\" stroke-width=\"2\"/></g></svg>",
+ "shirtGreen": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"24\" viewBox=\"0 0 28 24\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"m2 4 7-3q5 4 10 0l7 3 1 5-5 3-2-3v13H8V9l-2 3-5-3z\" fill=\"#a3be84\" stroke=\"#473d4c\" stroke-width=\"1.4\"/><path d=\"m10 2 4 5 4-5m-9 16h10\" fill=\"none\" stroke=\"#708e69\" stroke-width=\"2\"/><path d=\"M15 8h4v4l-2 1-2-1z\" fill=\"#f6d6a1\"/><path d=\"M8 1v4m12-4v4\" stroke=\"#aa714b\" stroke-width=\"2\"/></g></svg>",
+ "sockRose": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"24\" viewBox=\"0 0 28 24\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M9 1h11l-2 12 6 3q4 5-3 7l-12-3z\" fill=\"#ed94a3\" stroke=\"#473d4c\" stroke-width=\"1.4\"/><path d=\"M10 4h9m-9 3h8\" stroke=\"#fff0c6\" stroke-width=\"2\"/><path d=\"m10 15 4 1-2 5-3-2zm11 2 3 1-1 3-5 1z\" fill=\"#ae667c\"/><path d=\"M13 1v4\" stroke=\"#a7754a\" stroke-width=\"2\"/></g></svg>",
+ "sockGold": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"24\" viewBox=\"0 0 28 24\" preserveAspectRatio=\"none\"><g stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M9 1h11l-2 12 6 3q4 5-3 7l-12-3z\" fill=\"#f1c06e\" stroke=\"#473d4c\" stroke-width=\"1.4\"/><path d=\"M10 4h9m-9 3h8\" stroke=\"#fff0c6\" stroke-width=\"2\"/><path d=\"m10 15 4 1-2 5-3-2zm11 2 3 1-1 3-5 1z\" fill=\"#c49258\"/><path d=\"M13 1v4\" stroke=\"#a7754a\" stroke-width=\"2\"/></g></svg>"
+})){
+ const image=new Image();image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+ rooftopSprites[name]=image;
+}
+function roofSprite(c,name,x,y,w,h){
+ const img=rooftopSprites[name];
+ if(!img.naturalWidth)return false;
+ c.drawImage(img,x,y,w,h);return true;
+}
 function drawFan(c,f){const z=S*GS.cam.z,dir=Math.sign(f[4]);const fx=dir>0?f[0]+14:f[0]+f[2]-14;const fy=Math.min(f[1]+f[3]-60,Math.max(f[1]+150,topUnder(fx)+190));
  const X=W(fx),Y=H(fy);if(X<-200||X>CW+200)return;c.lineWidth=LW;c.strokeStyle=INK;c.lineJoin='round';
  // breeze streaks through the zone
@@ -1716,7 +1743,8 @@ function drawFan(c,f){const z=S*GS.cam.z,dir=Math.sign(f[4]);const fx=dir>0?f[0]
  // housing
  c.save();c.translate(X,Y);c.scale(dir,1);c.fillStyle='#5b5a8f';rr(c,-22*z,-34*z,22*z,68*z,8*z);c.fill();c.stroke();
  c.fillStyle='#dfe6f5';c.beginPath();c.ellipse(4*z,0,12*z,38*z,0,0,7);c.fill();c.stroke();
- const a=GS.time*18*Math.sign(f[4]);c.fillStyle='#ff6b4a';for(let k=0;k<3;k++){const yb=Math.sin(a+k*2.094)*30*z,wb=Math.abs(Math.cos(a+k*2.094))*8*z+2*z;c.beginPath();c.ellipse(5*z,yb*0.9,wb*0.6,9*z,0,0,7);c.fill();c.stroke()}
+ roofSprite(c,'fan',-22*z,-38*z,38*z,76*z);
+ const a=GS.time*18*Math.sign(f[4]);c.fillStyle='#ff6b4a';for(let k=0;k<3;k++){const yb=Math.sin(a+k*2.094)*30*z,wb=Math.abs(Math.cos(a+k*2.094))*8*z+2*z;if(roofSprite(c,'blade',5*z-wb*.6,yb*.9-9*z,wb*1.2,18*z))continue;c.beginPath();c.ellipse(5*z,yb*0.9,wb*0.6,9*z,0,0,7);c.fill();c.stroke()}
  c.fillStyle=INK;c.beginPath();c.arc(5*z,0,4*z,0,7);c.fill();c.restore()}
 function drawWind(c,w){
  const dir=Math.sign(w),travel=GS.windTravel*S,span=CW+220*S;
@@ -1735,7 +1763,7 @@ function drawTramp(c,t){const z=S*GS.cam.z,x=W(t[0]),y=H(t[2]),w=t[1]*z;if(x>CW+
  c.lineWidth=LW;c.strokeStyle=INK;c.fillStyle='#c9d3e6';for(const k of [0.15,0.85]){c.fillRect(x+w*k-4*z,y-16*z,8*z,16*z);c.strokeRect(x+w*k-4*z,y-16*z,8*z,16*z)}
  c.fillStyle='#ff4f6d';rr(c,x-4*z,y-22*z+hit,w+8*z,10*z,5*z);c.fill();c.stroke();c.fillStyle='#fff';c.fillRect(x+w*0.3,y-20*z+hit,w*0.12,4*z);c.fillRect(x+w*0.6,y-20*z+hit,w*0.12,4*z)}
 function drawRope(c,r){const z=S*GS.cam.z;c.lineWidth=LW;c.strokeStyle=INK;
- for(const px of [r[0],r[1]]){const base=topUnder(px);c.fillStyle='#a77a55';c.fillRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8));c.strokeRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8))}
+ for(const px of [r[0],r[1]]){const base=topUnder(px);c.fillStyle='#a77a55';c.fillRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8));c.strokeRect(W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8));roofSprite(c,'post',W(px)-4*z,H(r[2]+8),8*z,H(base)-H(r[2]+8))}
  c.beginPath();for(let k=0;k<=20;k++){const x=r[0]+(r[1]-r[0])*k/20;const y=ropeY(r,x);k?c.lineTo(W(x),H(y)):c.moveTo(W(x),H(y))}c.lineWidth=LW*0.8;c.strokeStyle='#5a4a6a';c.stroke();
  if(chapterArt.naturalWidth){
   const f=frames.rope;
@@ -1747,6 +1775,8 @@ function drawRope(c,r){const z=S*GS.cam.z;c.lineWidth=LW;c.strokeStyle=INK;
   }
  }
  const cols=['#ff6b9d','#7fc0ff','#ffd36e','#9fd17a'];for(let k=1;k<5;k++){const x=r[0]+(r[1]-r[0])*k/5,y=ropeY(r,x);const sw=Math.sin(GS.time*2+k)*0.12;c.save();c.translate(W(x),H(y));c.rotate(sw);c.fillStyle=cols[k%4];c.strokeStyle=INK;c.lineWidth=LW*0.6;
+  const cloth=['sockRose','shirtBlue','sockGold','shirtGreen'][k%4];
+  if(roofSprite(c,cloth,k%2?-14*z:-10*z,0,k%2?28*z:21*z,23*z)){c.restore();continue}
   if(k%2){c.beginPath();c.moveTo(-12*z,0);c.lineTo(12*z,0);c.lineTo(14*z,8*z);c.lineTo(8*z,8*z);c.lineTo(8*z,22*z);c.lineTo(-8*z,22*z);c.lineTo(-8*z,8*z);c.lineTo(-14*z,8*z);c.closePath()}else{c.beginPath();c.moveTo(-4*z,0);c.lineTo(4*z,0);c.lineTo(4*z,14*z);c.lineTo(10*z,18*z);c.lineTo(8*z,22*z);c.lineTo(-4*z,20*z);c.closePath()}c.fill();c.stroke();c.restore()}}
 function topUnder(x){const L=GS.L;for(const p of L.plats)if(x>=p[0]&&x<=p[0]+p[1])return p[2];return -400}
 function drawHang(c,d,L){const r=L.ropes[d.r];if(!r)return;const y=ropeY(r,d.x);const z=S*GS.cam.z;c.save();c.translate(W(d.x),H(y));c.rotate(Math.sin(GS.time*2.2+d.sw*9)*0.15+d.sw);c.strokeStyle=INK;c.lineWidth=LW*0.6;c.beginPath();c.moveTo(0,0);c.lineTo(0,6*z);c.stroke();c.translate(0,6*z+PK[d.t].h*z/2);drawParcel(c,d.t,z,0,0);c.restore()}
