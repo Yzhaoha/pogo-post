@@ -171,6 +171,9 @@ html:lang(zh) #title .tb small:empty{display:none}
 #shopL .panel>*{flex-shrink:0}
 #shopL #skGrid{flex:1 1 auto;min-height:0;align-content:start;align-items:stretch;overflow-y:auto;overscroll-behavior:contain;padding:5px;touch-action:pan-y}
 #shopL .skb{min-width:0}
+@media(max-height:520px) and (max-width:440px){
+ #shopL #skGrid:not(.items){grid-template-columns:repeat(auto-fit,minmax(min(100%,72px),1fr))}
+}
 </style>
 </head>
 <body>
