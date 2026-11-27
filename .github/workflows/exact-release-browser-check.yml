@@ -1,0 +1,45 @@
+name: Pogo Post 230ab06 release QA
+on:
+  push:
+    branches: [qa/230ab06-browser-check]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact uploaded file
+        run: echo 'b6ab016dd5c43aaf4979ed4ac7eb9c6982549ca4df39a69049478d55c505d4df  dist/crazygames/index.html' | sha256sum -c
+      - run: npm install --no-save playwright && npx playwright install msedge
+      - name: Smoke test exact build in Edge
+        run: |
+          cat > check.cjs <<'JS'
+          const { chromium } = require('playwright');
+          const assert = require('node:assert/strict');
+          const { pathToFileURL } = require('node:url');
+          const path = require('node:path');
+          (async()=>{
+            const b=await chromium.launch({channel:'msedge'});
+            const p=await b.newPage({viewport:{width:907,height:510}});
+            const errors=[];
+            p.on('pageerror',e=>errors.push(String(e)));
+            await p.route('https://sdk.crazygames.com/**',r=>r.fulfill({contentType:'application/javascript',body:"window.__cg=[];window.CrazyGames={SDK:{init:async()=>{},game:{loadingStart(){__cg.push('loadingStart')},loadingStop(){__cg.push('loadingStop')},gameplayStart(){__cg.push('gameplayStart')},gameplayStop(){__cg.push('gameplayStop')},settings:{muteAudio:false},addSettingsChangeListener(){}},user:{systemInfo:{locale:'en-US'}}}}"}));
+            await p.goto(pathToFileURL(path.resolve('dist/crazygames/index.html')).href);
+            await p.waitForFunction(()=>window.__cg?.includes('gameplayStart'));
+            await p.locator('#pauseB').click();
+            await p.locator('#pGo').waitFor({state:'visible'});
+            await p.locator('#pGo').click();
+            await p.locator('#pauseB').waitFor({state:'visible'});
+            await p.mouse.move(450,310);
+            await p.mouse.down();
+            await p.waitForTimeout(430);
+            await p.mouse.up();
+            await p.waitForTimeout(700);
+            assert.deepEqual(errors,[]);
+            console.log('Edge',b.version(),'gameplay, pause and resume OK',await p.evaluate(()=>__cg));
+            await b.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node check.cjs
