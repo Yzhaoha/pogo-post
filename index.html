@@ -283,6 +283,7 @@ const LANGS=[['en','English'],['fr','Français'],['it','Italiano'],['de','Deutsc
 const MEM=new URLSearchParams(location.search).has('new')?{}:null; // ?new : play as a brand-new player without touching the saved progress
 const store={get(k,d){if(MEM)return k in MEM?JSON.parse(MEM[k]):d;try{const v=localStorage.getItem('pp_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){if(MEM){MEM[k]=JSON.stringify(v);return}try{localStorage.setItem('pp_'+k,JSON.stringify(v))}catch(e){}}};
 const QS=new URLSearchParams(location.search);
+const quickRetryLimit=BUILD==='test'&&['8','15'].includes(QS.get('quickRetry'))?Number(QS.get('quickRetry')):0;
 const originalBackdrop=BUILD==='test'&&QS.get('art')==='original';
 const backdropComparison=BUILD==='test'&&['fixed','soft','compare'].includes(QS.get('parallax'))?QS.get('parallax'):null;
 function pickLang(){const c=[QS.get('lang'),store.get('lang',null)].concat(navigator.languages||[navigator.language||'en']);for(const x of c){if(!x)continue;const k=String(x).toLowerCase().slice(0,2);if(TXT[k])return k}return'en'}
@@ -920,13 +921,17 @@ function onCrash(why){recordFailure(GS.L);const s=GS.s;if(why==='fall'&&!seaHere
  GS.quip=why==='face'&&AIRN<3?T('faceTip'):pickQ('q_'+why);if(why==='dog')SFX.bark();
  const drop=why==='wall'||why==='fall',first=drop&&!store.get('fell1',0),intro=GS.L.tut&&s.lastP===0;if(first)store.set('fell1',1);
  if(repeat&&why==='face')GS.quip=T('faceTip');
- if(!GS.L.endless&&GS.L.i<QUICK_LV)setTimeout(()=>{if(GS.mode==='crash'&&GS.s===s){
+ const quickRetries=quickRetryLimit&&!GS.L.endless?store.get('quickRetryUsed',0):0;
+ const quickRetry=!GS.L.endless&&(quickRetryLimit?quickRetries<quickRetryLimit:GS.L.i<QUICK_LV);
+ if(quickRetry){
+  if(quickRetryLimit)store.set('quickRetryUsed',quickRetries+1);
+  setTimeout(()=>{if(GS.mode==='crash'&&GS.s===s){
   restart();
   const hint=why==='face'?'faceTip':why==='dog'?'t_dog':why==='rope'?'t_rope':'t3';
   if(intro&&drop){showTip(T('firstHold'),2);GS.retryHint=true}
   else if(repeat){showTip(T(hint),2);GS.retryHint=true}
- }},first&&!intro?3300:800); // early levels: straight back in, no panel
- else setTimeout(()=>{if(GS.mode==='crash'&&GS.s===s)showFail()},why==='wall'?1900:1500)}
+  }},quickRetryLimit?650:first&&!intro?3300:800);
+ }else setTimeout(()=>{if(GS.mode==='crash'&&GS.s===s)showFail()},why==='wall'?1900:1500)}
 
 /* ================= UI ================= */
 const LAYERS=['title','mapL','shopL','pauseL','winL','failL'];
