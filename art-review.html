@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>弹簧快递｜关卡美术检查</title>
+<style>
+:root{color:#302638;background:#f8eed9;font:16px system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:grid;grid-template-rows:auto minmax(340px,1fr)}
+header{display:grid;gap:10px;padding:12px max(12px,env(safe-area-inset-left));border-bottom:3px solid #493345}
+h1{font-size:1.2rem;margin:0}
+nav,.tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+select,button,.tools a{min-height:44px;padding:6px 10px;border:1px solid #765e5f;border-radius:8px;background:#fffaf0;color:inherit;font:inherit}
+button,select,.tools a{cursor:pointer}
+button[aria-current=true]{background:#ffd475;border-color:#563b30;font-weight:700}
+button:disabled,input:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #337588;outline-offset:2px}
+#levels{flex:1;display:grid;grid-template-columns:repeat(10,minmax(38px,1fr));gap:4px}
+#levels button{padding:4px}
+.route{display:flex;gap:8px;align-items:center;flex:1;min-width:225px}
+.route span{white-space:nowrap}
+.route input{width:100%;min-width:0;min-height:36px;accent-color:#98513a}
+output{min-width:3.4em;white-space:nowrap}
+iframe{display:block;width:100%;height:100%;min-height:340px;border:0;background:#9fd8ff}
+@media(max-width:740px){#levels{flex-basis:100%;grid-template-columns:repeat(10,minmax(0,1fr))}.route{flex-basis:100%}.tools a{margin-left:auto}}
+</style>
+</head>
+<body>
+<header>
+ <h1>弹簧快递 · 关卡美术检查</h1>
+ <nav aria-label="选择关卡">
+  <button id="prev" type="button" disabled>上一关</button>
+  <select id="chapter" aria-label="章节" disabled></select>
+  <button id="next" type="button" disabled>下一关</button>
+  <div id="levels"></div>
+ </nav>
+ <div class="tools">
+  <label class="route"><span>沿路线查看</span> <input id="route" type="range" min="0" max="0" value="0" disabled><output id="position"></output></label>
+  <a id="play" target="_blank" rel="noopener" hidden>全屏试玩本关 ↗</a>
+ </div>
+ <small id="status" role="status">正在加载游戏…</small>
+</header>
+<iframe id="game" title="关卡实景"></iframe>
+<script>
+const chapterNames = ['阳光街区','大风码头','雨夜高楼','黄昏天台','冰雪小镇','雾港','阵风屋顶','雷雨夜','暴雪码头','迷雾高楼','狂风码头','极端天气','霓虹雨夜','冰封港口','最后一单'];
+const perChapter = 10;
+const byId = id => document.getElementById(id);
+const [frame, chapter, levels, previous, next, route, position, play, status] =
+ ['game','chapter','levels','prev','next','route','position','play','status'].map(byId);
+
+function gameUrl(index) {
+ const hostedSource = location.hostname === 'htmlpreview.github.io'
+  ? location.search.slice(1).split('?')[0]
+  : '';
+ const query = '?preview=1&new&lang=zh&lvl=' + index;
+ if (hostedSource) {
+  // HTML Preview reads the raw source URL before the second question mark.
+  return 'https://htmlpreview.github.io/?' + new URL('index.html', hostedSource) + query;
+ }
+ return new URL('index.html' + query, location.href).href;
+}
+
+let game, levelIndex = 0;
+const initial = /^#(\d+)$/.exec(location.hash);
+frame.src = gameUrl(0);
+
+function showPlatform(index) {
+ const {GS} = game;
+ const platform = GS.L.plats[index];
+ GS.cam.x = index === 0 ? GS.s.x + 150 : platform[0] + platform[1] / 2;
+ GS.cam.y = platform[2];
+ GS.cam.z = 1;
+ game.tick(0);
+ position.value = (index + 1) + ' / ' + GS.L.plats.length;
+}
+
+function selectLevel(index) {
+ levelIndex = index;
+ const chapterIndex = Math.floor(index / perChapter);
+ chapter.value = chapterIndex;
+ previous.disabled = index === 0;
+ next.disabled = index === game.LEVELS.length - 1;
+ const first = chapterIndex * perChapter;
+ const last = Math.min(first + perChapter, game.LEVELS.length);
+ levels.replaceChildren();
+ for (let i = first; i < last; i++) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = i + 1;
+  button.setAttribute('aria-label', '第 ' + (i + 1) + ' 关');
+  if (i === index) button.setAttribute('aria-current', 'true');
+  button.addEventListener('click', () => {
+   selectLevel(i);
+   levels.querySelector('[aria-current]').focus();
+  });
+  levels.append(button);
+ }
+ game.startLevel(index);
+ const {GS} = game;
+ // Freeze gameplay in the review frame. The normal play link still uses regular game controls.
+ GS.manual = true;
+ GS.mode = 'review';
+ for (const id of ['tip', 'pauseB', 'muteB']) frame.contentDocument.getElementById(id).hidden = true;
+ route.max = GS.L.plats.length - 1;
+ route.value = 0;
+ showPlatform(0);
+ play.href = gameUrl(index);
+ status.textContent = '第 ' + (index + 1) + ' 关 · ' + chapterNames[chapterIndex];
+ const reviewUrl = new URL(location.href);
+ reviewUrl.hash = index + 1;
+ history.replaceState(null, '', reviewUrl.href);
+}
+
+chapter.addEventListener('change', () => selectLevel(Number(chapter.value) * perChapter));
+previous.addEventListener('click', () => selectLevel(levelIndex - 1));
+next.addEventListener('click', () => selectLevel(levelIndex + 1));
+route.addEventListener('input', () => showPlatform(Number(route.value)));
+window.addEventListener('resize', () => requestAnimationFrame(() => {
+ if (game) showPlatform(Number(route.value));
+}));
+
+const started = Date.now();
+const loading = setInterval(() => {
+ const ready = frame.contentWindow?.__pp;
+ if (!ready?.GS.L) {
+  if (Date.now() - started > 30000) {
+   clearInterval(loading);
+   status.textContent = '游戏加载超时，请刷新重试。';
+  }
+  return;
+ }
+ clearInterval(loading);
+ game = ready;
+ for (let i = 0; i * perChapter < game.LEVELS.length; i++) {
+  chapter.add(new Option(chapterNames[i], i));
+ }
+ chapter.disabled = route.disabled = false;
+ play.hidden = false;
+ selectLevel(Math.min(game.LEVELS.length - 1, Math.max(0, Number(initial?.[1] || 1) - 1)));
+ // Repaint once assets finish decoding in the embedded game.
+ Promise.allSettled([...frame.contentDocument.images].map(img => img.decode())).then(() => showPlatform(Number(route.value)));
+}, 100);
+</script>
+</body>
+</html>

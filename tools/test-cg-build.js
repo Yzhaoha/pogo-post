@@ -12,10 +12,13 @@ for(const [w,h,tag] of [[1000,600,'desk'],[390,844,'phone']]){
  const p=await b.newPage({viewport:{width:w,height:h}});p.on('pageerror',e=>errs.push(String(e)));
  await p.route('https://sdk.crazygames.com/**',r=>r.fulfill({contentType:'application/javascript',body:STUB}));
  await p.goto(BASE+'/dist/crazygames/index.html');await p.waitForTimeout(1500);
+ // Embedded containers can briefly collapse while the first-level tips are visible.
+ await p.setViewportSize({width:8,height:8});await p.waitForTimeout(120);
+ await p.setViewportSize({width:w,height:h});await p.waitForTimeout(120);
  await p.screenshot({path:`${out}-${tag}-start.png`});
  console.log(tag,'calls:',(await p.evaluate(()=>__cg)).join(','),'| title hidden:',await p.evaluate(()=>document.getElementById('title').hidden));
  // play: hold & release a few times (new player is in level 1)
  for(let j=0;j<3;j++){await p.mouse.move(w/2,h/2);await p.mouse.down();await p.waitForTimeout(420);await p.mouse.up();await p.waitForTimeout(1500)}
  await p.screenshot({path:`${out}-${tag}-play.png`});
  console.log(tag,'calls after play:',(await p.evaluate(()=>__cg)).join(','));await p.close()}
-console.log('errors:',errs.length?errs:'none');await b.close()})();
+console.log('errors:',errs.length?errs:'none');await b.close();if(errs.length)process.exitCode=1})();
